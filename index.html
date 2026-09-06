@@ -2,11 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Mission Week">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mission Week</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
@@ -227,7 +223,7 @@ function defaultData(){
 }
 
 async function loadData(){
-  try{ const raw = localStorage.getItem(STORAGE_KEY); data = raw ? JSON.parse(raw) : defaultData(); }
+  try{ const res = await window.storage.get(STORAGE_KEY, false); data = res && res.value ? JSON.parse(res.value) : defaultData(); }
   catch(e){ data = defaultData(); }
   if(!data.schedule) data.schedule = clone(DEFAULT_SCHEDULE);
   if(!data.penalties) data.penalties = clone(DEFAULT_PENALTIES);
@@ -282,7 +278,7 @@ async function loadData(){
   });
   await saveData();
 }
-async function saveData(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+async function saveData(){ try{ await window.storage.set(STORAGE_KEY, JSON.stringify(data), false); }catch(e){} }
 
 /* ---------------- Logic ---------------- */
 function sortedEntries(kidKey, day){
@@ -839,6 +835,10 @@ window.onAllowanceChange = onAllowanceChange;
   document.getElementById('app').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px 0;">Loading…</div>';
   await loadData();
   render();
+  setInterval(()=>{
+    // only refresh the live "NOW" indicator on the main view; don't interrupt editing or an open modal
+    if(!editMode && !pendingChoice) render();
+  }, 60000);
 })();
 </script>
 </body>
