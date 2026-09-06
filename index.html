@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mission Week">
+<title>Mission Week</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --panel:#FFFFFF; --panel2:#F4F5FB; --line:#E7E9F5;
+    --ink:#282A32; --muted:#9A9EC0; --gold:#E8A317; --cyan:#2FB6D9; --pink:#FF6FA5; --green:#2FAE72; --red:#FF5C5C;
+    --shadow:0 2px 10px rgba(38,40,74,.07);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); font-family:'Nunito',sans-serif; color:var(--ink); -webkit-tap-highlight-color:transparent; min-height:100vh; transition:background .3s ease; }
+  .app{ max-width:640px; margin:0 auto; padding:20px 16px 60px; }
+  h1,h2,h3{ font-family:'Baloo 2',sans-serif; margin:0; }
+
+  .topbar{ display:flex; gap:10px; margin-bottom:16px; align-items:center; }
+  .kidbar{ display:flex; gap:10px; flex:1; }
+  .kidtab{ flex:1; border:2px solid var(--line); border-radius:18px; padding:10px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; background:var(--panel); color:var(--muted); display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:var(--shadow); }
+  .kidtab.active{ color:#fff; border-color:var(--kidcolor); background:var(--kidcolor); box-shadow:0 6px 14px rgba(38,40,74,.18); }
+  .gearbtn{ width:44px;height:44px;border-radius:14px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font-size:18px;cursor:pointer;flex-shrink:0; box-shadow:var(--shadow); }
+
+  .levelcard{ display:flex; align-items:center; gap:12px; background:var(--panel); border:2px solid var(--line); border-radius:18px; padding:12px 14px; margin-bottom:14px; box-shadow:var(--shadow); }
+  .levelbadge{ width:46px;height:46px;border-radius:50%; background:conic-gradient(var(--kidcolor) calc(var(--xp,0)*3.6deg), var(--line) 0deg); display:flex;align-items:center;justify-content:center;flex-shrink:0; font-family:'Baloo 2',sans-serif;font-weight:800;font-size:12px; position:relative; }
+  .levelbadge::after{ content:'';position:absolute;inset:4px;border-radius:50%;background:var(--panel); }
+  .levelbadge span{ position:relative; z-index:1; }
+  .levelinfo{ flex:1; }
+  .levelinfo .lvltitle{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px; }
+  .xpbar{ height:8px; background:var(--line); border-radius:5px; overflow:hidden; margin-top:5px; }
+  .xpbar > div{ height:100%; background:var(--kidcolor); transition:width .3s ease; }
+  .streak{ display:flex; align-items:center; gap:4px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px; color:var(--gold); flex-shrink:0; }
+
+  .weekstrip{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:16px; }
+  .daycell{ background:var(--panel); border-radius:14px; border:2px solid var(--line); padding:8px 4px 10px; text-align:center; cursor:pointer; box-shadow:var(--shadow); }
+  .daycell.selected{ border-color:var(--kidcolor); }
+  .daycell .dlabel{ font-size:11px; font-weight:800; color:var(--muted); margin-bottom:6px; display:block; }
+  .ring{ width:34px;height:34px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800; }
+
+  .panel{ background:var(--panel); border-radius:22px; padding:18px; border:2px solid var(--line); margin-bottom:16px; box-shadow:var(--shadow); }
+  .panel h2{ font-size:19px; margin-bottom:2px; color:var(--kidcolor); }
+  .panelsub{ color:var(--muted); font-weight:700; font-size:12px; margin-bottom:12px; }
+
+  .timeline{ position:relative; padding-left:6px; }
+  .trow{ display:flex; align-items:flex-start; gap:10px; padding:9px 6px; border-radius:14px; position:relative; }
+  .trow.now{ background:rgba(255,200,87,.1); border:1.5px solid var(--gold); }
+  .ttime{ width:56px; flex-shrink:0; font-size:11px; font-weight:800; color:var(--muted); padding-top:8px; }
+  .trow.now .ttime{ color:var(--gold); }
+  .tbody{ flex:1; display:flex; align-items:center; gap:10px; background:var(--panel2); border-radius:12px; padding:8px 10px; }
+  .trow.passive .tbody{ background:transparent; opacity:.6; }
+  .ticon{ font-size:18px; width:24px; text-align:center; }
+  .tlabel{ flex:1; font-weight:700; font-size:14px; }
+  .trow.quest.checked .tlabel{ color:var(--muted); text-decoration:line-through; }
+  .checkbox{ width:28px;height:28px;border-radius:9px;border:2.5px solid var(--line); display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer; background:var(--panel); color:transparent; flex-shrink:0; }
+  .checkbox.on{ background:var(--kidcolor); border-color:var(--kidcolor); color:#fff; animation:pop .28s ease; }
+  @keyframes pop{ 0%{transform:scale(1);} 40%{transform:scale(1.3) rotate(8deg);} 100%{transform:scale(1);} }
+  .nowtag{ font-size:9px; font-weight:800; color:var(--bg); background:var(--gold); border-radius:6px; padding:2px 6px; margin-left:4px; }
+
+  .chestwrap{ text-align:center; padding:14px 10px 6px; }
+  .chest{ font-size:56px; cursor:pointer; display:inline-block; animation:wiggle 1.6s ease-in-out infinite; filter:drop-shadow(0 0 14px rgba(255,200,87,.5)); }
+  @keyframes wiggle{ 0%,100%{transform:rotate(-4deg);} 50%{transform:rotate(4deg);} }
+  .chesttitle{ font-family:'Baloo 2',sans-serif; color:var(--gold); font-size:20px; margin:8px 0 2px; }
+  .chestsub{ color:var(--muted); font-weight:700; font-size:13px; margin-bottom:10px; }
+  .rewardgrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+  .rewardbtn{ background:var(--panel2); border:2px solid var(--line); color:var(--ink); border-radius:14px; padding:12px 6px; font-family:'Nunito',sans-serif; font-weight:800; font-size:13px; cursor:pointer; }
+  .rewardbtn:hover{ border-color:var(--gold); }
+  .claimed{ background:rgba(255,200,87,.12); border:2px solid var(--gold); border-radius:14px; padding:14px; font-weight:800; color:var(--gold); }
+  .rewardcard{ border:2px solid var(--gold); background:radial-gradient(circle at top, rgba(255,200,87,.12), transparent 70%); }
+
+  .badgerow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+  .badge{ background:var(--panel2); border:2px solid var(--line); border-radius:12px; padding:6px 10px; font-size:12px; font-weight:800; display:flex; align-items:center; gap:5px; opacity:.35; filter:grayscale(1); }
+  .badge.unlocked{ opacity:1; filter:none; border-color:var(--gold); }
+
+  .penaltypanel{ border-color:var(--red); }
+  .balancerow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .balancenum{ font-family:'Baloo 2',sans-serif; font-size:30px; font-weight:800; }
+  .balancenum.low{ color:var(--red); }
+  .penlist{ display:flex; flex-direction:column; gap:8px; }
+  .penrow{ display:flex; align-items:center; gap:10px; background:var(--panel2); border-radius:12px; padding:9px 10px; }
+  .penrow .ticon{ font-size:17px; }
+  .penrow .tlabel{ flex:1; font-weight:700; font-size:13.5px; }
+  .penamt{ font-weight:800; font-size:12.5px; color:var(--red); }
+  .pentoggle{ width:28px;height:28px;border-radius:9px;border:2.5px solid var(--line); display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer; background:var(--panel); color:transparent; flex-shrink:0; }
+  .pentoggle.on{ background:var(--red); border-color:var(--red); color:#fff; }
+
+  .confetti{ position:fixed; top:-10px; width:8px;height:14px; border-radius:2px; z-index:999; animation:fall linear forwards; }
+  @keyframes fall{ to{ transform:translateY(110vh) rotate(360deg); opacity:.9; } }
+
+  /* ---- Edit mode ---- */
+  .editrow{ display:flex; gap:6px; align-items:center; background:var(--panel2); border-radius:12px; padding:8px; margin-bottom:6px; }
+  .editrow input[type=text]{ background:var(--panel); border:1.5px solid var(--line); color:var(--ink); border-radius:8px; padding:7px 8px; font-family:'Nunito',sans-serif; font-weight:700; font-size:13px; }
+  .editrow .ein-time{ width:72px; }
+  .editrow .ein-icon{ width:38px; text-align:center; }
+  .editrow .ein-label{ flex:1; min-width:0; }
+  .editrow input[type=checkbox]{ width:18px;height:18px; flex-shrink:0; }
+  .editrow .delbtn{ background:none; border:none; color:var(--red); font-size:16px; cursor:pointer; flex-shrink:0; }
+  .edittabs{ display:flex; gap:8px; margin-bottom:14px; }
+  .edittab{ flex:1; border:2px solid var(--line); background:var(--panel); color:var(--muted); border-radius:14px; padding:9px; font-weight:800; font-size:13px; cursor:pointer; }
+  .edittab.active{ background:var(--panel2); color:#fff; border-color:var(--gold); }
+  .daypicker{ display:flex; gap:5px; margin-bottom:12px; flex-wrap:wrap; }
+  .daypickbtn{ border:2px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:10px; padding:6px 10px; font-weight:800; font-size:12px; cursor:pointer; }
+  .daypickbtn.active{ color:#fff; border-color:var(--gold); }
+  .addbtn{ width:100%; background:var(--panel2); border:2px dashed var(--line); color:var(--muted); border-radius:12px; padding:10px; font-weight:800; font-size:13px; cursor:pointer; margin-top:4px; }
+  .smallbtn{ background:var(--panel2); border:2px solid var(--line); color:var(--ink); border-radius:10px; padding:8px 12px; font-weight:800; font-size:12px; cursor:pointer; margin-top:8px; margin-right:6px; }
+  .backbtn{ background:none; border:none; color:var(--gold); font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; cursor:pointer; margin-bottom:14px; }
+  .allowrow{ display:flex; align-items:center; justify-content:space-between; background:var(--panel2); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .allowrow input{ width:60px; background:var(--panel); border:1.5px solid var(--line); color:var(--ink); border-radius:8px; padding:6px; font-weight:800; text-align:center; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const META = { leyna:{name:'Leyna', avatar:'🦊', color:'#FF6FA5'}, lea:{name:'Lea', avatar:'🦉', color:'#6C63FF'} };
+
+/* ---------------- Default schedule (used on first run, and for "reset to default") ---------------- */
+function E(id,time,icon,label,quest){ return {id,time,icon,label,quest:!!quest}; }
+const DEFAULT_SCHEDULE = {
+  leyna:{
+    Mon:[E('leyna-mon-1','8:30AM','🏫','School'),E('leyna-mon-2','3:30PM','🍎','Snack'),E('leyna-mon-3','4:30PM','📐','RSM class + homework (4:15-6:15)',1),E('leyna-mon-4','6:30PM','🍽️','Dinner'),E('leyna-mon-5','7:15PM','🚿','Shower'),E('leyna-mon-6','7:30PM','📐','RSM homework',1),E('leyna-mon-7','8:30PM','📚','Reading / Clean up',1),E('leyna-mon-8','9:00PM','😴','Sleep')],
+    Tue:[E('leyna-tue-1','8:30AM','🏫','School'),E('leyna-tue-2','3:30PM','🍎','Snack'),E('leyna-tue-3','4:30PM','✏️','Simply Draw / Chinese book',1),E('leyna-tue-4','5:30PM','➗','Math homework',1),E('leyna-tue-5','6:15PM','🍽️','Dinner'),E('leyna-tue-6','7:15PM','🚿','Shower'),E('leyna-tue-7','7:30PM','🎨','Drawing',1),E('leyna-tue-8','8:30PM','📚','Reading / Clean up',1),E('leyna-tue-9','9:00PM','😴','Sleep')],
+    Wed:[E('leyna-wed-1','8:30AM','🏫','School'),E('leyna-wed-2','3:30PM','🍎','Snack'),E('leyna-wed-3','4:15PM','✏️','Simply Draw / Chinese book',1),E('leyna-wed-4','5:00PM','➗','Math homework',1),E('leyna-wed-5','6:15PM','🍽️','Dinner'),E('leyna-wed-6','7:15PM','🚿','Shower'),E('leyna-wed-7','7:30PM','✍️','Writing',1),E('leyna-wed-8','8:00PM','📒','Workbook (1 page)',1),E('leyna-wed-9','8:30PM','📚','Reading / Clean up',1),E('leyna-wed-10','9:00PM','😴','Sleep')],
+    Thu:[E('leyna-thu-1','8:30AM','🏫','School'),E('leyna-thu-2','3:30PM','🍎','Snack'),E('leyna-thu-3','3:45PM','🏊','Free swim (3:45-4:30)'),E('leyna-thu-4','4:30PM','🏊','Swimming (4:30-5:00)'),E('leyna-thu-5','5:45PM','📒','Workbook',1),E('leyna-thu-6','6:15PM','🍽️','Dinner'),E('leyna-thu-7','7:15PM','🚿','Shower'),E('leyna-thu-8','7:30PM','📒','Workbook (1 page)',1),E('leyna-thu-9','8:00PM','✍️','Writing',1),E('leyna-thu-10','8:30PM','📚','Reading / Clean up',1),E('leyna-thu-11','9:00PM','😴','Sleep')],
+    Fri:[E('leyna-fri-1','8:30AM','🏫','School'),E('leyna-fri-2','1:15PM','🍎','Snack'),E('leyna-fri-3','2:30PM','📒','Workbook (3 pages)',1),E('leyna-fri-4','3:45PM','➗','Math homework',1),E('leyna-fri-5','5:00PM','✍️','Writing',1),E('leyna-fri-6','5:45PM','🍽️','Dinner'),E('leyna-fri-7','6:30PM','🏊','Family swim (6:30-7:15)'),E('leyna-fri-8','8:30PM','📚','Reading / Clean up',1),E('leyna-fri-9','9:00PM','😴','Sleep')],
+    Sat:[E('leyna-sat-1','9:30AM','🎵','Practice',1),E('leyna-sat-2','10:00AM','🎵','Practice',1),E('leyna-sat-3','11:15AM','📱','iPad/TV'),E('leyna-sat-4','12:00PM','🍽️','Lunch'),E('leyna-sat-5','1:30PM','🎵','Practice',1),E('leyna-sat-6','2:00PM','🎵','Practice',1),E('leyna-sat-7','4:30PM','♨️','Hot tub time'),E('leyna-sat-8','5:15PM','📱','iPad/TV'),E('leyna-sat-9','6:00PM','🚿','Shower'),E('leyna-sat-10','6:15PM','🍽️','Dinner'),E('leyna-sat-11','7:00PM','🀄','Mandarin online (7-8pm)',1),E('leyna-sat-12','8:15PM','📚','Reading / Clean up',1),E('leyna-sat-13','9:00PM','😴','Sleep')],
+    Sun:[E('leyna-sun-1','9:30AM','🎵','Practice',1),E('leyna-sun-2','10:00AM','🎵','Practice',1),E('leyna-sun-3','11:15AM','📱','iPad/TV'),E('leyna-sun-4','12:00PM','🍽️','Lunch'),E('leyna-sun-5','1:30PM','🎵','Practice',1),E('leyna-sun-6','2:00PM','🎵','Practice',1),E('leyna-sun-7','3:00PM','📖','ZPD reading',1),E('leyna-sun-8','5:15PM','📱','iPad/TV'),E('leyna-sun-9','6:15PM','🍽️','Dinner'),E('leyna-sun-10','7:15PM','🚿','Shower'),E('leyna-sun-11','7:45PM','🎲','Family game time',1),E('leyna-sun-12','8:30PM','📚','Reading / Clean up',1),E('leyna-sun-13','9:00PM','😴','Sleep')]
+  },
+  lea:{
+    Mon:[E('lea-mon-1','8:30AM','🏫','School'),E('lea-mon-2','3:30PM','🍎','Snack'),E('lea-mon-3','4:00PM','📖','ZPD reading',1),E('lea-mon-4','6:15PM','🍽️','Dinner'),E('lea-mon-5','7:15PM','🚿','Shower'),E('lea-mon-6','7:30PM','➗','Math homework',1),E('lea-mon-7','8:00PM','✍️','Writing',1),E('lea-mon-8','8:30PM','📚','Reading / Clean up',1),E('lea-mon-9','9:00PM','😴','Sleep')],
+    Tue:[E('lea-tue-1','8:30AM','🏫','School'),E('lea-tue-2','3:30PM','🍎','Snack'),E('lea-tue-3','4:00PM','📐','RSM class (4:10-6:10)'),E('lea-tue-4','6:15PM','🍽️','Dinner'),E('lea-tue-5','7:15PM','🚿','Shower'),E('lea-tue-6','7:30PM','📐','RSM homework',1),E('lea-tue-7','8:30PM','📚','Reading / Clean up',1),E('lea-tue-8','9:00PM','😴','Sleep')],
+    Wed:[E('lea-wed-1','8:30AM','🏫','School'),E('lea-wed-2','3:30PM','🍎','Snack'),E('lea-wed-3','4:00PM','🎹','Piano lesson'),E('lea-wed-4','4:45PM','📐','RSM homework',1),E('lea-wed-5','6:15PM','🍽️','Dinner'),E('lea-wed-6','7:15PM','🚿','Shower'),E('lea-wed-7','7:30PM','🎹','Piano practice (30 min)',1),E('lea-wed-8','8:00PM','✍️','Writing',1),E('lea-wed-9','8:30PM','📚','Reading / Clean up',1),E('lea-wed-10','9:00PM','😴','Sleep')],
+    Thu:[E('lea-thu-1','8:30AM','🏫','School'),E('lea-thu-2','3:30PM','🍎','Snack'),E('lea-thu-3','3:45PM','🏊','Free swim (3:45-4:30)'),E('lea-thu-4','4:30PM','🏊','Swimming (4:30-5:00)'),E('lea-thu-5','5:45PM','📒','Workbook',1),E('lea-thu-6','6:15PM','🍽️','Dinner'),E('lea-thu-7','7:15PM','🚿','Shower'),E('lea-thu-8','7:30PM','🎹','Piano practice (30 min)',1),E('lea-thu-9','8:00PM','🎨','Drawing',1),E('lea-thu-10','9:00PM','😴','Sleep')],
+    Fri:[E('lea-fri-1','8:30AM','🏫','School'),E('lea-fri-2','1:15PM','🍎','Snack'),E('lea-fri-3','1:45PM','🎹','Piano practice (30 min)',1),E('lea-fri-4','3:00PM','📒','Workbook',1),E('lea-fri-5','3:45PM','➗','Math homework',1),E('lea-fri-6','5:00PM','✍️','Writing',1),E('lea-fri-7','5:45PM','🍽️','Dinner'),E('lea-fri-8','6:30PM','🏊','Family swim (6:30-7:15)'),E('lea-fri-9','8:30PM','📚','Reading / Clean up',1),E('lea-fri-10','9:00PM','😴','Sleep')],
+    Sat:[E('lea-sat-1','9:30AM','🎵','Practice',1),E('lea-sat-2','10:00AM','🎵','Practice',1),E('lea-sat-3','11:15AM','📱','iPad/TV'),E('lea-sat-4','12:00PM','🍽️','Lunch'),E('lea-sat-5','1:30PM','🎵','Practice',1),E('lea-sat-6','2:00PM','🎵','Practice',1),E('lea-sat-7','4:30PM','♨️','Hot tub time'),E('lea-sat-8','5:15PM','📱','iPad/TV'),E('lea-sat-9','6:00PM','🚿','Shower'),E('lea-sat-10','6:15PM','🍽️','Dinner'),E('lea-sat-11','7:00PM','🀄','Mandarin online (7-8pm)',1),E('lea-sat-12','8:15PM','📚','Reading / Clean up',1),E('lea-sat-13','9:00PM','😴','Sleep')],
+    Sun:[E('lea-sun-1','9:30AM','🎵','Practice',1),E('lea-sun-2','10:00AM','🎵','Practice',1),E('lea-sun-3','11:15AM','📱','iPad/TV'),E('lea-sun-4','12:00PM','🍽️','Lunch'),E('lea-sun-5','1:30PM','🎵','Practice',1),E('lea-sun-6','2:00PM','🎵','Practice',1),E('lea-sun-7','3:00PM','📖','ZPD reading',1),E('lea-sun-8','5:15PM','📱','iPad/TV'),E('lea-sun-9','6:15PM','🍽️','Dinner'),E('lea-sun-10','7:15PM','🚿','Shower'),E('lea-sun-11','7:45PM','🎲','Family game time',1),E('lea-sun-12','8:30PM','📚','Reading / Clean up',1),E('lea-sun-13','9:00PM','😴','Sleep')]
+  }
+};
+const DEFAULT_PENALTIES = [
+  {id:'pen-bathroom', icon:'🧼', label:'Bathroom not cleaned', amount:10},
+  {id:'pen-room', icon:'🛏️', label:'Room left messy', amount:10},
+  {id:'pen-attitude', icon:'😤', label:'Bad attitude / back talk', amount:10},
+  {id:'pen-latebed', icon:'⏰', label:'Not in bed on time', amount:10}
+];
+const DEFAULT_ALLOWANCE = { leyna:60, lea:60 };
+const REWARDS = [
+  {id:'screen30', icon:'📱', label:'+30 min iPad/game time'},
+  {id:'screen60', icon:'🎮', label:'+60 min iPad/game time'},
+  {id:'prize', icon:'🎁', label:'Pick from the prize box'},
+  {id:'sticker', icon:'⭐', label:'Pick a sticker'},
+  {id:'choose', icon:'🌟', label:'Choose your own weekend treat'}
+];
+const XP_PER_LEVEL = 20;
+
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function hexToRgba(hex, a){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function applyTheme(color){
+  document.documentElement.style.setProperty('--kidcolor', color);
+  document.documentElement.style.setProperty('--line', hexToRgba(color,0.22));
+  document.documentElement.style.setProperty('--panel2', hexToRgba(color,0.08));
+  document.body.style.background = `linear-gradient(180deg, ${hexToRgba(color,0.14)} 0%, #FFFFFF 420px)`;
+}
+function timeToMinutes(t){
+  const m = (t||'').match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if(!m) return 0;
+  let h = parseInt(m[1])%12; if(m[3].toUpperCase()==='PM') h+=12;
+  return h*60+parseInt(m[2]);
+}
+
+/* ---------------- State ---------------- */
+const STORAGE_KEY = 'kids_quest_v5';
+let currentKid = 'leyna';
+let currentDay = todayKey();
+const actualToday = currentDay;
+let data = null;
+let chestOpen = false;
+let editMode = null;        // null | 'schedule' | 'penalties'
+let editKid = 'leyna';
+let editDay = 'Mon';
+
+function todayKey(){
+  const map = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const idx = DAYS.indexOf(map[new Date().getDay()]);
+  return idx === -1 ? 'Mon' : DAYS[idx];
+}
+function mondayOf(date){
+  const d = new Date(date); const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1) - day); d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+function freshKidState(){
+  const checks = {}; const penaltyHits = {};
+  DAYS.forEach(d => { checks[d] = {}; penaltyHits[d] = {}; });
+  return { weekStart: mondayOf(new Date()), checks, penaltyHits, lifetimeStars:0, perfectWeeks:0, maxStreakEver:0, rewardClaimed:false, rewardChoice:null };
+}
+function defaultData(){
+  return { schedule: clone(DEFAULT_SCHEDULE), penalties: clone(DEFAULT_PENALTIES), allowance: clone(DEFAULT_ALLOWANCE),
+    leyna: freshKidState(), lea: freshKidState() };
+}
+
+async function loadData(){
+  try{ const raw = localStorage.getItem(STORAGE_KEY); data = raw ? JSON.parse(raw) : defaultData(); }
+  catch(e){ data = defaultData(); }
+  if(!data.schedule) data.schedule = clone(DEFAULT_SCHEDULE);
+  if(!data.penalties) data.penalties = clone(DEFAULT_PENALTIES);
+  if(!data.allowance) data.allowance = clone(DEFAULT_ALLOWANCE);
+  const thisMonday = mondayOf(new Date());
+  Object.keys(META).forEach(k=>{
+    if(!data[k]) data[k] = freshKidState();
+    if(!data[k].penaltyHits) data[k].penaltyHits = {};
+    DAYS.forEach(d=>{ if(!data[k].penaltyHits[d]) data[k].penaltyHits[d] = {}; if(!data[k].checks[d]) data[k].checks[d]={}; });
+    if(data[k].weekStart !== thisMonday){
+      const carry = { lifetimeStars:data[k].lifetimeStars||0, perfectWeeks:data[k].perfectWeeks||0, maxStreakEver:data[k].maxStreakEver||0 };
+      data[k] = Object.assign(freshKidState(), carry); data[k].weekStart = thisMonday;
+    }
+  });
+  await saveData();
+}
+async function saveData(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+
+/* ---------------- Logic ---------------- */
+function sortedEntries(kidKey, day){
+  return [...data.schedule[kidKey][day]].sort((a,b)=>timeToMinutes(a.time)-timeToMinutes(b.time));
+}
+function questsOf(kidKey, day){ return data.schedule[kidKey][day].filter(e=>e.quest); }
+function dayTotals(kidKey, day){
+  const qs = questsOf(kidKey, day);
+  const checks = data[kidKey].checks[day] || {};
+  const done = qs.filter(q => checks[q.id]).length;
+  return {done, total: qs.length};
+}
+function weekComplete(kidKey){
+  return DAYS.every(d => { const {done,total} = dayTotals(kidKey, d); return total > 0 ? done === total : true; })
+    && DAYS.some(d => questsOf(kidKey,d).length > 0);
+}
+function currentStreak(kidKey){
+  let streak = 0;
+  for(let i = DAYS.indexOf(actualToday); i >= 0; i--){
+    const {done,total} = dayTotals(kidKey, DAYS[i]);
+    if(total > 0 && done === total) streak++; else break;
+  }
+  return streak;
+}
+function levelInfo(stars){
+  const level = Math.floor(stars / XP_PER_LEVEL) + 1;
+  const xp = stars % XP_PER_LEVEL;
+  return { level, xp, pct: Math.round(xp / XP_PER_LEVEL * 100) };
+}
+function badgeList(kstate){
+  const streak = kstate.maxStreakEver||0;
+  return [
+    {icon:'🔥', label:'3-Day Streak', unlocked: streak>=3},
+    {icon:'🚀', label:'First Perfect Week', unlocked:(kstate.perfectWeeks||0)>=1},
+    {icon:'💯', label:'50 Stars', unlocked:(kstate.lifetimeStars||0)>=50},
+    {icon:'👑', label:'5 Perfect Weeks', unlocked:(kstate.perfectWeeks||0)>=5}
+  ];
+}
+function penaltyBalance(kidKey, day){
+  const base = (data.allowance[kidKey]!=null) ? data.allowance[kidKey] : 60;
+  const hits = data[kidKey].penaltyHits[day] || {};
+  let deduct = 0;
+  data.penalties.forEach(p=>{ if(hits[p.id]) deduct += (p.amount||0); });
+  return { base, deduct, remaining: Math.max(0, base-deduct) };
+}
+
+function toggleTask(kidKey, day, taskId){
+  const kstate = data[kidKey];
+  const wasChecked = !!kstate.checks[day][taskId];
+  const wasWeekDone = weekComplete(kidKey);
+  if(wasChecked){ delete kstate.checks[day][taskId]; kstate.lifetimeStars = Math.max(0,(kstate.lifetimeStars||0)-1); }
+  else { kstate.checks[day][taskId] = true; kstate.lifetimeStars = (kstate.lifetimeStars||0)+1; }
+  kstate.maxStreakEver = Math.max(kstate.maxStreakEver||0, currentStreak(kidKey));
+  const nowWeekDone = weekComplete(kidKey);
+  saveData(); render();
+  if(nowWeekDone && !wasWeekDone) burstConfetti();
+}
+function togglePenalty(kidKey, day, penId){
+  const hits = data[kidKey].penaltyHits[day];
+  hits[penId] = !hits[penId];
+  saveData(); render();
+}
+function claimReward(kidKey, rewardId){
+  const kstate = data[kidKey];
+  kstate.rewardClaimed = true; kstate.rewardChoice = rewardId; kstate.perfectWeeks = (kstate.perfectWeeks||0)+1;
+  saveData(); render(); burstConfetti();
+}
+function burstConfetti(){
+  const colors = ['#3FC7DE','#FF6FA5','#FFC857','#4CD07A','#B39DFF'];
+  for(let i=0;i<50;i++){
+    const el = document.createElement('div'); el.className = 'confetti';
+    el.style.left = Math.random()*100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    document.body.appendChild(el); setTimeout(()=>el.remove(), 3600);
+  }
+}
+
+/* ---------------- Edit-mode actions ---------------- */
+function openEdit(section){ editMode = section; editKid = currentKid; editDay = currentDay; renderEdit(); }
+function closeEdit(){ editMode = null; render(); }
+function addScheduleItem(){
+  const id = 'custom-'+Date.now();
+  data.schedule[editKid][editDay].push({id, time:'12:00PM', icon:'📌', label:'New item', quest:false});
+  saveData(); renderEdit();
+}
+function deleteScheduleItem(id){
+  data.schedule[editKid][editDay] = data.schedule[editKid][editDay].filter(e=>e.id!==id);
+  saveData(); renderEdit();
+}
+function resetDayToDefault(){
+  data.schedule[editKid][editDay] = clone(DEFAULT_SCHEDULE[editKid][editDay]);
+  saveData(); renderEdit();
+}
+function onSchedFieldChange(ev){
+  const el = ev.target;
+  const id = el.dataset.id, field = el.dataset.field;
+  const entry = data.schedule[editKid][editDay].find(e=>e.id===id);
+  if(!entry) return;
+  if(field==='quest') entry.quest = el.checked; else entry[field] = el.value;
+  saveData();
+}
+function addPenalty(){
+  data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:10});
+  saveData(); renderEdit();
+}
+function deletePenalty(id){
+  data.penalties = data.penalties.filter(p=>p.id!==id);
+  saveData(); renderEdit();
+}
+function onPenFieldChange(ev){
+  const el = ev.target;
+  const id = el.dataset.id, field = el.dataset.field;
+  const p = data.penalties.find(x=>x.id===id);
+  if(!p) return;
+  p[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
+  saveData();
+}
+function onAllowanceChange(kid, val){
+  data.allowance[kid] = parseInt(val)||0;
+  saveData(); renderEdit();
+}
+function attachEditListeners(){
+  document.querySelectorAll('.sched-field').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'change', onSchedFieldChange));
+  document.querySelectorAll('.pen-field').forEach(el=>el.addEventListener('change', onPenFieldChange));
+}
+
+/* ---------------- Render: normal view ---------------- */
+function render(){
+  const kid = META[currentKid];
+  const kstate = data[currentKid];
+  const root = document.getElementById('app');
+  applyTheme(kid.color);
+
+  const {level, xp, pct} = levelInfo(kstate.lifetimeStars||0);
+  const streak = currentStreak(currentKid);
+
+  let stripHtml = '';
+  DAYS.forEach(d=>{
+    const {done,total} = dayTotals(currentKid, d);
+    const donePct = total ? Math.round(done/total*100) : 0;
+    const isDone = total>0 && done===total;
+    const ringBg = total ? `conic-gradient(${kid.color} ${donePct*3.6}deg, var(--line) 0deg)` : 'var(--line)';
+    stripHtml += `<div class="daycell ${d===currentDay?'selected':''}" onclick="selectDay('${d}')">
+      <span class="dlabel">${d}</span>
+      <div class="ring" style="background:${ringBg}">${isDone ? '✅' : (total? done+'/'+total : '–')}</div>
+    </div>`;
+  });
+
+  const entries = sortedEntries(currentKid, currentDay);
+  const nowMin = (currentDay === actualToday) ? (new Date().getHours()*60+new Date().getMinutes()) : -1;
+  let nowIdx = -1;
+  if(nowMin >= 0){ entries.forEach((e,i)=>{ if(timeToMinutes(e.time) <= nowMin) nowIdx = i; }); }
+  let timelineHtml = '';
+  entries.forEach((e,i)=>{
+    if(e.quest){
+      const checked = !!kstate.checks[currentDay][e.id];
+      timelineHtml += `<div class="trow quest ${checked?'checked':''} ${i===nowIdx?'now':''}">
+        <div class="ttime">${e.time}${i===nowIdx?'<div class=\"nowtag\">NOW</div>':''}</div>
+        <div class="tbody"><div class="ticon">${e.icon}</div><div class="tlabel">${e.label}</div>
+          <div class="checkbox ${checked?'on':''}" onclick="toggleTask('${currentKid}','${currentDay}','${e.id}')">${checked?'✓':''}</div>
+        </div></div>`;
+    } else {
+      timelineHtml += `<div class="trow passive ${i===nowIdx?'now':''}">
+        <div class="ttime">${e.time}${i===nowIdx?'<div class=\"nowtag\">NOW</div>':''}</div>
+        <div class="tbody"><div class="ticon">${e.icon}</div><div class="tlabel">${e.label}</div></div></div>`;
+    }
+  });
+
+  let rewardHtml = '';
+  const isWeekDone = weekComplete(currentKid);
+  if(isWeekDone){
+    if(kstate.rewardClaimed){
+      const r = REWARDS.find(r=>r.id===kstate.rewardChoice);
+      rewardHtml = `<div class="panel rewardcard"><div class="chestwrap">
+        <div style="font-size:44px;">🎉</div><div class="chesttitle">Quest complete!</div>
+        <div class="claimed">${r ? r.icon+' '+r.label : 'Reward claimed'} — claimed</div></div></div>`;
+    } else if(chestOpen){
+      rewardHtml = `<div class="panel rewardcard"><div class="chestwrap">
+        <div style="font-size:44px;">🎁</div><div class="chesttitle">Pick your treasure!</div>
+        <div class="rewardgrid">${REWARDS.map(r=>`<button class="rewardbtn" onclick="claimReward('${currentKid}','${r.id}')">${r.icon} ${r.label}</button>`).join('')}</div>
+      </div></div>`;
+    } else {
+      rewardHtml = `<div class="panel rewardcard"><div class="chestwrap">
+        <div class="chest" onclick="openChest()">🧰</div><div class="chesttitle">All quests complete!</div>
+        <div class="chestsub">Tap the chest to claim your reward</div></div></div>`;
+    }
+  }
+
+  const badges = badgeList(kstate);
+
+  const bal = penaltyBalance(currentKid, currentDay);
+  const penHits = data[currentKid].penaltyHits[currentDay] || {};
+  const penListHtml = data.penalties.map(p=>{
+    const on = !!penHits[p.id];
+    return `<div class="penrow"><div class="ticon">${p.icon}</div><div class="tlabel">${p.label}</div><div class="penamt">-${p.amount}m</div>
+      <div class="pentoggle ${on?'on':''}" onclick="togglePenalty('${currentKid}','${currentDay}','${p.id}')">${on?'✓':''}</div></div>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div class="topbar">
+      <div class="kidbar">
+        ${Object.keys(META).map(k=>`
+          <button class="kidtab ${k===currentKid?'active':''}" style="${k===currentKid?'--kidcolor:'+META[k].color:''}" onclick="selectKid('${k}')">${META[k].name}</button>`).join('')}
+      </div>
+      <button class="gearbtn" onclick="openEdit('schedule')">⚙️</button>
+    </div>
+
+    <div class="levelcard">
+      <div class="levelbadge" style="--xp:${pct}"><span>Lv${level}</span></div>
+      <div class="levelinfo">
+        <div class="lvltitle">${kid.name} · ${xp}/${XP_PER_LEVEL} XP to next level</div>
+        <div class="xpbar"><div style="width:${pct}%"></div></div>
+      </div>
+      <div class="streak">🔥 ${streak}</div>
+    </div>
+
+    <div class="weekstrip">${stripHtml}</div>
+
+    ${rewardHtml}
+
+    <div class="panel">
+      <h2>${currentDay}'s Full Day</h2>
+      <div class="panelsub">Quests to check off: ${dayTotals(currentKid,currentDay).done}/${dayTotals(currentKid,currentDay).total} — everything else is just today's plan</div>
+      <div class="timeline">${timelineHtml}</div>
+    </div>
+
+    <div class="panel penaltypanel">
+      <div class="balancerow">
+        <h2 style="font-size:16px;">📱 ${currentDay}'s iPad/TV Balance</h2>
+        <div class="balancenum ${bal.remaining<=15?'low':''}">${bal.remaining}<span style="font-size:15px;">m</span></div>
+      </div>
+      <div class="panelsub" style="margin-bottom:10px;">Starts at ${bal.base}m — separate from stars/badges above</div>
+      <div class="penlist">${penListHtml}</div>
+    </div>
+
+    <div class="panel">
+      <h2 style="font-size:16px;">🏅 Badges</h2>
+      <div class="badgerow">${badges.map(b=>`<div class="badge ${b.unlocked?'unlocked':''}">${b.icon} ${b.label}</div>`).join('')}</div>
+    </div>
+  `;
+}
+
+/* ---------------- Render: edit view ---------------- */
+function renderEdit(){
+  applyTheme(META[editKid].color);
+  const root = document.getElementById('app');
+  let body = '';
+  if(editMode === 'schedule'){
+    const entries = sortedEntries(editKid, editDay);
+    body = `
+      <div class="kidbar" style="margin-bottom:10px;">
+        ${Object.keys(META).map(k=>`<button class="kidtab ${k===editKid?'active':''}" style="${k===editKid?'--kidcolor:'+META[k].color:''}" onclick="editKid='${k}';renderEdit()">${META[k].name}</button>`).join('')}
+      </div>
+      <div class="daypicker">${DAYS.map(d=>`<button class="daypickbtn ${d===editDay?'active':''}" onclick="editDay='${d}';renderEdit()">${d}</button>`).join('')}</div>
+      <div class="panel">
+        <div class="panelsub">Time · Icon · Label · Quest?</div>
+        ${entries.map(e=>`
+          <div class="editrow">
+            <input class="ein-time sched-field" type="text" data-id="${e.id}" data-field="time" value="${e.time.replace(/"/g,'&quot;')}">
+            <input class="ein-icon sched-field" type="text" data-id="${e.id}" data-field="icon" value="${e.icon.replace(/"/g,'&quot;')}">
+            <input class="ein-label sched-field" type="text" data-id="${e.id}" data-field="label" value="${e.label.replace(/"/g,'&quot;')}">
+            <input type="checkbox" class="sched-field" data-id="${e.id}" data-field="quest" ${e.quest?'checked':''} title="Countable quest?">
+            <button class="delbtn" onclick="deleteScheduleItem('${e.id}')">✕</button>
+          </div>`).join('')}
+        <button class="addbtn" onclick="addScheduleItem()">+ Add item to ${editDay}</button>
+        <div>
+          <button class="smallbtn" onclick="resetDayToDefault()">↺ Reset ${editDay} to default</button>
+        </div>
+      </div>`;
+  } else {
+    body = `
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:10px;">⚠️ Penalty items</h2>
+        <div class="panelsub">Icon · Label · Minutes deducted</div>
+        ${data.penalties.map(p=>`
+          <div class="editrow">
+            <input class="ein-icon pen-field" type="text" data-id="${p.id}" data-field="icon" value="${p.icon.replace(/"/g,'&quot;')}">
+            <input class="ein-label pen-field" type="text" data-id="${p.id}" data-field="label" value="${p.label.replace(/"/g,'&quot;')}">
+            <input type="text" class="pen-field" data-id="${p.id}" data-field="amount" value="${p.amount}" style="width:44px;text-align:center;">
+            <button class="delbtn" onclick="deletePenalty('${p.id}')">✕</button>
+          </div>`).join('')}
+        <button class="addbtn" onclick="addPenalty()">+ Add penalty</button>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:10px;">📱 Daily iPad/TV allowance</h2>
+        ${Object.keys(META).map(k=>`
+          <div class="allowrow"><div>${META[k].name}</div><div><input type="number" value="${data.allowance[k]}" onchange="onAllowanceChange('${k}', this.value)"> min/day</div></div>`).join('')}
+      </div>`;
+  }
+
+  root.innerHTML = `
+    <button class="backbtn" onclick="closeEdit()">← Back</button>
+    <div class="edittabs">
+      <button class="edittab ${editMode==='schedule'?'active':''}" onclick="editMode='schedule';renderEdit()">🗓 Schedule</button>
+      <button class="edittab ${editMode==='penalties'?'active':''}" onclick="editMode='penalties';renderEdit()">⚠️ Penalties & Screen Time</button>
+    </div>
+    ${body}
+  `;
+  attachEditListeners();
+}
+
+function selectKid(k){ currentKid = k; chestOpen = false; render(); }
+function selectDay(d){ currentDay = d; render(); }
+function openChest(){ chestOpen = true; render(); }
+window.toggleTask = toggleTask;
+window.togglePenalty = togglePenalty;
+window.claimReward = claimReward;
+window.selectKid = selectKid;
+window.selectDay = selectDay;
+window.openChest = openChest;
+window.openEdit = openEdit;
+window.closeEdit = closeEdit;
+window.editKid = editKid; window.editDay = editDay; window.editMode = editMode;
+window.renderEdit = renderEdit;
+window.addScheduleItem = addScheduleItem;
+window.deleteScheduleItem = deleteScheduleItem;
+window.resetDayToDefault = resetDayToDefault;
+window.addPenalty = addPenalty;
+window.deletePenalty = deletePenalty;
+window.onAllowanceChange = onAllowanceChange;
+
+(async function init(){
+  document.getElementById('app').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px 0;">Loading…</div>';
+  await loadData();
+  render();
+})();
+</script>
+</body>
+</html>
