@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mission Week">
 <title>Mission Week</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
@@ -223,8 +227,18 @@ function defaultData(){
 }
 
 async function loadData(){
-  try{ const res = await window.storage.get(STORAGE_KEY, false); data = res && res.value ? JSON.parse(res.value) : defaultData(); }
-  catch(e){ data = defaultData(); }
+  let loaded = null;
+  try{
+    const res = await fetch('/api/data');
+    if(res.ok){
+      const json = await res.json();
+      if(json && json.data) loaded = json.data;
+    }
+  }catch(e){ /* offline or function unreachable — fall back to local cache below */ }
+  if(!loaded){
+    try{ const raw = localStorage.getItem(STORAGE_KEY); loaded = raw ? JSON.parse(raw) : null; }catch(e){}
+  }
+  data = loaded || defaultData();
   if(!data.schedule) data.schedule = clone(DEFAULT_SCHEDULE);
   if(!data.penalties) data.penalties = clone(DEFAULT_PENALTIES);
   if(!data.bonuses) data.bonuses = clone(DEFAULT_BONUSES);
@@ -278,7 +292,21 @@ async function loadData(){
   });
   await saveData();
 }
-async function saveData(){ try{ await window.storage.set(STORAGE_KEY, JSON.stringify(data), false); }catch(e){} }
+async function saveData(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+  try{
+    fetch('/api/data', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    }).catch(()=>{ /* offline — local cache above still has it; will sync next time online */ });
+  }catch(e){}
+}
+
+// Safety net: force a save the moment the app is backgrounded, tab-switched, or closed,
+// in case something changed without a normal save being triggered yet.
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden' && data) saveData(); });
+window.addEventListener('pagehide', ()=>{ if(data) saveData(); });
 
 /* ---------------- Logic ---------------- */
 function sortedEntries(kidKey, day){
@@ -493,12 +521,16 @@ function onBonusFieldChange(ev){
 function onAllowanceChange(kid, bucket, val){
   if(!data.allowance[kid]) data.allowance[kid] = {sat:30,sun:30};
   data.allowance[kid][bucket] = parseInt(val)||0;
-  saveData(); renderEdit();
+  saveData();
 }
 function attachEditListeners(){
-  document.querySelectorAll('.sched-field').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'change', onSchedFieldChange));
-  document.querySelectorAll('.pen-field').forEach(el=>el.addEventListener('change', onPenFieldChange));
-  document.querySelectorAll('.bonus-field').forEach(el=>el.addEventListener('change', onBonusFieldChange));
+  document.querySelectorAll('.sched-field').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'input', onSchedFieldChange));
+  document.querySelectorAll('.pen-field').forEach(el=>el.addEventListener('input', onPenFieldChange));
+  document.querySelectorAll('.bonus-field').forEach(el=>el.addEventListener('input', onBonusFieldChange));
+  document.querySelectorAll('.allow-field').forEach(el=>el.addEventListener('input', ev=>{
+    const el2 = ev.target;
+    onAllowanceChange(el2.dataset.kid, el2.dataset.bucket, el2.value);
+  }));
 }
 
 /* ---------------- Render: normal view ---------------- */
@@ -783,8 +815,8 @@ function renderEdit(){
         <h2 style="font-size:16px;margin-bottom:10px;">📱 Weekend iPad/TV allowance</h2>
         ${Object.keys(META).map(k=>`
           <div class="allowrow"><div>${META[k].name}</div><div>
-            <input type="number" value="${data.allowance[k].sat}" onchange="onAllowanceChange('${k}','sat', this.value)"> Sat &nbsp;
-            <input type="number" value="${data.allowance[k].sun}" onchange="onAllowanceChange('${k}','sun', this.value)"> Sun
+            <input type="number" class="allow-field" data-kid="${k}" data-bucket="sat" value="${data.allowance[k].sat}"> Sat &nbsp;
+            <input type="number" class="allow-field" data-kid="${k}" data-bucket="sun" value="${data.allowance[k].sun}"> Sun
           </div></div>`).join('')}
       </div>`;
   }
