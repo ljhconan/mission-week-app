@@ -78,6 +78,18 @@
   .badge.unlocked{ opacity:1; filter:none; border-color:var(--gold); }
 
   .penaltypanel{ border-color:var(--red); }
+  .balrow2{ display:flex; gap:10px; margin-bottom:10px; }
+  .balbox{ flex:1; background:var(--panel2); border-radius:14px; padding:10px; text-align:center; }
+  .balbox .ballabel{ font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; }
+  .balbox .balnum{ font-family:'Baloo 2',sans-serif; font-size:24px; font-weight:800; }
+  .balbox .balnum.low{ color:var(--red); }
+  .modal-overlay{ position:fixed; inset:0; background:rgba(20,20,35,.45); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .modal-box{ background:var(--panel); border-radius:20px; padding:20px; max-width:320px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+  .modaltitle{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:17px; margin-bottom:4px; }
+  .modalsub{ color:var(--muted); font-weight:700; font-size:13px; margin-bottom:14px; }
+  .modalbtns{ display:flex; gap:8px; margin-bottom:10px; }
+  .modalbtn{ flex:1; background:var(--red); color:#fff; border:none; border-radius:12px; padding:12px 6px; font-weight:800; font-size:14px; cursor:pointer; }
+  .modalcancel{ background:none; border:none; color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
   .balancerow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
   .balancenum{ font-family:'Baloo 2',sans-serif; font-size:30px; font-weight:800; }
   .balancenum.low{ color:var(--red); }
@@ -148,13 +160,16 @@ const DEFAULT_PENALTIES = [
   {id:'pen-attitude', icon:'😤', label:'Bad attitude / back talk', amount:10},
   {id:'pen-latebed', icon:'⏰', label:'Not in bed on time', amount:10}
 ];
-const DEFAULT_ALLOWANCE = { leyna:60, lea:60 };
+const DEFAULT_ALLOWANCE = { leyna:{sat:30,sun:30}, lea:{sat:30,sun:30} };
+const DEFAULT_BONUSES = [
+  {id:'bonus-rsm', icon:'📐', label:'RSM homework ≥90% accuracy this week', amount:20},
+  {id:'bonus-mathhw', icon:'➗', label:'Math homework ≥90% accuracy this week', amount:20}
+];
 const REWARDS = [
-  {id:'screen30', icon:'📱', label:'+30 min iPad/game time'},
-  {id:'screen60', icon:'🎮', label:'+60 min iPad/game time'},
-  {id:'prize', icon:'🎁', label:'Pick from the prize box'},
-  {id:'sticker', icon:'⭐', label:'Pick a sticker'},
-  {id:'choose', icon:'🌟', label:'Choose your own weekend treat'}
+  {id:'ipad10', icon:'📱', label:'+10 min iPad time'},
+  {id:'mariokart20', icon:'🏎️', label:'+20 min Mario Kart'},
+  {id:'justdance30', icon:'💃', label:'+30 min Just Dance'},
+  {id:'marioparty20', icon:'🎲', label:'+20 min Mario Party'}
 ];
 const XP_PER_LEVEL = 20;
 
@@ -198,13 +213,16 @@ function mondayOf(date){
   d.setDate(d.getDate() + (day === 0 ? -6 : 1) - day); d.setHours(0,0,0,0);
   return d.toISOString().slice(0,10);
 }
-function freshKidState(){
-  const checks = {}; const penaltyHits = {};
-  DAYS.forEach(d => { checks[d] = {}; penaltyHits[d] = {}; });
-  return { weekStart: mondayOf(new Date()), checks, penaltyHits, lifetimeStars:0, perfectWeeks:0, maxStreakEver:0, rewardClaimed:false, rewardChoice:null };
+function freshKidState(carryLog){
+  const checks = {}; const penaltyHits = {}; const dayStarAwarded = {}; const exerciseDone = {}; const daySportAwarded = {};
+  DAYS.forEach(d => { checks[d] = {}; penaltyHits[d] = {}; dayStarAwarded[d] = false; exerciseDone[d] = false; daySportAwarded[d] = false; });
+  return { weekStart: mondayOf(new Date()), checks, penaltyHits, dayStarAwarded, exerciseDone, daySportAwarded, bonusHits:{},
+    lifetimeStars:0, perfectWeeks:0, maxStreakEver:0, ever50:false, taobaoRedemptions:0,
+    sportBadges:0, everSport50:false, sportRedemptions:0, rewardClaimed:false, rewardChoice:null,
+    weekLog: carryLog || [] };
 }
 function defaultData(){
-  return { schedule: clone(DEFAULT_SCHEDULE), penalties: clone(DEFAULT_PENALTIES), allowance: clone(DEFAULT_ALLOWANCE),
+  return { schedule: clone(DEFAULT_SCHEDULE), penalties: clone(DEFAULT_PENALTIES), bonuses: clone(DEFAULT_BONUSES), allowance: clone(DEFAULT_ALLOWANCE),
     leyna: freshKidState(), lea: freshKidState() };
 }
 
@@ -213,15 +231,53 @@ async function loadData(){
   catch(e){ data = defaultData(); }
   if(!data.schedule) data.schedule = clone(DEFAULT_SCHEDULE);
   if(!data.penalties) data.penalties = clone(DEFAULT_PENALTIES);
+  if(!data.bonuses) data.bonuses = clone(DEFAULT_BONUSES);
   if(!data.allowance) data.allowance = clone(DEFAULT_ALLOWANCE);
+  Object.keys(META).forEach(k=>{
+    if(typeof data.allowance[k] !== 'object' || data.allowance[k] == null){ data.allowance[k] = {sat:30, sun:30}; }
+    if(data.allowance[k].sat == null) data.allowance[k].sat = 30;
+    if(data.allowance[k].sun == null) data.allowance[k].sun = 30;
+  });
   const thisMonday = mondayOf(new Date());
   Object.keys(META).forEach(k=>{
     if(!data[k]) data[k] = freshKidState();
     if(!data[k].penaltyHits) data[k].penaltyHits = {};
-    DAYS.forEach(d=>{ if(!data[k].penaltyHits[d]) data[k].penaltyHits[d] = {}; if(!data[k].checks[d]) data[k].checks[d]={}; });
+    if(!data[k].dayStarAwarded) data[k].dayStarAwarded = {};
+    if(!data[k].exerciseDone) data[k].exerciseDone = {};
+    if(!data[k].daySportAwarded) data[k].daySportAwarded = {};
+    if(!data[k].bonusHits) data[k].bonusHits = {};
+    if(!data[k].weekLog) data[k].weekLog = [];
+    DAYS.forEach(d=>{
+      if(!data[k].penaltyHits[d]) data[k].penaltyHits[d] = {};
+      if(!data[k].checks[d]) data[k].checks[d]={};
+      if(data[k].dayStarAwarded[d]===undefined) data[k].dayStarAwarded[d]=false;
+      if(data[k].exerciseDone[d]===undefined) data[k].exerciseDone[d]=false;
+      if(data[k].daySportAwarded[d]===undefined) data[k].daySportAwarded[d]=false;
+    });
     if(data[k].weekStart !== thisMonday){
-      const carry = { lifetimeStars:data[k].lifetimeStars||0, perfectWeeks:data[k].perfectWeeks||0, maxStreakEver:data[k].maxStreakEver||0 };
-      data[k] = Object.assign(freshKidState(), carry); data[k].weekStart = thisMonday;
+      // snapshot the outgoing week into a permanent log before resetting
+      const outgoing = data[k];
+      const daysSummary = {};
+      DAYS.forEach(d=>{
+        const qs = data.schedule[k][d].filter(e=>e.quest);
+        const checks = outgoing.checks[d] || {};
+        const done = qs.filter(q=>checks[q.id]).length;
+        const penLabels = Object.keys(outgoing.penaltyHits[d]||{}).map(pid=>{
+          const hit = outgoing.penaltyHits[d][pid]; const p = data.penalties.find(x=>x.id===pid);
+          return p ? `${p.label} (-${p.amount}m ${hit.bucket==='sat'?'Sat':'Sun'})` : null;
+        }).filter(Boolean);
+        daysSummary[d] = { done, total: qs.length, star: !!outgoing.dayStarAwarded[d], exercise: !!outgoing.exerciseDone[d], medal: !!outgoing.daySportAwarded[d], penalties: penLabels };
+      });
+      const bonusLabels = Object.keys(outgoing.bonusHits||{}).map(bid=>{
+        const hit = outgoing.bonusHits[bid]; const b = data.bonuses.find(x=>x.id===bid);
+        return (hit && b) ? `${b.label} (+${b.amount}m ${hit.bucket==='sat'?'Sat':'Sun'})` : null;
+      }).filter(Boolean);
+      const logEntry = { weekStart: outgoing.weekStart, days: daysSummary, bonuses: bonusLabels, rewardClaimed: !!outgoing.rewardClaimed, rewardChoice: outgoing.rewardChoice||null };
+      const weekLog = (outgoing.weekLog||[]).concat([logEntry]).slice(-12);
+      const carry = { lifetimeStars:data[k].lifetimeStars||0, perfectWeeks:data[k].perfectWeeks||0, maxStreakEver:data[k].maxStreakEver||0,
+        ever50:data[k].ever50||false, taobaoRedemptions:data[k].taobaoRedemptions||0,
+        sportBadges:data[k].sportBadges||0, everSport50:data[k].everSport50||false, sportRedemptions:data[k].sportRedemptions||0 };
+      data[k] = Object.assign(freshKidState(weekLog), carry); data[k].weekStart = thisMonday;
     }
   });
   await saveData();
@@ -261,34 +317,111 @@ function badgeList(kstate){
   return [
     {icon:'🔥', label:'3-Day Streak', unlocked: streak>=3},
     {icon:'🚀', label:'First Perfect Week', unlocked:(kstate.perfectWeeks||0)>=1},
-    {icon:'💯', label:'50 Stars', unlocked:(kstate.lifetimeStars||0)>=50},
+    {icon:'💯', label:'50 Stars', unlocked: !!kstate.ever50},
+    {icon:'🏃', label:'Sport Star', unlocked: !!kstate.everSport50},
     {icon:'👑', label:'5 Perfect Weeks', unlocked:(kstate.perfectWeeks||0)>=5}
   ];
 }
-function penaltyBalance(kidKey, day){
-  const base = (data.allowance[kidKey]!=null) ? data.allowance[kidKey] : 60;
-  const hits = data[kidKey].penaltyHits[day] || {};
-  let deduct = 0;
-  data.penalties.forEach(p=>{ if(hits[p.id]) deduct += (p.amount||0); });
-  return { base, deduct, remaining: Math.max(0, base-deduct) };
+function bucketRemaining(kidKey, bucket){
+  const allow = data.allowance[kidKey] || {sat:30,sun:30};
+  const base = allow[bucket] != null ? allow[bucket] : 30;
+  let deduct = 0, add = 0;
+  DAYS.forEach(d=>{
+    const hits = data[kidKey].penaltyHits[d] || {};
+    Object.keys(hits).forEach(pid=>{
+      const h = hits[pid];
+      if(h && h.bucket === bucket){ const p = data.penalties.find(x=>x.id===pid); if(p) deduct += (p.amount||0); }
+    });
+  });
+  const bhits = data[kidKey].bonusHits || {};
+  Object.keys(bhits).forEach(bid=>{
+    const h = bhits[bid];
+    if(h && h.bucket === bucket){ const b = data.bonuses.find(x=>x.id===bid); if(b) add += (b.amount||0); }
+  });
+  return { base, remaining: Math.max(0, base - deduct + add) };
 }
 
+function awardOrRevokeDayStar(kidKey, day){
+  const kstate = data[kidKey];
+  const {done,total} = dayTotals(kidKey, day);
+  const isComplete = total > 0 && done === total;
+  const wasAwarded = !!kstate.dayStarAwarded[day];
+  if(isComplete && !wasAwarded){
+    kstate.dayStarAwarded[day] = true;
+    kstate.lifetimeStars = (kstate.lifetimeStars||0) + 1;
+    if(kstate.lifetimeStars >= 50) kstate.ever50 = true;
+    return true; // newly earned
+  }
+  if(!isComplete && wasAwarded){
+    kstate.dayStarAwarded[day] = false;
+    kstate.lifetimeStars = Math.max(0, (kstate.lifetimeStars||0) - 1);
+  }
+  return false;
+}
+function toggleExercise(kidKey, day){
+  const kstate = data[kidKey];
+  kstate.exerciseDone[day] = !kstate.exerciseDone[day];
+  const isDone = !!kstate.exerciseDone[day];
+  const wasAwarded = !!kstate.daySportAwarded[day];
+  let earned = false;
+  if(isDone && !wasAwarded){
+    kstate.daySportAwarded[day] = true;
+    kstate.sportBadges = (kstate.sportBadges||0) + 1;
+    if(kstate.sportBadges >= 50) kstate.everSport50 = true;
+    earned = true;
+  } else if(!isDone && wasAwarded){
+    kstate.daySportAwarded[day] = false;
+    kstate.sportBadges = Math.max(0, (kstate.sportBadges||0) - 1);
+  }
+  saveData(); render();
+  if(earned) burstConfetti();
+}
+function claimSportReward(kidKey){
+  const kstate = data[kidKey];
+  if((kstate.sportBadges||0) < 50) return;
+  kstate.sportBadges = 0;
+  kstate.sportRedemptions = (kstate.sportRedemptions||0) + 1;
+  saveData(); render(); burstConfetti();
+}
 function toggleTask(kidKey, day, taskId){
   const kstate = data[kidKey];
   const wasChecked = !!kstate.checks[day][taskId];
   const wasWeekDone = weekComplete(kidKey);
-  if(wasChecked){ delete kstate.checks[day][taskId]; kstate.lifetimeStars = Math.max(0,(kstate.lifetimeStars||0)-1); }
-  else { kstate.checks[day][taskId] = true; kstate.lifetimeStars = (kstate.lifetimeStars||0)+1; }
+  if(wasChecked){ delete kstate.checks[day][taskId]; }
+  else { kstate.checks[day][taskId] = true; }
+  const earnedDayStar = awardOrRevokeDayStar(kidKey, day);
   kstate.maxStreakEver = Math.max(kstate.maxStreakEver||0, currentStreak(kidKey));
   const nowWeekDone = weekComplete(kidKey);
   saveData(); render();
-  if(nowWeekDone && !wasWeekDone) burstConfetti();
+  if(earnedDayStar || (nowWeekDone && !wasWeekDone)) burstConfetti();
 }
+function claimStarReward(kidKey){
+  const kstate = data[kidKey];
+  if((kstate.lifetimeStars||0) < 50) return;
+  kstate.lifetimeStars = 0;
+  kstate.taobaoRedemptions = (kstate.taobaoRedemptions||0) + 1;
+  saveData(); render(); burstConfetti();
+}
+let pendingChoice = null; // {kind:'penalty'|'bonus', kidKey, day, id}
 function togglePenalty(kidKey, day, penId){
   const hits = data[kidKey].penaltyHits[day];
-  hits[penId] = !hits[penId];
+  if(hits[penId]){ delete hits[penId]; saveData(); render(); }
+  else { pendingChoice = {kind:'penalty', kidKey, day, id:penId}; render(); }
+}
+function toggleBonus(kidKey, bonusId){
+  const kstate = data[kidKey];
+  if(kstate.bonusHits[bonusId]){ delete kstate.bonusHits[bonusId]; saveData(); render(); }
+  else { pendingChoice = {kind:'bonus', kidKey, id:bonusId}; render(); }
+}
+function confirmChoice(bucket){
+  if(!pendingChoice) return;
+  const {kind, kidKey, day, id} = pendingChoice;
+  if(kind === 'penalty') data[kidKey].penaltyHits[day][id] = {bucket};
+  else data[kidKey].bonusHits[id] = {bucket};
+  pendingChoice = null;
   saveData(); render();
 }
+function cancelChoice(){ pendingChoice = null; render(); }
 function claimReward(kidKey, rewardId){
   const kstate = data[kidKey];
   kstate.rewardClaimed = true; kstate.rewardChoice = rewardId; kstate.perfectWeeks = (kstate.perfectWeeks||0)+1;
@@ -345,13 +478,31 @@ function onPenFieldChange(ev){
   p[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
   saveData();
 }
-function onAllowanceChange(kid, val){
-  data.allowance[kid] = parseInt(val)||0;
+function addBonus(){
+  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:20});
+  saveData(); renderEdit();
+}
+function deleteBonus(id){
+  data.bonuses = data.bonuses.filter(b=>b.id!==id);
+  saveData(); renderEdit();
+}
+function onBonusFieldChange(ev){
+  const el = ev.target;
+  const id = el.dataset.id, field = el.dataset.field;
+  const b = data.bonuses.find(x=>x.id===id);
+  if(!b) return;
+  b[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
+  saveData();
+}
+function onAllowanceChange(kid, bucket, val){
+  if(!data.allowance[kid]) data.allowance[kid] = {sat:30,sun:30};
+  data.allowance[kid][bucket] = parseInt(val)||0;
   saveData(); renderEdit();
 }
 function attachEditListeners(){
   document.querySelectorAll('.sched-field').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'change', onSchedFieldChange));
   document.querySelectorAll('.pen-field').forEach(el=>el.addEventListener('change', onPenFieldChange));
+  document.querySelectorAll('.bonus-field').forEach(el=>el.addEventListener('change', onBonusFieldChange));
 }
 
 /* ---------------- Render: normal view ---------------- */
@@ -418,21 +569,57 @@ function render(){
 
   const badges = badgeList(kstate);
 
-  const bal = penaltyBalance(currentKid, currentDay);
+  const satBal = bucketRemaining(currentKid, 'sat');
+  const sunBal = bucketRemaining(currentKid, 'sun');
   const penHits = data[currentKid].penaltyHits[currentDay] || {};
   const penListHtml = data.penalties.map(p=>{
-    const on = !!penHits[p.id];
-    return `<div class="penrow"><div class="ticon">${p.icon}</div><div class="tlabel">${p.label}</div><div class="penamt">-${p.amount}m</div>
+    const hit = penHits[p.id];
+    const on = !!hit;
+    const tag = on ? ` (${hit.bucket==='sat'?'Sat':'Sun'})` : '';
+    return `<div class="penrow"><div class="ticon">${p.icon}</div><div class="tlabel">${p.label}${tag}</div><div class="penamt">-${p.amount}m</div>
       <div class="pentoggle ${on?'on':''}" onclick="togglePenalty('${currentKid}','${currentDay}','${p.id}')">${on?'✓':''}</div></div>`;
   }).join('');
 
+  const bonusListHtml = data.bonuses.map(b=>{
+    const hit = kstate.bonusHits[b.id];
+    const on = !!hit;
+    const tag = on ? ` (${hit.bucket==='sat'?'Sat':'Sun'})` : '';
+    return `<div class="penrow"><div class="ticon">${b.icon}</div><div class="tlabel">${b.label}${tag}</div><div class="penamt" style="color:var(--green);">+${b.amount}m</div>
+      <div class="pentoggle ${on?'on':''}" style="${on?'background:var(--green);border-color:var(--green);':''}" onclick="toggleBonus('${currentKid}','${b.id}')">${on?'✓':''}</div></div>`;
+  }).join('');
+
+  const exDone = !!kstate.exerciseDone[currentDay];
+
+  let modalHtml = '';
+  if(pendingChoice && pendingChoice.kidKey === currentKid){
+    const isBonus = pendingChoice.kind === 'bonus';
+    const item = isBonus ? data.bonuses.find(x=>x.id===pendingChoice.id) : data.penalties.find(x=>x.id===pendingChoice.id);
+    if(item){
+      modalHtml = `<div class="modal-overlay">
+        <div class="modal-box">
+          <div class="modaltitle">${item.icon} ${item.label}</div>
+          <div class="modalsub">${isBonus?'Add':'Take'} ${item.amount} minutes ${isBonus?'to':'from'} which day's screen time?</div>
+          <div class="modalbtns">
+            <button class="modalbtn" style="${isBonus?'background:var(--green);':''}" onclick="confirmChoice('sat')">Saturday</button>
+            <button class="modalbtn" style="${isBonus?'background:var(--green);':''}" onclick="confirmChoice('sun')">Sunday</button>
+          </div>
+          <button class="modalcancel" onclick="cancelChoice()">Cancel</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  const nowStr = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}) + ' · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+
   root.innerHTML = `
+    <div class="datebar" style="text-align:center;color:var(--muted);font-weight:800;font-size:12px;margin-bottom:10px;">${nowStr}</div>
     <div class="topbar">
       <div class="kidbar">
         ${Object.keys(META).map(k=>`
           <button class="kidtab ${k===currentKid?'active':''}" style="${k===currentKid?'--kidcolor:'+META[k].color:''}" onclick="selectKid('${k}')">${META[k].name}</button>`).join('')}
       </div>
-      <button class="gearbtn" onclick="openEdit('schedule')">⚙️</button>
+      <button class="gearbtn" onclick="openHistory()" title="History">📜</button>
+      <button class="gearbtn" onclick="openEdit('schedule')" title="Edit">⚙️</button>
     </div>
 
     <div class="levelcard">
@@ -444,29 +631,102 @@ function render(){
       <div class="streak">🔥 ${streak}</div>
     </div>
 
+    <div class="panel" style="padding-top:14px;padding-bottom:14px;">
+      <div class="panelhead">
+        <h2 style="font-size:15px;">⭐ 50-Star Taobao Reward</h2>
+        ${(kstate.lifetimeStars||0) >= 50 ? `<button class="rewardbtn" style="padding:8px 14px;" onclick="claimStarReward('${currentKid}')">🛍️ Redeem now</button>` : ''}
+      </div>
+      <div class="panelsub">${kstate.lifetimeStars||0}/50 stars saved${kstate.taobaoRedemptions ? ' · 🛍️ '+kstate.taobaoRedemptions+' redeemed so far' : ''}</div>
+      <div class="xpbar"><div style="width:${Math.min(100,Math.round(((kstate.lifetimeStars||0)/50)*100))}%;background:var(--gold);"></div></div>
+    </div>
+
     <div class="weekstrip">${stripHtml}</div>
 
     ${rewardHtml}
 
     <div class="panel">
       <h2>${currentDay}'s Full Day</h2>
-      <div class="panelsub">Quests to check off: ${dayTotals(currentKid,currentDay).done}/${dayTotals(currentKid,currentDay).total} — everything else is just today's plan</div>
+      <div class="panelsub">Quests to check off: ${dayTotals(currentKid,currentDay).done}/${dayTotals(currentKid,currentDay).total} — finish them ALL today to earn 1 ⭐. Resets every Monday.</div>
       <div class="timeline">${timelineHtml}</div>
     </div>
 
-    <div class="panel penaltypanel">
-      <div class="balancerow">
-        <h2 style="font-size:16px;">📱 ${currentDay}'s iPad/TV Balance</h2>
-        <div class="balancenum ${bal.remaining<=15?'low':''}">${bal.remaining}<span style="font-size:15px;">m</span></div>
+    <div class="panel" style="border-color:var(--green);">
+      <div class="panelhead">
+        <h2 style="font-size:16px;color:var(--green);">🏃 ${currentDay}'s Exercise</h2>
       </div>
-      <div class="panelsub" style="margin-bottom:10px;">Starts at ${bal.base}m — separate from stars/badges above</div>
-      <div class="penlist">${penListHtml}</div>
+      <div class="task ${exDone?'checked':''}" style="background:var(--panel2);border-radius:12px;">
+        <div class="icon" style="width:36px;">🏃</div>
+        <div class="label">About 60 min of exercise today?</div>
+        <div class="checkbox ${exDone?'on':''}" style="${exDone?'background:var(--green);border-color:var(--green);':''}" onclick="toggleExercise('${currentKid}','${currentDay}')">${exDone?'✓':''}</div>
+      </div>
+    </div>
+
+    <div class="panel penaltypanel">
+      <h2 style="font-size:16px;margin-bottom:10px;">📱 iPad/TV Balance (this week)</h2>
+      <div class="balrow2">
+        <div class="balbox"><div class="ballabel">Saturday</div><div class="balnum ${satBal.remaining<=10?'low':''}">${satBal.remaining}<span style="font-size:13px;">/${satBal.base}m</span></div></div>
+        <div class="balbox"><div class="ballabel">Sunday</div><div class="balnum ${sunBal.remaining<=10?'low':''}">${sunBal.remaining}<span style="font-size:13px;">/${sunBal.base}m</span></div></div>
+      </div>
+      <div class="panelsub" style="margin-bottom:6px;">⚠️ Penalties — tap, then pick which day's time it comes out of</div>
+      <div class="penlist" style="margin-bottom:12px;">${penListHtml}</div>
+      <div class="panelsub" style="margin-bottom:6px;">🎯 Weekly accuracy bonus — tap, then pick which day it's added to</div>
+      <div class="penlist">${bonusListHtml}</div>
+    </div>
+
+    <div class="panel">
+      <div class="panelhead">
+        <h2 style="font-size:15px;">🏃 50-Medal Taobao Reward</h2>
+        ${(kstate.sportBadges||0) >= 50 ? `<button class="rewardbtn" style="padding:8px 14px;" onclick="claimSportReward('${currentKid}')">🛍️ Redeem now</button>` : ''}
+      </div>
+      <div class="panelsub">${kstate.sportBadges||0}/50 medals saved${kstate.sportRedemptions ? ' · 🛍️ '+kstate.sportRedemptions+' redeemed so far' : ''}</div>
+      <div class="xpbar"><div style="width:${Math.min(100,Math.round(((kstate.sportBadges||0)/50)*100))}%;background:var(--green);"></div></div>
     </div>
 
     <div class="panel">
       <h2 style="font-size:16px;">🏅 Badges</h2>
       <div class="badgerow">${badges.map(b=>`<div class="badge ${b.unlocked?'unlocked':''}">${b.icon} ${b.label}</div>`).join('')}</div>
     </div>
+
+    ${modalHtml}
+  `;
+}
+
+/* ---------------- Render: history view ---------------- */
+function openHistory(){ editMode = 'history'; editKid = currentKid; renderHistory(); }
+function closeHistory(){ editMode = null; render(); }
+function renderHistory(){
+  applyTheme(META[editKid].color);
+  const root = document.getElementById('app');
+  const log = (data[editKid].weekLog || []).slice().reverse();
+  let body = '';
+  if(log.length === 0){
+    body = `<div class="panel"><div class="panelsub" style="text-align:center;padding:10px 0;">No past weeks yet — this fills in once a week resets (every Monday).</div></div>`;
+  } else {
+    body = log.map(entry=>{
+      const days = DAYS.map(d=>{
+        const s = entry.days[d];
+        if(!s) return '';
+        const penTxt = s.penalties.length ? `<div style="color:var(--red);font-size:11px;">${s.penalties.join(', ')}</div>` : '';
+        return `<div class="penrow" style="background:transparent;padding:6px 4px;">
+          <div class="tlabel" style="flex:0 0 40px;font-weight:800;">${d}</div>
+          <div class="tlabel">${s.done}/${s.total} quests ${s.star?'⭐':''} ${s.exercise?'🏃':''}${penTxt}</div>
+        </div>`;
+      }).join('');
+      const bonusTxt = entry.bonuses && entry.bonuses.length ? `<div class="panelsub" style="color:var(--green);">${entry.bonuses.join(', ')}</div>` : '';
+      return `<div class="panel">
+        <h2 style="font-size:15px;">Week of ${entry.weekStart}</h2>
+        <div class="panelsub">${entry.rewardClaimed ? '🎉 Weekly reward claimed' : 'Reward not claimed'}</div>
+        ${bonusTxt}
+        ${days}
+      </div>`;
+    }).join('');
+  }
+  root.innerHTML = `
+    <button class="backbtn" onclick="closeHistory()">← Back</button>
+    <div class="kidbar" style="margin-bottom:14px;">
+      ${Object.keys(META).map(k=>`<button class="kidtab ${k===editKid?'active':''}" style="${k===editKid?'--kidcolor:'+META[k].color:''}" onclick="editKid='${k}';renderHistory()">${META[k].name}</button>`).join('')}
+    </div>
+    ${body}
   `;
 }
 
@@ -512,9 +772,24 @@ function renderEdit(){
         <button class="addbtn" onclick="addPenalty()">+ Add penalty</button>
       </div>
       <div class="panel">
-        <h2 style="font-size:16px;margin-bottom:10px;">📱 Daily iPad/TV allowance</h2>
+        <h2 style="font-size:16px;margin-bottom:10px;">🎯 Weekly accuracy bonuses</h2>
+        <div class="panelsub">Icon · Label · Minutes added</div>
+        ${data.bonuses.map(b=>`
+          <div class="editrow">
+            <input class="ein-icon bonus-field" type="text" data-id="${b.id}" data-field="icon" value="${b.icon.replace(/"/g,'&quot;')}">
+            <input class="ein-label bonus-field" type="text" data-id="${b.id}" data-field="label" value="${b.label.replace(/"/g,'&quot;')}">
+            <input type="text" class="bonus-field" data-id="${b.id}" data-field="amount" value="${b.amount}" style="width:44px;text-align:center;">
+            <button class="delbtn" onclick="deleteBonus('${b.id}')">✕</button>
+          </div>`).join('')}
+        <button class="addbtn" onclick="addBonus()">+ Add bonus</button>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:10px;">📱 Weekend iPad/TV allowance</h2>
         ${Object.keys(META).map(k=>`
-          <div class="allowrow"><div>${META[k].name}</div><div><input type="number" value="${data.allowance[k]}" onchange="onAllowanceChange('${k}', this.value)"> min/day</div></div>`).join('')}
+          <div class="allowrow"><div>${META[k].name}</div><div>
+            <input type="number" value="${data.allowance[k].sat}" onchange="onAllowanceChange('${k}','sat', this.value)"> Sat &nbsp;
+            <input type="number" value="${data.allowance[k].sun}" onchange="onAllowanceChange('${k}','sun', this.value)"> Sun
+          </div></div>`).join('')}
       </div>`;
   }
 
@@ -533,13 +808,22 @@ function selectKid(k){ currentKid = k; chestOpen = false; render(); }
 function selectDay(d){ currentDay = d; render(); }
 function openChest(){ chestOpen = true; render(); }
 window.toggleTask = toggleTask;
+window.claimStarReward = claimStarReward;
+window.toggleExercise = toggleExercise;
+window.claimSportReward = claimSportReward;
+window.confirmChoice = confirmChoice;
+window.cancelChoice = cancelChoice;
 window.togglePenalty = togglePenalty;
+window.toggleBonus = toggleBonus;
 window.claimReward = claimReward;
 window.selectKid = selectKid;
 window.selectDay = selectDay;
 window.openChest = openChest;
 window.openEdit = openEdit;
 window.closeEdit = closeEdit;
+window.openHistory = openHistory;
+window.closeHistory = closeHistory;
+window.renderHistory = renderHistory;
 window.editKid = editKid; window.editDay = editDay; window.editMode = editMode;
 window.renderEdit = renderEdit;
 window.addScheduleItem = addScheduleItem;
@@ -547,6 +831,8 @@ window.deleteScheduleItem = deleteScheduleItem;
 window.resetDayToDefault = resetDayToDefault;
 window.addPenalty = addPenalty;
 window.deletePenalty = deletePenalty;
+window.addBonus = addBonus;
+window.deleteBonus = deleteBonus;
 window.onAllowanceChange = onAllowanceChange;
 
 (async function init(){
