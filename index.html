@@ -226,23 +226,31 @@ function defaultData(){
     leyna: freshKidState(), lea: freshKidState() };
 }
 
+function sharedSnapshot(){
+  return { schedule: data.schedule, penalties: data.penalties, bonuses: data.bonuses, allowance: data.allowance };
+}
 async function loadData(){
-  let loaded = null;
+  let cloudShared = null, cloudLeyna = null, cloudLea = null;
   try{
     const res = await fetch('/api/data');
     if(res.ok){
       const json = await res.json();
-      if(json && json.data) loaded = json.data;
+      cloudShared = json.shared; cloudLeyna = json.leyna; cloudLea = json.lea;
     }
   }catch(e){ /* offline or function unreachable — fall back to local cache below */ }
-  if(!loaded){
-    try{ const raw = localStorage.getItem(STORAGE_KEY); loaded = raw ? JSON.parse(raw) : null; }catch(e){}
+  let cached = null;
+  if(!cloudShared || !cloudLeyna || !cloudLea){
+    try{ const raw = localStorage.getItem(STORAGE_KEY); cached = raw ? JSON.parse(raw) : null; }catch(e){}
   }
-  data = loaded || defaultData();
-  if(!data.schedule) data.schedule = clone(DEFAULT_SCHEDULE);
-  if(!data.penalties) data.penalties = clone(DEFAULT_PENALTIES);
-  if(!data.bonuses) data.bonuses = clone(DEFAULT_BONUSES);
-  if(!data.allowance) data.allowance = clone(DEFAULT_ALLOWANCE);
+  data = {};
+  const sharedSrc = cloudShared || (cached && {schedule:cached.schedule, penalties:cached.penalties, bonuses:cached.bonuses, allowance:cached.allowance}) || {};
+  data.schedule = sharedSrc.schedule || clone(DEFAULT_SCHEDULE);
+  data.penalties = sharedSrc.penalties || clone(DEFAULT_PENALTIES);
+  data.bonuses = sharedSrc.bonuses || clone(DEFAULT_BONUSES);
+  data.allowance = sharedSrc.allowance || clone(DEFAULT_ALLOWANCE);
+  data.leyna = cloudLeyna || (cached && cached.leyna) || freshKidState();
+  data.lea = cloudLea || (cached && cached.lea) || freshKidState();
+
   Object.keys(META).forEach(k=>{
     if(typeof data.allowance[k] !== 'object' || data.allowance[k] == null){ data.allowance[k] = {sat:30, sun:30}; }
     if(data.allowance[k].sat == null) data.allowance[k].sat = 30;
@@ -290,23 +298,23 @@ async function loadData(){
       data[k] = Object.assign(freshKidState(weekLog), carry); data[k].weekStart = thisMonday;
     }
   });
-  await saveData();
+  await saveData('all');
 }
-async function saveData(){
+async function saveData(scope){
+  // local cache always mirrors everything, for instant offline reads
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
-  try{
-    fetch('/api/data', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(data)
-    }).catch(()=>{ /* offline — local cache above still has it; will sync next time online */ });
-  }catch(e){}
+  const parts = scope === 'all' ? ['shared','leyna','lea'] : [scope];
+  parts.forEach(part=>{
+    const body = part === 'shared' ? sharedSnapshot() : data[part];
+    try{
+      fetch('/api/data?part='+part, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      }).catch(()=>{ /* offline — local cache above still has it; will sync next time online */ });
+    }catch(e){}
+  });
 }
-
-// Safety net: force a save the moment the app is backgrounded, tab-switched, or closed,
-// in case something changed without a normal save being triggered yet.
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden' && data) saveData(); });
-window.addEventListener('pagehide', ()=>{ if(data) saveData(); });
 
 /* ---------------- Logic ---------------- */
 function sortedEntries(kidKey, day){
@@ -397,7 +405,7 @@ function toggleExercise(kidKey, day){
     kstate.daySportAwarded[day] = false;
     kstate.sportBadges = Math.max(0, (kstate.sportBadges||0) - 1);
   }
-  saveData(); render();
+  saveData(kidKey); render();
   if(earned) burstConfetti();
 }
 function claimSportReward(kidKey){
@@ -405,7 +413,7 @@ function claimSportReward(kidKey){
   if((kstate.sportBadges||0) < 50) return;
   kstate.sportBadges = 0;
   kstate.sportRedemptions = (kstate.sportRedemptions||0) + 1;
-  saveData(); render(); burstConfetti();
+  saveData(kidKey); render(); burstConfetti();
 }
 function toggleTask(kidKey, day, taskId){
   const kstate = data[kidKey];
@@ -416,7 +424,7 @@ function toggleTask(kidKey, day, taskId){
   const earnedDayStar = awardOrRevokeDayStar(kidKey, day);
   kstate.maxStreakEver = Math.max(kstate.maxStreakEver||0, currentStreak(kidKey));
   const nowWeekDone = weekComplete(kidKey);
-  saveData(); render();
+  saveData(kidKey); render();
   if(earnedDayStar || (nowWeekDone && !wasWeekDone)) burstConfetti();
 }
 function claimStarReward(kidKey){
@@ -424,17 +432,17 @@ function claimStarReward(kidKey){
   if((kstate.lifetimeStars||0) < 50) return;
   kstate.lifetimeStars = 0;
   kstate.taobaoRedemptions = (kstate.taobaoRedemptions||0) + 1;
-  saveData(); render(); burstConfetti();
+  saveData(kidKey); render(); burstConfetti();
 }
 let pendingChoice = null; // {kind:'penalty'|'bonus', kidKey, day, id}
 function togglePenalty(kidKey, day, penId){
   const hits = data[kidKey].penaltyHits[day];
-  if(hits[penId]){ delete hits[penId]; saveData(); render(); }
+  if(hits[penId]){ delete hits[penId]; saveData(kidKey); render(); }
   else { pendingChoice = {kind:'penalty', kidKey, day, id:penId}; render(); }
 }
 function toggleBonus(kidKey, bonusId){
   const kstate = data[kidKey];
-  if(kstate.bonusHits[bonusId]){ delete kstate.bonusHits[bonusId]; saveData(); render(); }
+  if(kstate.bonusHits[bonusId]){ delete kstate.bonusHits[bonusId]; saveData(kidKey); render(); }
   else { pendingChoice = {kind:'bonus', kidKey, id:bonusId}; render(); }
 }
 function confirmChoice(bucket){
@@ -443,13 +451,13 @@ function confirmChoice(bucket){
   if(kind === 'penalty') data[kidKey].penaltyHits[day][id] = {bucket};
   else data[kidKey].bonusHits[id] = {bucket};
   pendingChoice = null;
-  saveData(); render();
+  saveData(kidKey); render();
 }
 function cancelChoice(){ pendingChoice = null; render(); }
 function claimReward(kidKey, rewardId){
   const kstate = data[kidKey];
   kstate.rewardClaimed = true; kstate.rewardChoice = rewardId; kstate.perfectWeeks = (kstate.perfectWeeks||0)+1;
-  saveData(); render(); burstConfetti();
+  saveData(kidKey); render(); burstConfetti();
 }
 function burstConfetti(){
   const colors = ['#3FC7DE','#FF6FA5','#FFC857','#4CD07A','#B39DFF'];
@@ -468,15 +476,15 @@ function closeEdit(){ editMode = null; render(); }
 function addScheduleItem(){
   const id = 'custom-'+Date.now();
   data.schedule[editKid][editDay].push({id, time:'12:00PM', icon:'📌', label:'New item', quest:false});
-  saveData(); renderEdit();
+  saveData('shared'); renderEdit();
 }
 function deleteScheduleItem(id){
   data.schedule[editKid][editDay] = data.schedule[editKid][editDay].filter(e=>e.id!==id);
-  saveData(); renderEdit();
+  saveData('shared'); renderEdit();
 }
 function resetDayToDefault(){
   data.schedule[editKid][editDay] = clone(DEFAULT_SCHEDULE[editKid][editDay]);
-  saveData(); renderEdit();
+  saveData('shared'); renderEdit();
 }
 function onSchedFieldChange(ev){
   const el = ev.target;
@@ -484,15 +492,15 @@ function onSchedFieldChange(ev){
   const entry = data.schedule[editKid][editDay].find(e=>e.id===id);
   if(!entry) return;
   if(field==='quest') entry.quest = el.checked; else entry[field] = el.value;
-  saveData();
+  saveData('shared');
 }
 function addPenalty(){
   data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:10});
-  saveData(); renderEdit();
+  saveData('shared'); renderEdit();
 }
 function deletePenalty(id){
   data.penalties = data.penalties.filter(p=>p.id!==id);
-  saveData(); renderEdit();
+  saveData('shared'); renderEdit();
 }
 function onPenFieldChange(ev){
   const el = ev.target;
@@ -500,15 +508,15 @@ function onPenFieldChange(ev){
   const p = data.penalties.find(x=>x.id===id);
   if(!p) return;
   p[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
-  saveData();
+  saveData('shared');
 }
 function addBonus(){
   data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:20});
-  saveData(); renderEdit();
+  saveData('shared'); renderEdit();
 }
 function deleteBonus(id){
   data.bonuses = data.bonuses.filter(b=>b.id!==id);
-  saveData(); renderEdit();
+  saveData('shared'); renderEdit();
 }
 function onBonusFieldChange(ev){
   const el = ev.target;
@@ -516,12 +524,12 @@ function onBonusFieldChange(ev){
   const b = data.bonuses.find(x=>x.id===id);
   if(!b) return;
   b[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
-  saveData();
+  saveData('shared');
 }
 function onAllowanceChange(kid, bucket, val){
   if(!data.allowance[kid]) data.allowance[kid] = {sat:30,sun:30};
   data.allowance[kid][bucket] = parseInt(val)||0;
-  saveData();
+  saveData('shared');
 }
 function attachEditListeners(){
   document.querySelectorAll('.sched-field').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'input', onSchedFieldChange));
