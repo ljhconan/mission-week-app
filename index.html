@@ -197,7 +197,8 @@ function timeToMinutes(t){
 const STORAGE_KEY = 'kids_quest_v5';
 let currentKid = 'leyna';
 let currentDay = todayKey();
-const actualToday = currentDay;
+let actualToday = currentDay;
+let lastKnownDate = new Date().toDateString();
 let data = null;
 let chestOpen = false;
 let editMode = null;        // null | 'schedule' | 'penalties'
@@ -925,7 +926,15 @@ window.onAllowanceChange = onAllowanceChange;
   document.getElementById('app').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px 0;">Loading…</div>';
   await loadData();
   render();
-  setInterval(()=>{
+  setInterval(async ()=>{
+    const nowDateStr = new Date().toDateString();
+    if(nowDateStr !== lastKnownDate){
+      lastKnownDate = nowDateStr;
+      const wasOnToday = (currentDay === actualToday);
+      actualToday = todayKey();
+      if(wasOnToday) currentDay = actualToday;
+      await loadData(); // re-checks the Monday weekly rollover too, in case the app was left open across it
+    }
     // only refresh the live "NOW" indicator on the main view; don't interrupt editing or an open modal
     if(!editMode && !pendingChoice) render();
   }, 60000);
