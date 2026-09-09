@@ -50,7 +50,8 @@
   .timeline{ position:relative; padding-left:6px; }
   .trow{ display:flex; align-items:flex-start; gap:10px; padding:9px 6px; border-radius:14px; position:relative; }
   .trow.now{ background:rgba(255,200,87,.1); border:1.5px solid var(--gold); }
-  .ttime{ width:56px; flex-shrink:0; font-size:11px; font-weight:800; color:var(--muted); padding-top:8px; }
+  .ttime{ width:64px; flex-shrink:0; font-size:11px; font-weight:800; color:var(--muted); padding-top:8px; }
+  .ttime-end{ font-size:9px; font-weight:700; color:var(--muted); opacity:.75; margin-top:1px; }
   .trow.now .ttime{ color:var(--gold); }
   .tbody{ flex:1; display:flex; align-items:center; gap:10px; background:var(--panel2); border-radius:12px; padding:8px 10px; }
   .trow.passive .tbody{ background:transparent; opacity:.6; }
@@ -133,25 +134,25 @@ const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const META = { leyna:{name:'Leyna', avatar:'🦊', color:'#FF6FA5'}, lea:{name:'Lea', avatar:'🦉', color:'#6C63FF'} };
 
 /* ---------------- Default schedule (used on first run, and for "reset to default") ---------------- */
-function E(id,time,icon,label,quest){ return {id,time,icon,label,quest:!!quest}; }
+function E(id,time,icon,label,quest,end){ return {id,time,icon,label,quest:!!quest,end: end||null}; }
 const DEFAULT_SCHEDULE = {
   leyna:{
-    Mon:[E('leyna-mon-1','8:30AM','🏫','School'),E('leyna-mon-2','3:30PM','🍎','Snack'),E('leyna-mon-3','4:30PM','📐','RSM class + homework (4:15-6:15)',1),E('leyna-mon-4','6:30PM','🍽️','Dinner'),E('leyna-mon-5','7:15PM','🚿','Shower'),E('leyna-mon-6','7:30PM','📐','RSM homework',1),E('leyna-mon-7','8:30PM','📚','Reading / Clean up',1),E('leyna-mon-8','9:00PM','😴','Sleep')],
-    Tue:[E('leyna-tue-1','8:30AM','🏫','School'),E('leyna-tue-2','3:30PM','🍎','Snack'),E('leyna-tue-3','4:30PM','✏️','Simply Draw / Chinese book',1),E('leyna-tue-4','5:30PM','➗','Math homework',1),E('leyna-tue-5','6:15PM','🍽️','Dinner'),E('leyna-tue-6','7:15PM','🚿','Shower'),E('leyna-tue-7','7:30PM','🎨','Drawing',1),E('leyna-tue-8','8:30PM','📚','Reading / Clean up',1),E('leyna-tue-9','9:00PM','😴','Sleep')],
-    Wed:[E('leyna-wed-1','8:30AM','🏫','School'),E('leyna-wed-2','3:30PM','🍎','Snack'),E('leyna-wed-3','4:15PM','✏️','Simply Draw / Chinese book',1),E('leyna-wed-4','5:00PM','➗','Math homework',1),E('leyna-wed-5','6:15PM','🍽️','Dinner'),E('leyna-wed-6','7:15PM','🚿','Shower'),E('leyna-wed-7','7:30PM','✍️','Writing',1),E('leyna-wed-8','8:00PM','📒','Workbook (1 page)',1),E('leyna-wed-9','8:30PM','📚','Reading / Clean up',1),E('leyna-wed-10','9:00PM','😴','Sleep')],
-    Thu:[E('leyna-thu-1','8:30AM','🏫','School'),E('leyna-thu-2','3:30PM','🍎','Snack'),E('leyna-thu-3','3:45PM','🏊','Free swim (3:45-4:30)'),E('leyna-thu-4','4:30PM','🏊','Swimming (4:30-5:00)'),E('leyna-thu-5','5:45PM','📒','Workbook',1),E('leyna-thu-6','6:15PM','🍽️','Dinner'),E('leyna-thu-7','7:15PM','🚿','Shower'),E('leyna-thu-8','7:30PM','📒','Workbook (1 page)',1),E('leyna-thu-9','8:00PM','✍️','Writing',1),E('leyna-thu-10','8:30PM','📚','Reading / Clean up',1),E('leyna-thu-11','9:00PM','😴','Sleep')],
-    Fri:[E('leyna-fri-1','8:30AM','🏫','School'),E('leyna-fri-2','1:15PM','🍎','Snack'),E('leyna-fri-3','2:30PM','📒','Workbook (3 pages)',1),E('leyna-fri-4','3:45PM','➗','Math homework',1),E('leyna-fri-5','5:00PM','✍️','Writing',1),E('leyna-fri-6','5:45PM','🍽️','Dinner'),E('leyna-fri-7','6:30PM','🏊','Family swim (6:30-7:15)'),E('leyna-fri-8','8:30PM','📚','Reading / Clean up',1),E('leyna-fri-9','9:00PM','😴','Sleep')],
-    Sat:[E('leyna-sat-1','9:30AM','🎵','Practice',1),E('leyna-sat-2','10:00AM','🎵','Practice',1),E('leyna-sat-3','11:15AM','📱','iPad/TV'),E('leyna-sat-4','12:00PM','🍽️','Lunch'),E('leyna-sat-5','1:30PM','🎵','Practice',1),E('leyna-sat-6','2:00PM','🎵','Practice',1),E('leyna-sat-7','4:30PM','♨️','Hot tub time'),E('leyna-sat-8','5:15PM','📱','iPad/TV'),E('leyna-sat-9','6:00PM','🚿','Shower'),E('leyna-sat-10','6:15PM','🍽️','Dinner'),E('leyna-sat-11','7:00PM','🀄','Mandarin online (7-8pm)',1),E('leyna-sat-12','8:15PM','📚','Reading / Clean up',1),E('leyna-sat-13','9:00PM','😴','Sleep')],
-    Sun:[E('leyna-sun-1','9:30AM','🎵','Practice',1),E('leyna-sun-2','10:00AM','🎵','Practice',1),E('leyna-sun-3','11:15AM','📱','iPad/TV'),E('leyna-sun-4','12:00PM','🍽️','Lunch'),E('leyna-sun-5','1:30PM','🎵','Practice',1),E('leyna-sun-6','2:00PM','🎵','Practice',1),E('leyna-sun-7','3:00PM','📖','ZPD reading',1),E('leyna-sun-8','5:15PM','📱','iPad/TV'),E('leyna-sun-9','6:15PM','🍽️','Dinner'),E('leyna-sun-10','7:15PM','🚿','Shower'),E('leyna-sun-11','7:45PM','🎲','Family game time',1),E('leyna-sun-12','8:30PM','📚','Reading / Clean up',1),E('leyna-sun-13','9:00PM','😴','Sleep')]
+    Mon:[E('leyna-mon-1','8:30AM','🏫','School',0,'3:30PM'),E('leyna-mon-2','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-mon-3','3:45PM','🟢','Free time',0,'4:30PM'),E('leyna-mon-4','4:30PM','📐','RSM class + homework',1,'6:30PM'),E('leyna-mon-5','6:30PM','🍽️','Dinner',0,'7:00PM'),E('leyna-mon-6','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-mon-7','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-mon-8','7:30PM','📐','RSM homework',1,'8:30PM'),E('leyna-mon-9','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-mon-10','9:00PM','😴','Sleep',0,null)],
+    Tue:[E('leyna-tue-1','8:30AM','🏫','School',0,'3:30PM'),E('leyna-tue-2','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-tue-3','3:45PM','🟢','Free time',0,'4:30PM'),E('leyna-tue-4','4:30PM','✏️','Simply Draw / Chinese book',1,'5:30PM'),E('leyna-tue-5','5:30PM','➗','Math homework',1,'6:15PM'),E('leyna-tue-6','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-tue-7','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-tue-8','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-tue-9','7:30PM','🎨','Drawing',1,'8:30PM'),E('leyna-tue-10','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-tue-11','9:00PM','😴','Sleep',0,null)],
+    Wed:[E('leyna-wed-1','8:30AM','🏫','School',0,'3:30PM'),E('leyna-wed-2','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-wed-3','3:45PM','🟢','Free time',0,'4:15PM'),E('leyna-wed-4','4:15PM','✏️','Simply Draw / Chinese book',1,'5:00PM'),E('leyna-wed-5','5:00PM','➗','Math homework',1,'5:45PM'),E('leyna-wed-6','5:45PM','🟢','Free time',0,'6:15PM'),E('leyna-wed-7','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-wed-8','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-wed-9','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-wed-10','7:30PM','✍️','Writing',1,'8:00PM'),E('leyna-wed-11','8:00PM','📒','Workbook (1 page)',1,'8:30PM'),E('leyna-wed-12','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-wed-13','9:00PM','😴','Sleep',0,null)],
+    Thu:[E('leyna-thu-1','8:30AM','🏫','School',0,'3:30PM'),E('leyna-thu-2','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-thu-3','3:45PM','🏊','Free swim',0,'4:30PM'),E('leyna-thu-4','4:30PM','🏊','Swimming',0,'5:00PM'),E('leyna-thu-5','5:00PM','🟢','Free time',0,'5:45PM'),E('leyna-thu-6','5:45PM','📒','Workbook',1,'6:15PM'),E('leyna-thu-7','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-thu-8','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-thu-9','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-thu-10','7:30PM','📒','Workbook (1 page)',1,'8:00PM'),E('leyna-thu-11','8:00PM','✍️','Writing',1,'8:30PM'),E('leyna-thu-12','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-thu-13','9:00PM','😴','Sleep',0,null)],
+    Fri:[E('leyna-fri-1','8:30AM','🏫','School',0,'1:15PM'),E('leyna-fri-2','1:15PM','🍎','Snack',0,'1:45PM'),E('leyna-fri-3','1:45PM','🟢','Free time',0,'2:30PM'),E('leyna-fri-4','2:30PM','📒','Workbook (3 pages)',1,'3:00PM'),E('leyna-fri-5','3:00PM','🟢','Free time',0,'3:30PM'),E('leyna-fri-6','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-fri-7','3:45PM','➗','Math homework',1,'4:30PM'),E('leyna-fri-8','4:30PM','🟢','Free time',0,'5:00PM'),E('leyna-fri-9','5:00PM','✍️','Writing',1,'5:30PM'),E('leyna-fri-10','5:30PM','🟢','Free time',0,'5:45PM'),E('leyna-fri-11','5:45PM','🍽️','Dinner',0,'6:30PM'),E('leyna-fri-12','6:30PM','🏊','Family swim',0,'7:45PM'),E('leyna-fri-13','7:45PM','🟢','Free time',0,'8:30PM'),E('leyna-fri-14','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-fri-15','9:00PM','😴','Sleep',0,null)],
+    Sat:[E('leyna-sat-1','9:30AM','🎵','Practice',1,'10:00AM'),E('leyna-sat-2','10:00AM','🎵','Practice',1,'10:30AM'),E('leyna-sat-3','10:30AM','🟢','Free time',0,'11:15AM'),E('leyna-sat-4','11:15AM','📱','iPad/TV',0,'12:00PM'),E('leyna-sat-5','12:00PM','🍽️','Lunch',0,'1:00PM'),E('leyna-sat-6','1:00PM','🟢','Free time',0,'1:30PM'),E('leyna-sat-7','1:30PM','🎵','Practice',1,'2:00PM'),E('leyna-sat-8','2:00PM','🎵','Practice',1,'2:30PM'),E('leyna-sat-9','2:30PM','🟢','Free time',0,'3:30PM'),E('leyna-sat-10','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-sat-11','3:45PM','🟢','Free time',0,'4:30PM'),E('leyna-sat-12','4:30PM','♨️','Hot tub time',0,'4:45PM'),E('leyna-sat-13','4:45PM','🟢','Free time',0,'5:15PM'),E('leyna-sat-14','5:15PM','📱','iPad/TV',0,'5:45PM'),E('leyna-sat-15','5:45PM','🟢','Free time',0,'6:00PM'),E('leyna-sat-16','6:00PM','🚿','Shower',0,'6:15PM'),E('leyna-sat-17','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-sat-18','7:00PM','🀄','Mandarin online class',1,'8:15PM'),E('leyna-sat-19','8:15PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-sat-20','9:00PM','😴','Sleep',0,null)],
+    Sun:[E('leyna-sun-1','9:30AM','🎵','Practice',1,'10:00AM'),E('leyna-sun-2','10:00AM','🎵','Practice',1,'10:30AM'),E('leyna-sun-3','10:30AM','🟢','Free time',0,'11:15AM'),E('leyna-sun-4','11:15AM','📱','iPad/TV',0,'12:00PM'),E('leyna-sun-5','12:00PM','🍽️','Lunch',0,'1:00PM'),E('leyna-sun-6','1:00PM','🟢','Free time',0,'1:30PM'),E('leyna-sun-7','1:30PM','🎵','Practice',1,'2:00PM'),E('leyna-sun-8','2:00PM','🎵','Practice',1,'2:30PM'),E('leyna-sun-9','2:30PM','🟢','Free time',0,'3:00PM'),E('leyna-sun-10','3:00PM','📖','ZPD reading',1,'4:30PM'),E('leyna-sun-11','4:30PM','🟢','Free time',0,'5:15PM'),E('leyna-sun-12','5:15PM','📱','iPad/TV',0,'5:45PM'),E('leyna-sun-13','5:45PM','🟢','Free time',0,'6:15PM'),E('leyna-sun-14','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-sun-15','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-sun-16','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-sun-17','7:30PM','🟢','Free time',0,'7:45PM'),E('leyna-sun-18','7:45PM','🎲','Family game time',1,'8:30PM'),E('leyna-sun-19','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-sun-20','9:00PM','😴','Sleep',0,null)],
   },
   lea:{
-    Mon:[E('lea-mon-1','8:30AM','🏫','School'),E('lea-mon-2','3:30PM','🍎','Snack'),E('lea-mon-3','4:00PM','📖','ZPD reading',1),E('lea-mon-4','6:15PM','🍽️','Dinner'),E('lea-mon-5','7:15PM','🚿','Shower'),E('lea-mon-6','7:30PM','➗','Math homework',1),E('lea-mon-7','8:00PM','✍️','Writing',1),E('lea-mon-8','8:30PM','📚','Reading / Clean up',1),E('lea-mon-9','9:00PM','😴','Sleep')],
-    Tue:[E('lea-tue-1','8:30AM','🏫','School'),E('lea-tue-2','3:30PM','🍎','Snack'),E('lea-tue-3','4:00PM','📐','RSM class (4:10-6:10)'),E('lea-tue-4','6:15PM','🍽️','Dinner'),E('lea-tue-5','7:15PM','🚿','Shower'),E('lea-tue-6','7:30PM','📐','RSM homework',1),E('lea-tue-7','8:30PM','📚','Reading / Clean up',1),E('lea-tue-8','9:00PM','😴','Sleep')],
-    Wed:[E('lea-wed-1','8:30AM','🏫','School'),E('lea-wed-2','3:30PM','🍎','Snack'),E('lea-wed-3','4:00PM','🎹','Piano lesson'),E('lea-wed-4','4:45PM','📐','RSM homework',1),E('lea-wed-5','6:15PM','🍽️','Dinner'),E('lea-wed-6','7:15PM','🚿','Shower'),E('lea-wed-7','7:30PM','🎹','Piano practice (30 min)',1),E('lea-wed-8','8:00PM','✍️','Writing',1),E('lea-wed-9','8:30PM','📚','Reading / Clean up',1),E('lea-wed-10','9:00PM','😴','Sleep')],
-    Thu:[E('lea-thu-1','8:30AM','🏫','School'),E('lea-thu-2','3:30PM','🍎','Snack'),E('lea-thu-3','3:45PM','🏊','Free swim (3:45-4:30)'),E('lea-thu-4','4:30PM','🏊','Swimming (4:30-5:00)'),E('lea-thu-5','5:45PM','📒','Workbook',1),E('lea-thu-6','6:15PM','🍽️','Dinner'),E('lea-thu-7','7:15PM','🚿','Shower'),E('lea-thu-8','7:30PM','🎹','Piano practice (30 min)',1),E('lea-thu-9','8:00PM','🎨','Drawing',1),E('lea-thu-10','9:00PM','😴','Sleep')],
-    Fri:[E('lea-fri-1','8:30AM','🏫','School'),E('lea-fri-2','1:15PM','🍎','Snack'),E('lea-fri-3','1:45PM','🎹','Piano practice (30 min)',1),E('lea-fri-4','3:00PM','📒','Workbook',1),E('lea-fri-5','3:45PM','➗','Math homework',1),E('lea-fri-6','5:00PM','✍️','Writing',1),E('lea-fri-7','5:45PM','🍽️','Dinner'),E('lea-fri-8','6:30PM','🏊','Family swim (6:30-7:15)'),E('lea-fri-9','8:30PM','📚','Reading / Clean up',1),E('lea-fri-10','9:00PM','😴','Sleep')],
-    Sat:[E('lea-sat-1','9:30AM','🎵','Practice',1),E('lea-sat-2','10:00AM','🎵','Practice',1),E('lea-sat-3','11:15AM','📱','iPad/TV'),E('lea-sat-4','12:00PM','🍽️','Lunch'),E('lea-sat-5','1:30PM','🎵','Practice',1),E('lea-sat-6','2:00PM','🎵','Practice',1),E('lea-sat-7','4:30PM','♨️','Hot tub time'),E('lea-sat-8','5:15PM','📱','iPad/TV'),E('lea-sat-9','6:00PM','🚿','Shower'),E('lea-sat-10','6:15PM','🍽️','Dinner'),E('lea-sat-11','7:00PM','🀄','Mandarin online (7-8pm)',1),E('lea-sat-12','8:15PM','📚','Reading / Clean up',1),E('lea-sat-13','9:00PM','😴','Sleep')],
-    Sun:[E('lea-sun-1','9:30AM','🎵','Practice',1),E('lea-sun-2','10:00AM','🎵','Practice',1),E('lea-sun-3','11:15AM','📱','iPad/TV'),E('lea-sun-4','12:00PM','🍽️','Lunch'),E('lea-sun-5','1:30PM','🎵','Practice',1),E('lea-sun-6','2:00PM','🎵','Practice',1),E('lea-sun-7','3:00PM','📖','ZPD reading',1),E('lea-sun-8','5:15PM','📱','iPad/TV'),E('lea-sun-9','6:15PM','🍽️','Dinner'),E('lea-sun-10','7:15PM','🚿','Shower'),E('lea-sun-11','7:45PM','🎲','Family game time',1),E('lea-sun-12','8:30PM','📚','Reading / Clean up',1),E('lea-sun-13','9:00PM','😴','Sleep')]
+    Mon:[E('lea-mon-1','8:30AM','🏫','School',0,'3:30PM'),E('lea-mon-2','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-mon-3','3:45PM','🟢','Free time',0,'4:00PM'),E('lea-mon-4','4:00PM','📖','ZPD reading',1,'5:45PM'),E('lea-mon-5','5:45PM','🟢','Free time',0,'6:15PM'),E('lea-mon-6','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-mon-7','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-mon-8','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-mon-9','7:30PM','➗','Math homework',1,'8:00PM'),E('lea-mon-10','8:00PM','✍️','Writing',1,'8:30PM'),E('lea-mon-11','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-mon-12','9:00PM','😴','Sleep',0,null)],
+    Tue:[E('lea-tue-1','8:30AM','🏫','School',0,'3:30PM'),E('lea-tue-2','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-tue-3','3:45PM','🟢','Free time',0,'4:00PM'),E('lea-tue-4','4:00PM','📐','RSM class + homework',1,'6:15PM'),E('lea-tue-5','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-tue-6','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-tue-7','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-tue-8','7:30PM','📐','RSM homework',1,'8:30PM'),E('lea-tue-9','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-tue-10','9:00PM','😴','Sleep',0,null)],
+    Wed:[E('lea-wed-1','8:30AM','🏫','School',0,'3:30PM'),E('lea-wed-2','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-wed-3','3:45PM','🟢','Free time',0,'4:00PM'),E('lea-wed-4','4:00PM','🎹','Piano lesson',0,'4:30PM'),E('lea-wed-5','4:30PM','🟢','Free time',0,'4:45PM'),E('lea-wed-6','4:45PM','📐','RSM homework',1,'5:45PM'),E('lea-wed-7','5:45PM','🟢','Free time',0,'6:15PM'),E('lea-wed-8','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-wed-9','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-wed-10','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-wed-11','7:30PM','🎹','Piano practice (30 min)',1,'8:00PM'),E('lea-wed-12','8:00PM','✍️','Writing',1,'8:30PM'),E('lea-wed-13','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-wed-14','9:00PM','😴','Sleep',0,null)],
+    Thu:[E('lea-thu-1','8:30AM','🏫','School',0,'3:30PM'),E('lea-thu-2','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-thu-3','3:45PM','🏊','Free swim',0,'4:30PM'),E('lea-thu-4','4:30PM','🏊','Swimming',0,'5:00PM'),E('lea-thu-5','5:00PM','🟢','Free time',0,'5:45PM'),E('lea-thu-6','5:45PM','📒','Workbook',1,'6:15PM'),E('lea-thu-7','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-thu-8','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-thu-9','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-thu-10','7:30PM','🎹','Piano practice (30 min)',1,'8:00PM'),E('lea-thu-11','8:00PM','🎨','Drawing',1,'9:00PM'),E('lea-thu-12','9:00PM','😴','Sleep',0,null)],
+    Fri:[E('lea-fri-1','8:30AM','🏫','School',0,'1:15PM'),E('lea-fri-2','1:15PM','🍎','Snack',0,'1:45PM'),E('lea-fri-3','1:45PM','🎹','Piano practice (30 min)',1,'2:30PM'),E('lea-fri-4','2:30PM','🟢','Free time',0,'3:00PM'),E('lea-fri-5','3:00PM','📒','Workbook',1,'3:30PM'),E('lea-fri-6','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-fri-7','3:45PM','➗','Math homework',1,'4:30PM'),E('lea-fri-8','4:30PM','🟢','Free time',0,'5:00PM'),E('lea-fri-9','5:00PM','✍️','Writing',1,'5:30PM'),E('lea-fri-10','5:30PM','🟢','Free time',0,'5:45PM'),E('lea-fri-11','5:45PM','🍽️','Dinner',0,'6:30PM'),E('lea-fri-12','6:30PM','🏊','Family swim',0,'7:45PM'),E('lea-fri-13','7:45PM','🟢','Free time',0,'8:30PM'),E('lea-fri-14','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-fri-15','9:00PM','😴','Sleep',0,null)],
+    Sat:[E('lea-sat-1','9:30AM','🎵','Practice',1,'10:00AM'),E('lea-sat-2','10:00AM','🎵','Practice',1,'10:30AM'),E('lea-sat-3','10:30AM','🟢','Free time',0,'11:15AM'),E('lea-sat-4','11:15AM','📱','iPad/TV',0,'12:00PM'),E('lea-sat-5','12:00PM','🍽️','Lunch',0,'1:00PM'),E('lea-sat-6','1:00PM','🟢','Free time',0,'1:30PM'),E('lea-sat-7','1:30PM','🎵','Practice',1,'2:00PM'),E('lea-sat-8','2:00PM','🎵','Practice',1,'2:30PM'),E('lea-sat-9','2:30PM','🟢','Free time',0,'3:30PM'),E('lea-sat-10','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-sat-11','3:45PM','🟢','Free time',0,'4:30PM'),E('lea-sat-12','4:30PM','♨️','Hot tub time',0,'4:45PM'),E('lea-sat-13','4:45PM','🟢','Free time',0,'5:15PM'),E('lea-sat-14','5:15PM','📱','iPad/TV',0,'5:45PM'),E('lea-sat-15','5:45PM','🟢','Free time',0,'6:00PM'),E('lea-sat-16','6:00PM','🚿','Shower',0,'6:15PM'),E('lea-sat-17','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-sat-18','7:00PM','🀄','Mandarin online class',1,'8:15PM'),E('lea-sat-19','8:15PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-sat-20','9:00PM','😴','Sleep',0,null)],
+    Sun:[E('lea-sun-1','9:30AM','🎵','Practice',1,'10:00AM'),E('lea-sun-2','10:00AM','🎵','Practice',1,'10:30AM'),E('lea-sun-3','10:30AM','🟢','Free time',0,'11:15AM'),E('lea-sun-4','11:15AM','📱','iPad/TV',0,'12:00PM'),E('lea-sun-5','12:00PM','🍽️','Lunch',0,'1:00PM'),E('lea-sun-6','1:00PM','🟢','Free time',0,'1:30PM'),E('lea-sun-7','1:30PM','🎵','Practice',1,'2:00PM'),E('lea-sun-8','2:00PM','🎵','Practice',1,'2:30PM'),E('lea-sun-9','2:30PM','🟢','Free time',0,'3:00PM'),E('lea-sun-10','3:00PM','📖','ZPD reading',1,'4:30PM'),E('lea-sun-11','4:30PM','🟢','Free time',0,'5:15PM'),E('lea-sun-12','5:15PM','📱','iPad/TV',0,'5:45PM'),E('lea-sun-13','5:45PM','🟢','Free time',0,'6:15PM'),E('lea-sun-14','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-sun-15','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-sun-16','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-sun-17','7:30PM','🟢','Free time',0,'7:45PM'),E('lea-sun-18','7:45PM','🎲','Family game time',1,'8:30PM'),E('lea-sun-19','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-sun-20','9:00PM','😴','Sleep',0,null)],
   }
 };
 const DEFAULT_PENALTIES = [
@@ -162,8 +163,8 @@ const DEFAULT_PENALTIES = [
 ];
 const DEFAULT_ALLOWANCE = { leyna:{sat:30,sun:30}, lea:{sat:30,sun:30} };
 const DEFAULT_BONUSES = [
-  {id:'bonus-rsm', icon:'📐', label:'RSM homework ≥90% accuracy this week', amount:20},
-  {id:'bonus-mathhw', icon:'➗', label:'Math homework ≥90% accuracy this week', amount:20}
+  {id:'bonus-rsm', icon:'📐', label:'RSM homework ≥90% accuracy this week', amount:20, frequency:'weekly'},
+  {id:'bonus-mathhw', icon:'➗', label:'Math homework ≥90% accuracy this week', amount:20, frequency:'weekly'}
 ];
 const REWARDS = [
   {id:'ipad10', icon:'📱', label:'+10 min iPad time'},
@@ -214,9 +215,9 @@ function mondayOf(date){
   return d.toISOString().slice(0,10);
 }
 function freshKidState(carryLog){
-  const checks = {}; const penaltyHits = {}; const dayStarAwarded = {}; const exerciseDone = {}; const daySportAwarded = {};
-  DAYS.forEach(d => { checks[d] = {}; penaltyHits[d] = {}; dayStarAwarded[d] = false; exerciseDone[d] = false; daySportAwarded[d] = false; });
-  return { weekStart: mondayOf(new Date()), checks, penaltyHits, dayStarAwarded, exerciseDone, daySportAwarded, bonusHits:{},
+  const checks = {}; const penaltyHits = {}; const dayStarAwarded = {}; const exerciseDone = {}; const daySportAwarded = {}; const bonusHitsDaily = {};
+  DAYS.forEach(d => { checks[d] = {}; penaltyHits[d] = {}; dayStarAwarded[d] = false; exerciseDone[d] = false; daySportAwarded[d] = false; bonusHitsDaily[d] = {}; });
+  return { weekStart: mondayOf(new Date()), checks, penaltyHits, dayStarAwarded, exerciseDone, daySportAwarded, bonusHitsWeekly:{}, bonusHitsDaily,
     lifetimeStars:0, perfectWeeks:0, maxStreakEver:0, ever50:false, taobaoRedemptions:0,
     sportBadges:0, everSport50:false, sportRedemptions:0, rewardClaimed:false, rewardChoice:null,
     weekLog: carryLog || [] };
@@ -263,11 +264,13 @@ async function loadData(){
     if(!data[k].dayStarAwarded) data[k].dayStarAwarded = {};
     if(!data[k].exerciseDone) data[k].exerciseDone = {};
     if(!data[k].daySportAwarded) data[k].daySportAwarded = {};
-    if(!data[k].bonusHits) data[k].bonusHits = {};
+    if(!data[k].bonusHitsWeekly) data[k].bonusHitsWeekly = {};
+    if(!data[k].bonusHitsDaily) data[k].bonusHitsDaily = {};
     if(!data[k].weekLog) data[k].weekLog = [];
     DAYS.forEach(d=>{
       if(!data[k].penaltyHits[d]) data[k].penaltyHits[d] = {};
       if(!data[k].checks[d]) data[k].checks[d]={};
+      if(!data[k].bonusHitsDaily[d]) data[k].bonusHitsDaily[d] = {};
       if(data[k].dayStarAwarded[d]===undefined) data[k].dayStarAwarded[d]=false;
       if(data[k].exerciseDone[d]===undefined) data[k].exerciseDone[d]=false;
       if(data[k].daySportAwarded[d]===undefined) data[k].daySportAwarded[d]=false;
@@ -284,13 +287,17 @@ async function loadData(){
           const hit = outgoing.penaltyHits[d][pid]; const p = data.penalties.find(x=>x.id===pid);
           return p ? `${p.label} (-${p.amount}m ${hit.bucket==='sat'?'Sat':'Sun'})` : null;
         }).filter(Boolean);
-        daysSummary[d] = { done, total: qs.length, star: !!outgoing.dayStarAwarded[d], exercise: !!outgoing.exerciseDone[d], medal: !!outgoing.daySportAwarded[d], penalties: penLabels };
+        const dailyBonusLabels = Object.keys(outgoing.bonusHitsDaily[d]||{}).map(bid=>{
+          const hit = outgoing.bonusHitsDaily[d][bid]; const b = data.bonuses.find(x=>x.id===bid);
+          return (hit && b) ? `${b.label} (+${b.amount}m ${hit.bucket==='sat'?'Sat':'Sun'})` : null;
+        }).filter(Boolean);
+        daysSummary[d] = { done, total: qs.length, star: !!outgoing.dayStarAwarded[d], exercise: !!outgoing.exerciseDone[d], medal: !!outgoing.daySportAwarded[d], penalties: penLabels, dailyBonuses: dailyBonusLabels };
       });
-      const bonusLabels = Object.keys(outgoing.bonusHits||{}).map(bid=>{
-        const hit = outgoing.bonusHits[bid]; const b = data.bonuses.find(x=>x.id===bid);
+      const weeklyBonusLabels = Object.keys(outgoing.bonusHitsWeekly||{}).map(bid=>{
+        const hit = outgoing.bonusHitsWeekly[bid]; const b = data.bonuses.find(x=>x.id===bid);
         return (hit && b) ? `${b.label} (+${b.amount}m ${hit.bucket==='sat'?'Sat':'Sun'})` : null;
       }).filter(Boolean);
-      const logEntry = { weekStart: outgoing.weekStart, days: daysSummary, bonuses: bonusLabels, rewardClaimed: !!outgoing.rewardClaimed, rewardChoice: outgoing.rewardChoice||null };
+      const logEntry = { weekStart: outgoing.weekStart, days: daysSummary, bonuses: weeklyBonusLabels, rewardClaimed: !!outgoing.rewardClaimed, rewardChoice: outgoing.rewardChoice||null };
       const weekLog = (outgoing.weekLog||[]).concat([logEntry]).slice(-12);
       const carry = { lifetimeStars:data[k].lifetimeStars||0, perfectWeeks:data[k].perfectWeeks||0, maxStreakEver:data[k].maxStreakEver||0,
         ever50:data[k].ever50||false, taobaoRedemptions:data[k].taobaoRedemptions||0,
@@ -365,10 +372,17 @@ function bucketRemaining(kidKey, bucket){
       if(h && h.bucket === bucket){ const p = data.penalties.find(x=>x.id===pid); if(p) deduct += (p.amount||0); }
     });
   });
-  const bhits = data[kidKey].bonusHits || {};
-  Object.keys(bhits).forEach(bid=>{
-    const h = bhits[bid];
+  const weeklyHits = data[kidKey].bonusHitsWeekly || {};
+  Object.keys(weeklyHits).forEach(bid=>{
+    const h = weeklyHits[bid];
     if(h && h.bucket === bucket){ const b = data.bonuses.find(x=>x.id===bid); if(b) add += (b.amount||0); }
+  });
+  DAYS.forEach(d=>{
+    const dailyHits = (data[kidKey].bonusHitsDaily && data[kidKey].bonusHitsDaily[d]) || {};
+    Object.keys(dailyHits).forEach(bid=>{
+      const h = dailyHits[bid];
+      if(h && h.bucket === bucket){ const b = data.bonuses.find(x=>x.id===bid); if(b) add += (b.amount||0); }
+    });
   });
   return { base, remaining: Math.max(0, base - deduct + add) };
 }
@@ -440,16 +454,28 @@ function togglePenalty(kidKey, day, penId){
   if(hits[penId]){ delete hits[penId]; saveData(kidKey); render(); }
   else { pendingChoice = {kind:'penalty', kidKey, day, id:penId}; render(); }
 }
-function toggleBonus(kidKey, bonusId){
+function toggleBonus(kidKey, day, bonusId){
   const kstate = data[kidKey];
-  if(kstate.bonusHits[bonusId]){ delete kstate.bonusHits[bonusId]; saveData(kidKey); render(); }
-  else { pendingChoice = {kind:'bonus', kidKey, id:bonusId}; render(); }
+  const b = data.bonuses.find(x=>x.id===bonusId);
+  if(!b) return;
+  if(b.frequency === 'daily'){
+    if(kstate.bonusHitsDaily[day][bonusId]){ delete kstate.bonusHitsDaily[day][bonusId]; saveData(kidKey); render(); }
+    else { pendingChoice = {kind:'bonus', kidKey, day, id:bonusId}; render(); }
+  } else {
+    if(kstate.bonusHitsWeekly[bonusId]){ delete kstate.bonusHitsWeekly[bonusId]; saveData(kidKey); render(); }
+    else { pendingChoice = {kind:'bonus', kidKey, day:null, id:bonusId}; render(); }
+  }
 }
 function confirmChoice(bucket){
   if(!pendingChoice) return;
   const {kind, kidKey, day, id} = pendingChoice;
-  if(kind === 'penalty') data[kidKey].penaltyHits[day][id] = {bucket};
-  else data[kidKey].bonusHits[id] = {bucket};
+  if(kind === 'penalty'){
+    data[kidKey].penaltyHits[day][id] = {bucket};
+  } else {
+    const b = data.bonuses.find(x=>x.id===id);
+    if(b && b.frequency === 'daily') data[kidKey].bonusHitsDaily[day][id] = {bucket};
+    else data[kidKey].bonusHitsWeekly[id] = {bucket};
+  }
   pendingChoice = null;
   saveData(kidKey); render();
 }
@@ -486,6 +512,10 @@ function resetDayToDefault(){
   data.schedule[editKid][editDay] = clone(DEFAULT_SCHEDULE[editKid][editDay]);
   saveData('shared'); renderEdit();
 }
+function resetKidScheduleToDefault(){
+  data.schedule[editKid] = clone(DEFAULT_SCHEDULE[editKid]);
+  saveData('shared'); renderEdit();
+}
 function onSchedFieldChange(ev){
   const el = ev.target;
   const id = el.dataset.id, field = el.dataset.field;
@@ -511,7 +541,7 @@ function onPenFieldChange(ev){
   saveData('shared');
 }
 function addBonus(){
-  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:20});
+  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:10, frequency:'daily'});
   saveData('shared'); renderEdit();
 }
 function deleteBonus(id){
@@ -526,6 +556,14 @@ function onBonusFieldChange(ev){
   b[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
   saveData('shared');
 }
+function onBonusFrequencyChange(ev){
+  const el = ev.target;
+  const id = el.dataset.id;
+  const b = data.bonuses.find(x=>x.id===id);
+  if(!b) return;
+  b.frequency = el.value;
+  saveData('shared'); renderEdit();
+}
 function onAllowanceChange(kid, bucket, val){
   if(!data.allowance[kid]) data.allowance[kid] = {sat:30,sun:30};
   data.allowance[kid][bucket] = parseInt(val)||0;
@@ -535,6 +573,7 @@ function attachEditListeners(){
   document.querySelectorAll('.sched-field').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'input', onSchedFieldChange));
   document.querySelectorAll('.pen-field').forEach(el=>el.addEventListener('input', onPenFieldChange));
   document.querySelectorAll('.bonus-field').forEach(el=>el.addEventListener('input', onBonusFieldChange));
+  document.querySelectorAll('.bonus-freq').forEach(el=>el.addEventListener('change', onBonusFrequencyChange));
   document.querySelectorAll('.allow-field').forEach(el=>el.addEventListener('input', ev=>{
     const el2 = ev.target;
     onAllowanceChange(el2.dataset.kid, el2.dataset.bucket, el2.value);
@@ -569,16 +608,18 @@ function render(){
   if(nowMin >= 0){ entries.forEach((e,i)=>{ if(timeToMinutes(e.time) <= nowMin) nowIdx = i; }); }
   let timelineHtml = '';
   entries.forEach((e,i)=>{
+    const endTime = e.end || null;
+    const timeCell = `${e.time}${endTime?`<div class="ttime-end">– ${endTime}</div>`:''}${i===nowIdx?'<div class=\"nowtag\">NOW</div>':''}`;
     if(e.quest){
       const checked = !!kstate.checks[currentDay][e.id];
       timelineHtml += `<div class="trow quest ${checked?'checked':''} ${i===nowIdx?'now':''}">
-        <div class="ttime">${e.time}${i===nowIdx?'<div class=\"nowtag\">NOW</div>':''}</div>
+        <div class="ttime">${timeCell}</div>
         <div class="tbody"><div class="ticon">${e.icon}</div><div class="tlabel">${e.label}</div>
           <div class="checkbox ${checked?'on':''}" onclick="toggleTask('${currentKid}','${currentDay}','${e.id}')">${checked?'✓':''}</div>
         </div></div>`;
     } else {
       timelineHtml += `<div class="trow passive ${i===nowIdx?'now':''}">
-        <div class="ttime">${e.time}${i===nowIdx?'<div class=\"nowtag\">NOW</div>':''}</div>
+        <div class="ttime">${timeCell}</div>
         <div class="tbody"><div class="ticon">${e.icon}</div><div class="tlabel">${e.label}</div></div></div>`;
     }
   });
@@ -617,11 +658,13 @@ function render(){
   }).join('');
 
   const bonusListHtml = data.bonuses.map(b=>{
-    const hit = kstate.bonusHits[b.id];
+    const isDaily = b.frequency === 'daily';
+    const hit = isDaily ? kstate.bonusHitsDaily[currentDay][b.id] : kstate.bonusHitsWeekly[b.id];
     const on = !!hit;
-    const tag = on ? ` (${hit.bucket==='sat'?'Sat':'Sun'})` : '';
-    return `<div class="penrow"><div class="ticon">${b.icon}</div><div class="tlabel">${b.label}${tag}</div><div class="penamt" style="color:var(--green);">+${b.amount}m</div>
-      <div class="pentoggle ${on?'on':''}" style="${on?'background:var(--green);border-color:var(--green);':''}" onclick="toggleBonus('${currentKid}','${b.id}')">${on?'✓':''}</div></div>`;
+    const bucketTag = on ? ` (${hit.bucket==='sat'?'Sat':'Sun'})` : '';
+    const freqTag = isDaily ? ' · daily' : ' · weekly';
+    return `<div class="penrow"><div class="ticon">${b.icon}</div><div class="tlabel">${b.label}${bucketTag}<span style="color:var(--muted);font-weight:700;">${freqTag}</span></div><div class="penamt" style="color:var(--green);">+${b.amount}m</div>
+      <div class="pentoggle ${on?'on':''}" style="${on?'background:var(--green);border-color:var(--green);':''}" onclick="toggleBonus('${currentKid}','${currentDay}','${b.id}')">${on?'✓':''}</div></div>`;
   }).join('');
 
   const exDone = !!kstate.exerciseDone[currentDay];
@@ -779,10 +822,11 @@ function renderEdit(){
       </div>
       <div class="daypicker">${DAYS.map(d=>`<button class="daypickbtn ${d===editDay?'active':''}" onclick="editDay='${d}';renderEdit()">${d}</button>`).join('')}</div>
       <div class="panel">
-        <div class="panelsub">Time · Icon · Label · Quest?</div>
+        <div class="panelsub">Start · End · Icon · Label · Quest?</div>
         ${entries.map(e=>`
           <div class="editrow">
             <input class="ein-time sched-field" type="text" data-id="${e.id}" data-field="time" value="${e.time.replace(/"/g,'&quot;')}">
+            <input class="ein-time sched-field" type="text" data-id="${e.id}" data-field="end" value="${(e.end||'').replace(/"/g,'&quot;')}" placeholder="end">
             <input class="ein-icon sched-field" type="text" data-id="${e.id}" data-field="icon" value="${e.icon.replace(/"/g,'&quot;')}">
             <input class="ein-label sched-field" type="text" data-id="${e.id}" data-field="label" value="${e.label.replace(/"/g,'&quot;')}">
             <input type="checkbox" class="sched-field" data-id="${e.id}" data-field="quest" ${e.quest?'checked':''} title="Countable quest?">
@@ -791,6 +835,7 @@ function renderEdit(){
         <button class="addbtn" onclick="addScheduleItem()">+ Add item to ${editDay}</button>
         <div>
           <button class="smallbtn" onclick="resetDayToDefault()">↺ Reset ${editDay} to default</button>
+          <button class="smallbtn" onclick="resetKidScheduleToDefault()">↺ Reset ALL 7 days to default</button>
         </div>
       </div>`;
   } else {
@@ -808,13 +853,17 @@ function renderEdit(){
         <button class="addbtn" onclick="addPenalty()">+ Add penalty</button>
       </div>
       <div class="panel">
-        <h2 style="font-size:16px;margin-bottom:10px;">🎯 Weekly accuracy bonuses</h2>
-        <div class="panelsub">Icon · Label · Minutes added</div>
+        <h2 style="font-size:16px;margin-bottom:10px;">🎯 Bonuses (screen-time add-ons)</h2>
+        <div class="panelsub">Icon · Label · Minutes added · Daily (resets every day) or Weekly (once per week)</div>
         ${data.bonuses.map(b=>`
           <div class="editrow">
             <input class="ein-icon bonus-field" type="text" data-id="${b.id}" data-field="icon" value="${b.icon.replace(/"/g,'&quot;')}">
             <input class="ein-label bonus-field" type="text" data-id="${b.id}" data-field="label" value="${b.label.replace(/"/g,'&quot;')}">
             <input type="text" class="bonus-field" data-id="${b.id}" data-field="amount" value="${b.amount}" style="width:44px;text-align:center;">
+            <select class="bonus-freq" data-id="${b.id}" style="background:var(--panel);border:1.5px solid var(--line);color:var(--ink);border-radius:8px;padding:6px;font-weight:700;font-size:12px;">
+              <option value="daily" ${b.frequency==='daily'?'selected':''}>Daily</option>
+              <option value="weekly" ${b.frequency==='weekly'?'selected':''}>Weekly</option>
+            </select>
             <button class="delbtn" onclick="deleteBonus('${b.id}')">✕</button>
           </div>`).join('')}
         <button class="addbtn" onclick="addBonus()">+ Add bonus</button>
@@ -865,6 +914,7 @@ window.renderEdit = renderEdit;
 window.addScheduleItem = addScheduleItem;
 window.deleteScheduleItem = deleteScheduleItem;
 window.resetDayToDefault = resetDayToDefault;
+window.resetKidScheduleToDefault = resetKidScheduleToDefault;
 window.addPenalty = addPenalty;
 window.deletePenalty = deletePenalty;
 window.addBonus = addBonus;
