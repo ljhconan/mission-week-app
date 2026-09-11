@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -228,30 +231,24 @@ function defaultData(){
     leyna: freshKidState(), lea: freshKidState() };
 }
 
-function sharedSnapshot(){
-  return { schedule: data.schedule, penalties: data.penalties, bonuses: data.bonuses, allowance: data.allowance };
-}
 async function loadData(){
-  let cloudShared = null, cloudLeyna = null, cloudLea = null;
+  let cloud = null;
   try{
-    const res = await fetch('/api/data');
-    if(res.ok){
-      const json = await res.json();
-      cloudShared = json.shared; cloudLeyna = json.leyna; cloudLea = json.lea;
-    }
+    const res = await fetch('/api/data', {cache:'no-store'});
+    if(res.ok) cloud = await res.json();
   }catch(e){ /* offline or function unreachable — fall back to local cache below */ }
   let cached = null;
-  if(!cloudShared || !cloudLeyna || !cloudLea){
+  if(!cloud || !cloud.schedule || !cloud.penalties || !cloud.bonuses || !cloud.allowance || !cloud.leyna || !cloud.lea){
     try{ const raw = localStorage.getItem(STORAGE_KEY); cached = raw ? JSON.parse(raw) : null; }catch(e){}
   }
+  cloud = cloud || {};
   data = {};
-  const sharedSrc = cloudShared || (cached && {schedule:cached.schedule, penalties:cached.penalties, bonuses:cached.bonuses, allowance:cached.allowance}) || {};
-  data.schedule = sharedSrc.schedule || clone(DEFAULT_SCHEDULE);
-  data.penalties = sharedSrc.penalties || clone(DEFAULT_PENALTIES);
-  data.bonuses = sharedSrc.bonuses || clone(DEFAULT_BONUSES);
-  data.allowance = sharedSrc.allowance || clone(DEFAULT_ALLOWANCE);
-  data.leyna = cloudLeyna || (cached && cached.leyna) || freshKidState();
-  data.lea = cloudLea || (cached && cached.lea) || freshKidState();
+  data.schedule = cloud.schedule || (cached && cached.schedule) || clone(DEFAULT_SCHEDULE);
+  data.penalties = cloud.penalties || (cached && cached.penalties) || clone(DEFAULT_PENALTIES);
+  data.bonuses = cloud.bonuses || (cached && cached.bonuses) || clone(DEFAULT_BONUSES);
+  data.allowance = cloud.allowance || (cached && cached.allowance) || clone(DEFAULT_ALLOWANCE);
+  data.leyna = cloud.leyna || (cached && cached.leyna) || freshKidState();
+  data.lea = cloud.lea || (cached && cached.lea) || freshKidState();
 
   Object.keys(META).forEach(k=>{
     if(typeof data.allowance[k] !== 'object' || data.allowance[k] == null){ data.allowance[k] = {sat:30, sun:30}; }
@@ -311,14 +308,13 @@ async function loadData(){
 async function saveData(scope){
   // local cache always mirrors everything, for instant offline reads
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
-  const parts = scope === 'all' ? ['shared','leyna','lea'] : [scope];
+  const parts = scope === 'all' ? ['schedule','penalties','bonuses','allowance','leyna','lea'] : [scope];
   parts.forEach(part=>{
-    const body = part === 'shared' ? sharedSnapshot() : data[part];
     try{
       fetch('/api/data?part='+part, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
+        body: JSON.stringify(data[part])
       }).catch(()=>{ /* offline — local cache above still has it; will sync next time online */ });
     }catch(e){}
   });
@@ -503,19 +499,19 @@ function closeEdit(){ editMode = null; render(); }
 function addScheduleItem(){
   const id = 'custom-'+Date.now();
   data.schedule[editKid][editDay].push({id, time:'12:00PM', icon:'📌', label:'New item', quest:false});
-  saveData('shared'); renderEdit();
+  saveData('schedule'); renderEdit();
 }
 function deleteScheduleItem(id){
   data.schedule[editKid][editDay] = data.schedule[editKid][editDay].filter(e=>e.id!==id);
-  saveData('shared'); renderEdit();
+  saveData('schedule'); renderEdit();
 }
 function resetDayToDefault(){
   data.schedule[editKid][editDay] = clone(DEFAULT_SCHEDULE[editKid][editDay]);
-  saveData('shared'); renderEdit();
+  saveData('schedule'); renderEdit();
 }
 function resetKidScheduleToDefault(){
   data.schedule[editKid] = clone(DEFAULT_SCHEDULE[editKid]);
-  saveData('shared'); renderEdit();
+  saveData('schedule'); renderEdit();
 }
 function onSchedFieldChange(ev){
   const el = ev.target;
@@ -523,15 +519,15 @@ function onSchedFieldChange(ev){
   const entry = data.schedule[editKid][editDay].find(e=>e.id===id);
   if(!entry) return;
   if(field==='quest') entry.quest = el.checked; else entry[field] = el.value;
-  saveData('shared');
+  saveData('schedule');
 }
 function addPenalty(){
   data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:10});
-  saveData('shared'); renderEdit();
+  saveData('penalties'); renderEdit();
 }
 function deletePenalty(id){
   data.penalties = data.penalties.filter(p=>p.id!==id);
-  saveData('shared'); renderEdit();
+  saveData('penalties'); renderEdit();
 }
 function onPenFieldChange(ev){
   const el = ev.target;
@@ -539,15 +535,15 @@ function onPenFieldChange(ev){
   const p = data.penalties.find(x=>x.id===id);
   if(!p) return;
   p[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
-  saveData('shared');
+  saveData('penalties');
 }
 function addBonus(){
   data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:10, frequency:'daily'});
-  saveData('shared'); renderEdit();
+  saveData('bonuses'); renderEdit();
 }
 function deleteBonus(id){
   data.bonuses = data.bonuses.filter(b=>b.id!==id);
-  saveData('shared'); renderEdit();
+  saveData('bonuses'); renderEdit();
 }
 function onBonusFieldChange(ev){
   const el = ev.target;
@@ -555,7 +551,7 @@ function onBonusFieldChange(ev){
   const b = data.bonuses.find(x=>x.id===id);
   if(!b) return;
   b[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
-  saveData('shared');
+  saveData('bonuses');
 }
 function onBonusFrequencyChange(ev){
   const el = ev.target;
@@ -563,12 +559,12 @@ function onBonusFrequencyChange(ev){
   const b = data.bonuses.find(x=>x.id===id);
   if(!b) return;
   b.frequency = el.value;
-  saveData('shared'); renderEdit();
+  saveData('bonuses'); renderEdit();
 }
 function onAllowanceChange(kid, bucket, val){
   if(!data.allowance[kid]) data.allowance[kid] = {sat:30,sun:30};
   data.allowance[kid][bucket] = parseInt(val)||0;
-  saveData('shared');
+  saveData('allowance');
 }
 function attachEditListeners(){
   document.querySelectorAll('.sched-field').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'input', onSchedFieldChange));
