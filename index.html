@@ -246,6 +246,7 @@ async function loadData(){
   data.schedule = cloud.schedule || (cached && cached.schedule) || clone(DEFAULT_SCHEDULE);
   data.penalties = cloud.penalties || (cached && cached.penalties) || clone(DEFAULT_PENALTIES);
   data.bonuses = cloud.bonuses || (cached && cached.bonuses) || clone(DEFAULT_BONUSES);
+  data.bonuses.forEach(b=>{ if(!b.frequency) b.frequency = 'daily'; });
   data.allowance = cloud.allowance || (cached && cached.allowance) || clone(DEFAULT_ALLOWANCE);
   data.leyna = cloud.leyna || (cached && cached.leyna) || freshKidState();
   data.lea = cloud.lea || (cached && cached.lea) || freshKidState();
