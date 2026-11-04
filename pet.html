@@ -258,6 +258,11 @@
   .branchglow{ position:absolute; left:50%; top:52%; width:170px; height:170px; margin:-85px 0 0 -85px; border-radius:50%; z-index:-1; animation:zzz 2.4s ease-in-out infinite; }
   .branchglow.brave{ background:radial-gradient(circle,rgba(255,110,80,.55),transparent 68%); } .branchglow.gentle{ background:radial-gradient(circle,rgba(140,190,255,.7),transparent 68%); }
   .branchbadge{ position:absolute; right:-14px; top:-4px; font-size:30px; pointer-events:none; }
+  .shoptile.locked{ opacity:.55; filter:grayscale(.9); }
+  .achlist{ display:grid; gap:6px; margin-bottom:12px; text-align:left; }
+  .ach{ display:flex; align-items:center; gap:8px; background:var(--panel2); border-radius:14px; padding:7px 10px; opacity:.7; }
+  .ach.got{ background:#FFF3C9; opacity:1; }
+  .ach .ai{ font-size:24px; width:30px; text-align:center; } .ach .at{ flex:1; line-height:1.2; } .ach .at b{ display:block; font-size:13px; } .ach .at span{ font-size:11px; color:var(--muted); font-weight:700; } .ach .ar{ font-size:20px; }
   .petaura{ position:absolute; left:50%; top:50%; width:150px; height:150px; margin:-75px 0 0 -75px; border-radius:50%; background:radial-gradient(circle,rgba(255,226,120,.75),rgba(255,226,120,0) 70%); animation:zzz 2.4s ease-in-out infinite; z-index:-1; }
   .growline{ font-size:12px; font-weight:800; color:var(--muted); margin:-4px 4px 8px; }
   .growline .gbar{ height:8px; border-radius:5px; background:var(--line); overflow:hidden; margin-top:3px; }
@@ -1018,6 +1023,34 @@ PET_ITEMS.push(
   {id:'r-rainbow',slot:'room',spot:'tr',emoji:'🌈',name:'Rainbow',cost:12},
   {id:'r-balloons',slot:'room',spot:'tr',emoji:'🎈',name:'Balloons',cost:10}
 );
+const ACHS = {
+  first:   {icon:'🌟', name:'First Perfect Day', how:'Finish ALL quests in one day', test:(k,pt)=>DAYS.some(d=>{ const t=dayTotals(k,d); return t.total>0 && t.done===t.total; })},
+  streak3: {icon:'🔥', name:'3-Day Streak', how:'Finish all quests 3 days in a row', test:(k,pt)=>Math.max(currentStreak(k), data[k].maxStreakEver||0) >= 3},
+  streak7: {icon:'🔥', name:'7-Day Streak', how:'Finish all quests 7 days in a row', test:(k,pt)=>Math.max(currentStreak(k), data[k].maxStreakEver||0) >= 7},
+  week:    {icon:'🏆', name:'Perfect Week', how:'Finish every weekday quest (Mon–Fri)', test:(k,pt)=>WEEKDAYS_FOR_TIME.every(d=>{ const t=dayTotals(k,d); return t.total>0 && t.done===t.total; })},
+  sport:   {icon:'🏃', name:'Sporty Week', how:'Exercise 3 days in one week', test:(k,pt)=>DAYS.filter(d=>(data[k].exerciseDone||{})[d]).length >= 3},
+  homework:{icon:'📐', name:'Homework Hero', how:'Hit the weekly homework goals (90%+)', test:(k,pt)=>{ const w=data.bonuses.filter(b=>b.frequency==='weekly'); return w.length>0 && w.every(b=>(data[k].bonusHitsWeekly||{})[b.id]); }},
+  wishes:  {icon:'💭', name:'Wish Granter', how:'Grant your buddy\'s wish 5 times', test:(k,pt)=>(pt.wishCount||0) >= 5},
+  grown:   {icon:'🌱', name:'Fully Grown', how:'Grow your buddy to the last form', test:(k,pt)=>stageIdx(pt.growth||0) >= 3}
+};
+const LOCKS = {'crown':'first','bg-space':'streak3','r-castle':'streak7','wand':'week','r-rainbow':'week','guitar':'sport','grad':'homework','r-fountain':'wishes','bg-candy':'grown'};
+function achDone(pt, id){ return !!(pt.ach && pt.ach[id]); }
+function itemLocked(pt, it){ const a = LOCKS[it.id]; return !!a && !achDone(pt, a) && pt.owned.indexOf(it.id) === -1; }
+function checkAchievements(kidKey){
+  const pt = petOf(kidKey); if(!pt || !pt.type || !data[kidKey]) return;
+  if(!pt.ach) pt.ach = {};
+  let changed = false;
+  Object.keys(ACHS).forEach(id=>{
+    if(pt.ach[id]) return;
+    let ok = false; try{ ok = ACHS[id].test(kidKey, pt); }catch(e){}
+    if(!ok) return;
+    pt.ach[id] = Date.now(); changed = true;
+    const unlocks = Object.keys(LOCKS).filter(i=>LOCKS[i]===id).map(i=>PET_ITEMS.find(x=>x.id===i)).filter(Boolean);
+    setTimeout(()=>{ playFanfare(); burstConfetti(); }, 300);
+    petReact('🏅 Badge: '+ACHS[id].name+'!'+(unlocks.length?' Unlocked '+unlocks.map(u=>u.emoji).join(' ')+' in the shop!':''));
+  });
+  if(changed) savePet(kidKey);
+}
 const slotKey = it => it.slot==='room' ? 'room-'+it.spot : it.slot;
 const DEFAULT_BG = 'linear-gradient(180deg,#CFF0FF 0%,#EAFBE0 60%,#B7E4A0 61%,#9ED585 100%)';
 const TAP_LINES = ['Hehe, that tickles! 🥰','Boop! 💕','I believe in you! 💪','Wanna play later? 🎮','You\'re my best friend! 💖','Hi hi hi! 👋'];
@@ -1116,7 +1149,7 @@ function wishOf(kidKey){
 function completeWish(kidKey, kind){
   const pt = petOf(kidKey); if(!pt || !pt.type) return;
   const w = wishOf(kidKey); if(w.done || w.k !== kind) return;
-  w.done = true; pt.coins += 3; logCoin(pt, 3, '💭 Granted '+pt.name+"'s wish");
+  w.done = true; pt.wishCount = (pt.wishCount||0)+1; pt.coins += 3; logCoin(pt, 3, '💭 Granted '+pt.name+"'s wish");
   addGrowth(kidKey, 2); savePet(kidKey);
   setTimeout(()=>{ playFanfare(); burstConfetti(); }, 150);
   petReact('My wish came true!! +3 🪙 💖');
@@ -1126,6 +1159,7 @@ function closeShop(){ showShop = false; render(); }
 function shopAction(itemId){
   const pt = petOf(currentKid); const it = PET_ITEMS.find(x=>x.id===itemId); if(!it) return;
   if(pt.owned.indexOf(itemId) === -1){
+    if(itemLocked(pt, it)){ petReact('🔒 Earn the "'+ACHS[LOCKS[itemId]].name+'" badge to unlock!'); render(); return; }
     if(pt.coins < it.cost) return;
     pt.coins -= it.cost; logCoin(pt, -it.cost, '🛍️ Bought '+it.name); pt.owned.push(itemId); pt.equipped[slotKey(it)] = itemId;
     unlockAudio(); playFanfare(); petReact('Ooh, new '+it.name+'! Thank you! 💖');
@@ -1135,7 +1169,8 @@ function shopAction(itemId){
   savePet(currentKid); render();
 }
 function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
-  const pt = petOf(kidKey); const eq = pt.equipped || {};
+  const pt = petOf(kidKey);
+  checkAchievements(kidKey); const eq = pt.equipped || {};
   const item = slot => PET_ITEMS.find(x=>x.id===eq[slot]);
   const bgItem = item('bg');
   const night = isNight();
@@ -1225,6 +1260,8 @@ function petOverlays(kidKey){
     const tile = it=>{
       const owned = pt.owned.indexOf(it.id) !== -1, worn = pt.equipped[slotKey(it)] === it.id;
       const afford = pt.coins >= it.cost;
+      const locked = itemLocked(pt, it), A = locked ? ACHS[LOCKS[it.id]] : null;
+      if(locked) return `<div class="shoptile locked" onclick="shopAction('${it.id}')"><div class="si">${it.emoji}</div><div class="sn">${it.name}</div><div class="sp no">🔒 ${A.icon} ${A.name}</div></div>`;
       return `<div class="shoptile ${worn?'worn':''}" onclick="shopAction('${it.id}')">
         <div class="si">${it.emoji}</div><div class="sn">${it.name}</div>
         <div class="sp ${(!owned && !afford)?'no':''}">${owned ? (worn?'✓ Wearing':'Wear') : '🪙 '+it.cost}</div></div>`;
@@ -1242,6 +1279,9 @@ function petOverlays(kidKey){
         🎮 Games cost 🪙2 to enter and pay back up to 🪙3<br>
         Coins never expire — save up for something big!
       </div>
+      <div class="biglabel">🏅 Badges — earn them to unlock special items!</div>
+      <div class="achlist">${Object.keys(ACHS).map(id=>{ const a = ACHS[id], got = achDone(pt,id), rw = Object.keys(LOCKS).filter(i=>LOCKS[i]===id).map(i=>PET_ITEMS.find(x=>x.id===i).emoji).join(' ');
+        return `<div class="ach ${got?'got':''}"><div class="ai">${got?a.icon:'🔒'}</div><div class="at"><b>${a.name}</b><span>${a.how}</span></div><div class="ar">${rw}</div></div>`; }).join('')}</div>
       ${sect('🎩 Hats','hat')}${sect('🕶️ Style','face')}${sect('🎈 Fun stuff','item')}${sect('🌈 Places','bg')}${sect('🏠 Decorate the room','room')}
       <button class="rbtn snz" onclick="editPet()">✏️ Change buddy / name</button>
       <button class="rbtn go" onclick="closeShop()">Done</button>
