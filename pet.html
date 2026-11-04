@@ -453,6 +453,11 @@ async function loadData(){
   data.penalties = cloud.penalties || (cached && cached.penalties) || clone(DEFAULT_PENALTIES);
   data.bonuses = cloud.bonuses || (cached && cached.bonuses) || clone(DEFAULT_BONUSES);
   data.bonuses.forEach(b=>{ if(!b.frequency) b.frequency = 'daily'; });
+  // one-time rebalance: daily items were too heavy in the % model (10% each) -> lighter values
+  let rebalanced = false;
+  data.penalties.forEach(x=>{ if(!x.v2){ x.v2 = true; if((x.amount||0) >= 5){ x.amount = 3; } rebalanced = true; } });
+  data.bonuses.forEach(x=>{ if(!x.v2){ x.v2 = true; if(x.frequency==='daily' && (x.amount||0) >= 5){ x.amount = 2; } rebalanced = true; } });
+  if(rebalanced) setTimeout(()=>{ try{ saveData('penalties'); saveData('bonuses'); }catch(e){} }, 1500);
   data.allowance = cloud.allowance || (cached && cached.allowance) || clone(DEFAULT_ALLOWANCE);
   data.leyna = cloud.leyna || (cached && cached.leyna) || freshKidState();
   data.lea = cloud.lea || (cached && cached.lea) || freshKidState();
@@ -1545,7 +1550,7 @@ function onSchedFieldChange(ev){
   saveData('schedule');
 }
 function addPenalty(){
-  data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:10});
+  data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:3, v2:true});
   saveData('penalties'); renderEdit();
 }
 function deletePenalty(id){
@@ -1561,7 +1566,7 @@ function onPenFieldChange(ev){
   saveData('penalties');
 }
 function addBonus(){
-  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:10, frequency:'daily'});
+  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:2, frequency:'daily', v2:true});
   saveData('bonuses'); renderEdit();
 }
 function deleteBonus(id){
