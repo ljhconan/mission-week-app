@@ -186,6 +186,10 @@
   .remind-overlay{ position:fixed; inset:0; background:rgba(20,20,35,.55); display:flex; align-items:center; justify-content:center; z-index:3000; padding:20px; }
   .remind-box{ background:var(--panel); border:3px solid var(--kidcolor); border-radius:28px; padding:26px 20px 20px; max-width:340px; width:100%; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.3); animation:rpop .5s cubic-bezier(.3,1.5,.5,1); }
   @keyframes rpop{ from{transform:scale(.4); opacity:0;} to{transform:scale(1); opacity:1;} }
+  .rpet{ display:flex; align-items:center; gap:10px; margin-bottom:8px; text-align:left; }
+  .rpetface{ flex:0 0 auto; animation:ring 1.2s ease-in-out infinite; }
+  .rpetsay{ background:#fff; border:3px solid var(--pink,#ff6fa5); border-radius:18px; padding:8px 12px; font-weight:800; font-size:15px; position:relative; }
+  .rpetsay b{ display:block; font-size:12px; opacity:.6; }
   .remind-box .rbig{ font-size:72px; display:inline-block; animation:ring 1s ease-in-out infinite; }
   @keyframes ring{ 0%,100%{transform:rotate(0);} 20%{transform:rotate(-14deg);} 40%{transform:rotate(14deg);} 60%{transform:rotate(-8deg);} 80%{transform:rotate(8deg);} }
   .remind-box .rtitle{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:26px; line-height:1.1; margin:8px 0 2px; color:var(--kidcolor); }
@@ -862,9 +866,9 @@ function checkReminders(){
   const bedStart = BED_REMINDER.h*60+BED_REMINDER.m, bedKey = currentKid+'|bedtime';
   if(!fired.keys[bedKey] && nowMin >= bedStart && nowMin < bedStart+40){
     fired.keys[bedKey] = 1; setFired(fired);
-    const nm = META[currentKid].name, sayBed = nm+', time to get ready for bed! You finished '+dayTotals(currentKid, actualToday).done+' of '+dayTotals(currentKid, actualToday).total+' quests today. Brush your teeth and put on your pajamas.';
+    const nm = META[currentKid].name, pn = petName(currentKid), sayBed = (pn?pn+' says: ':'')+nm+', time to get ready for bed! You finished '+dayTotals(currentKid, actualToday).done+' of '+dayTotals(currentKid, actualToday).total+' quests today. Brush your teeth and put on your pajamas.';
     activeReminder = {kidKey:currentKid, id:'bedtime', kind:'bed', icon:'🛏️', label:'Get ready for bed', off:0, time:'', say:sayBed};
-    playChime(); speak(sayBed); startRemindLoop(sayBed);
+    petAlert(currentKid); speak(sayBed); startRemindLoop(sayBed);
     render();
     return;
   }
@@ -879,21 +883,30 @@ function checkReminders(){
       if(fired.keys[key] || nowMin < winStart || nowMin >= winEnd) continue;
       fired.keys[key] = 1; setFired(fired);
       activeReminder = {kidKey:currentKid, id:e.id, icon:e.icon, label:e.label, off, time:e.time, say:''};
-      playChime();
-      const nm = META[currentKid].name;
-      const sayText = off>=10 ? nm+', '+e.label+' starts in '+off+' minutes.' : nm+', almost time! '+e.label+' starts in '+off+' minutes. Get ready!';
+      petAlert(currentKid);
+      const nm = META[currentKid].name, pn = petName(currentKid), pre = pn?pn+' says: ':'';
+      const sayText = off>=10 ? pre+nm+', '+e.label+' starts in '+off+' minutes.' : pre+nm+', almost time! '+e.label+' starts in '+off+' minutes. Get ready!';
       activeReminder.say = sayText; speak(sayText); startRemindLoop(sayText);
       render();
       return;
     }
   }
 }
+function petName(kidKey){ const pt = petOf(kidKey); return pt && pt.type ? pt.name : ''; }
+function petAlert(kidKey){ // pet cry + chime (chime stays for iOS reliability)
+  playChime();
+  try{ const pt = petOf(kidKey); if(pt && pt.type) setTimeout(()=>petSound(pt,false), 350); }catch(e){}
+}
+function petBubbleHtml(kidKey, text){
+  const pt = petOf(kidKey); if(!pt || !pt.type) return '';
+  return `<div class="rpet"><div class="rpetface">${petFaceHtml(pt,86,'happy')}</div><div class="rpetsay"><b>${pt.name}</b>${text}</div></div>`;
+}
 let remindLoop = null;
 function startRemindLoop(text){
   stopRemindLoop();
   remindLoop = setInterval(()=>{
     if(!activeReminder){ stopRemindLoop(); return; }
-    playChime(); setTimeout(()=>speak(text), 1100);
+    petAlert(activeReminder.kidKey); setTimeout(()=>speak(text), 1100);
   }, 10000);
 }
 function stopRemindLoop(){
@@ -1838,7 +1851,7 @@ function render(){
   if(activeReminder && activeReminder.kidKey === currentKid){
     if(activeReminder.kind === 'bed'){
       remindHtml = `<div class="remind-overlay"><div class="remind-box">
-      <div class="rbig">🌙</div>
+      ${petBubbleHtml(activeReminder.kidKey, "Time for bed, "+META[activeReminder.kidKey].name+"! I'm sleepy too 😴")||'<div class="rbig">🌙</div>'}
       <div class="rtitle">Bedtime soon!</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;margin-bottom:2px;">Time to get ready for bed</div>
       <div class="rsub">🪥 Brush teeth · 👕 Pajamas · 🛏️ Into bed</div>
@@ -1848,7 +1861,8 @@ function render(){
     } else {
       const soon = activeReminder.off < 10;
       remindHtml = `<div class="remind-overlay"><div class="remind-box">
-      <div class="rbig">${activeReminder.icon}</div>
+      ${petBubbleHtml(activeReminder.kidKey, soon?"Almost time for "+activeReminder.label+"! Let's go! 💪":activeReminder.label+" is coming up! Ready?")}
+      <div class="rbig" style="${petOf(activeReminder.kidKey)&&petOf(activeReminder.kidKey).type?'font-size:48px':''}">${activeReminder.icon}</div>
       <div class="rtitle">${soon?'Almost time!':'Heads up!'}</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px;">${activeReminder.label}</div>
       <div class="rsub">starts in ${activeReminder.off} minutes · ${activeReminder.time}</div>
