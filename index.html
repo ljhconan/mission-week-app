@@ -692,34 +692,33 @@ function toggleReminders(){
   if(editMode) renderEdit(); else render();
 }
 function toggleReminderVoice(){ reminders.voice = !reminders.voice; saveReminders(); renderEdit(); }
+const REMIND_OFFSETS = [15, 3];   // minutes before a quest starts
 function checkReminders(){
   if(!reminders.on || editMode || activeReminder || !data) return;
   const now = new Date(), nowMin = now.getHours()*60+now.getMinutes();
   const fired = getFired();
   const list = (data.schedule[currentKid] && data.schedule[currentKid][actualToday]) || [];
   const checks = (data[currentKid].checks[actualToday]) || {};
-  for(const e of list){
-    if(!e.quest || checks[e.id]) continue;
+  const sorted = [...list].filter(e=>e.quest && !checks[e.id]).sort((a,b)=>timeToMinutes(a.time)-timeToMinutes(b.time));
+  for(const e of sorted){
     const start = timeToMinutes(e.time);
-    const key = currentKid+'|'+e.id;
-    const snz = snoozeUntil[key];
-    const due = (snz!=null) ? (nowMin >= snz) : (!fired.keys[key] && nowMin >= start && nowMin < start+10);
-    if(!due) continue;
-    fired.keys[key] = 1; setFired(fired); delete snoozeUntil[key];
-    activeReminder = {kidKey:currentKid, id:e.id, icon:e.icon, label:e.label};
-    playChime(); speak(META[currentKid].name+', time for '+e.label+'!');
-    render();
-    return;
+    for(let i=0;i<REMIND_OFFSETS.length;i++){
+      const off = REMIND_OFFSETS[i];
+      const key = currentKid+'|'+e.id+'|'+off;
+      const winStart = start - off;
+      const winEnd = (i+1 < REMIND_OFFSETS.length) ? start - REMIND_OFFSETS[i+1] : start;  // don't replay an old stage once the next one is due
+      if(fired.keys[key] || nowMin < winStart || nowMin >= winEnd) continue;
+      fired.keys[key] = 1; setFired(fired);
+      activeReminder = {kidKey:currentKid, id:e.id, icon:e.icon, label:e.label, off, time:e.time};
+      playChime();
+      const nm = META[currentKid].name;
+      speak(off>=10 ? nm+', '+e.label+' starts in '+off+' minutes.' : nm+', almost time! '+e.label+' starts in '+off+' minutes. Get ready!');
+      render();
+      return;
+    }
   }
 }
 function dismissReminder(){ activeReminder = null; render(); }
-function snoozeReminder(){
-  if(activeReminder){
-    const now = new Date();
-    snoozeUntil[activeReminder.kidKey+'|'+activeReminder.id] = now.getHours()*60+now.getMinutes()+3;
-  }
-  activeReminder = null; render();
-}
 
 /* ---------------- Calendar export (.ics) ---------------- */
 function icsEsc(t){ return String(t).replace(/\\/g,'\\\\').replace(/;/g,'\;').replace(/,/g,'\\,').replace(/\n/g,'\\n'); }
@@ -743,7 +742,8 @@ function exportICS(kidKey){
       L.push('BEGIN:VEVENT','UID:mw-'+kidKey+'-'+day+'-'+e.id+'@missionweek','DTSTAMP:'+stamp,
         'DTSTART:'+ds+'T'+fmtT(s),'DTEND:'+ds+'T'+fmtT(en),'RRULE:FREQ=WEEKLY;BYDAY='+byday[day],
         'SUMMARY:'+icsEsc(e.icon+' '+e.label),
-        'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(name+': time for '+e.label+'!'),'TRIGGER:PT0S','END:VALARM',
+        'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(name+': '+e.label+' starts in 15 minutes'),'TRIGGER:-PT15M','END:VALARM',
+        'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(name+': '+e.label+' starts in 3 minutes!'),'TRIGGER:-PT3M','END:VALARM',
         'END:VEVENT');
       count++;
     });
@@ -1077,12 +1077,13 @@ function render(){
 
   let remindHtml = '';
   if(activeReminder && activeReminder.kidKey === currentKid){
+    const soon = activeReminder.off < 10;
     remindHtml = `<div class="remind-overlay"><div class="remind-box">
       <div class="rbig">${activeReminder.icon}</div>
-      <div class="rtitle">Time for ${activeReminder.label}!</div>
-      <div class="rsub">${META[currentKid].name}, your quest is starting now</div>
-      <button class="rbtn go" onclick="dismissReminder()">Let's go! 💪</button>
-      <button class="rbtn snz" onclick="snoozeReminder()">Give me 3 minutes ⏳</button>
+      <div class="rtitle">${soon?'Almost time!':'Heads up!'}</div>
+      <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px;">${activeReminder.label}</div>
+      <div class="rsub">starts in ${activeReminder.off} minutes · ${activeReminder.time}</div>
+      <button class="rbtn go" onclick="dismissReminder()">${soon?"I'm ready! 💪":'Got it! 👍'}</button>
     </div></div>`;
   }
   const nowStr = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}) + ' · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
@@ -1229,14 +1230,14 @@ function renderEdit(){
     body = `
       <div class="panel">
         <h2 style="font-size:16px;margin-bottom:6px;">🔔 Reminders on this iPad</h2>
-        <div class="panelsub">When it's time for a quest, the app pops up a big alert with a chime (and says it out loud). Works while the app is open on screen — it keeps the screen awake when reminders are on. Each iPad reminds for the kid tab it's showing.</div>
+        <div class="panelsub">15 minutes and again 3 minutes before each quest starts, the app pops up a big alert with a chime (and says it out loud). Works while the app is open on screen — it keeps the screen awake when reminders are on. Each iPad reminds for the kid tab it's showing.</div>
         <div class="toggle"><span>Reminders</span><button class="smallbtn" style="margin:0" onclick="toggleReminders()">${reminders.on?'🔔 ON — tap to turn off':'🔕 OFF — tap to turn on'}</button></div>
         <div class="toggle"><span>Speak out loud</span><button class="smallbtn" style="margin:0" onclick="toggleReminderVoice()">${reminders.voice?'🔊 ON':'🔇 OFF'}</button></div>
-        <button class="smallbtn" style="margin-left:0" onclick="unlockAudio();playChime();speak('Test reminder. Time for a quest!')">▶︎ Test sound</button>
+        <button class="smallbtn" style="margin-left:0" onclick="unlockAudio();playChime();speak('Test reminder. Writing starts in 15 minutes.')">▶︎ Test sound</button>
       </div>
       <div class="panel">
         <h2 style="font-size:16px;margin-bottom:6px;">📆 Alarms even when the screen is off</h2>
-        <div class="panelsub">Download a calendar file with every quest (weekly, alert at start time). Open it on the iPad and tap Add All — put it in a new calendar like "Leyna Mission" so you can delete it all at once if the schedule changes. Re-export after editing the schedule.</div>
+        <div class="panelsub">Download a calendar file with every quest (weekly, alerts 15 min and 3 min before). Open it on the iPad and tap Add All — put it in a new calendar like "Leyna Mission" so you can delete it all at once if the schedule changes. Re-export after editing the schedule.</div>
         ${Object.keys(META).map(k=>`<button class="smallbtn" style="margin-left:0" onclick="exportICS('${k}')">⬇️ ${META[k].name}'s calendar (.ics)</button>`).join('')}
       </div>`;
   } else {
@@ -1307,7 +1308,7 @@ window.selectKid = selectKid;
 window.selectDay = selectDay;
 window.openChest = openChest;
 window.toggleReminders = toggleReminders; window.toggleReminderVoice = toggleReminderVoice;
-window.dismissReminder = dismissReminder; window.snoozeReminder = snoozeReminder;
+window.dismissReminder = dismissReminder;
 window.exportICS = exportICS; window.unlockAudio = unlockAudio; window.playChime = playChime; window.speak = speak;
 window.openEdit = openEdit;
 window.closeEdit = closeEdit;
