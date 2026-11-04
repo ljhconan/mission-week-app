@@ -221,7 +221,38 @@
   @keyframes pethop{ 0%{ transform:translateY(0) scale(1); } 30%{ transform:translateY(-34px) scale(.92,1.1) rotate(-8deg); } 55%{ transform:translateY(-34px) rotate(8deg); } 80%{ transform:translateY(0) scale(1.1,.9); } 100%{ transform:translateY(0) scale(1); } }
   .petname{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,.9); padding:2px 14px; border-radius:12px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:14px; color:#444; }
   .shopbtn{ position:absolute; right:10px; bottom:10px; background:var(--kidcolor); color:#fff; border:none; border-radius:14px; padding:8px 12px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.18); }
-  .petgrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:10px 0 12px; }
+
+  .petmood{ position:absolute; top:10px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:5px; background:rgba(255,255,255,.85); border-radius:14px; padding:4px 10px; font-size:15px; }
+  .petmood .mbar{ width:54px; height:8px; border-radius:5px; background:rgba(0,0,0,.12); overflow:hidden; }
+  .petmood .mbar > div{ height:100%; background:linear-gradient(90deg,#FF7BAC,#FFC857); transition:width .5s; }
+  .carerow{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:-4px 0 14px; }
+  .carebtn{ background:var(--panel); border:2.5px solid var(--line); border-radius:18px; padding:8px 4px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:14px; color:var(--ink); cursor:pointer; box-shadow:0 4px 0 var(--line); display:flex; flex-direction:column; align-items:center; line-height:1.1; }
+  .carebtn span{ font-size:28px; } .carebtn small{ font-size:11px; color:var(--muted); }
+  .carebtn:active{ transform:translateY(4px); box-shadow:0 0 0 var(--line); }
+  .flyitem{ position:absolute; font-size:38px; z-index:5; pointer-events:none; }
+  .flyitem.toface{ left:8%; bottom:70px; animation:flytoface 1s ease-in forwards; }
+  @keyframes flytoface{ 0%{ transform:translate(0,0) scale(1); opacity:1; } 80%{ transform:translate(150px,-30px) scale(.8); opacity:1; } 100%{ transform:translate(165px,-30px) scale(.2); opacity:0; } }
+  .flyitem.ball{ left:6%; bottom:40px; animation:ballroll 1.4s linear forwards; }
+  @keyframes ballroll{ 0%{ transform:translate(0,0) rotate(0); } 15%{ transform:translate(40px,-70px) rotate(90deg); } 30%{ transform:translate(90px,0) rotate(180deg); } 45%{ transform:translate(140px,-50px) rotate(270deg); } 60%{ transform:translate(190px,0) rotate(360deg); } 80%{ transform:translate(250px,-35px) rotate(450deg); } 100%{ transform:translate(320px,0) rotate(540deg); opacity:0; } }
+  .flyitem.hearts{ left:50%; bottom:110px; margin-left:-19px; font-size:44px; animation:heartup 1.3s ease-out forwards; }
+  @keyframes heartup{ 0%{ transform:translateY(0) scale(.4); opacity:0; } 30%{ transform:translateY(-30px) scale(1.2); opacity:1; } 100%{ transform:translateY(-100px) scale(1.5); opacity:0; } }
+
+  .petscale{ position:relative; width:110px; height:110px; transform:scale(var(--ps,1)); transform-origin:50% 100%; transition:transform .8s cubic-bezier(.3,1.5,.5,1); }
+  .petaura{ position:absolute; left:50%; top:50%; width:150px; height:150px; margin:-75px 0 0 -75px; border-radius:50%; background:radial-gradient(circle,rgba(255,226,120,.75),rgba(255,226,120,0) 70%); animation:zzz 2.4s ease-in-out infinite; z-index:-1; }
+  .growline{ font-size:12px; font-weight:800; color:var(--muted); margin:-4px 4px 8px; }
+  .growline .gbar{ height:8px; border-radius:5px; background:var(--line); overflow:hidden; margin-top:3px; }
+  .growline .gbar > div{ height:100%; background:linear-gradient(90deg,#6EE7A8,#2FAE72); transition:width .6s; }
+  .gameov{ position:fixed; inset:0; z-index:2500; background:rgba(20,20,35,.6); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .gbox{ background:var(--panel); border:3px solid var(--kidcolor); border-radius:26px; padding:18px 16px 14px; width:100%; max-width:360px; text-align:center; }
+  .gtitle{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:22px; color:var(--kidcolor); }
+  .gsub{ color:var(--muted); font-weight:800; font-size:13px; margin:4px 0 10px; }
+  .garena{ position:relative; height:340px; border-radius:18px; overflow:hidden; background:linear-gradient(180deg,#CFF0FF,#EAFBE0 70%,#B7E4A0); touch-action:none; margin-bottom:8px; }
+  .gpet{ position:absolute; bottom:6px; left:0; font-size:48px; line-height:52px; width:52px; text-align:center; }
+  .gitem{ position:absolute; left:0; top:0; font-size:30px; width:32px; text-align:center; }
+  .mpads{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:10px 0; }
+  .mpad{ height:110px; border-radius:22px; opacity:.55; cursor:pointer; transition:transform .1s, opacity .1s; }
+  .mpad.lit{ opacity:1; transform:scale(1.07); box-shadow:0 0 22px rgba(255,255,255,.9) inset; }
+  .petgrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:10px 0 12px; max-height:290px; overflow-y:auto; }
   .petpick{ font-size:36px; background:var(--panel2); border:3px solid transparent; border-radius:16px; padding:6px 0; cursor:pointer; }
   .petpick.sel{ border-color:var(--kidcolor); background:var(--panel); transform:scale(1.08); }
   .petnamein{ width:100%; border:2px solid var(--line); border-radius:14px; padding:12px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:18px; text-align:center; margin-bottom:10px; color:var(--ink); background:var(--panel); }
@@ -742,12 +773,23 @@ function toggleReminders(){
 }
 function toggleReminderVoice(){ reminders.voice = !reminders.voice; saveReminders(); renderEdit(); }
 const REMIND_OFFSETS = [15, 3];   // minutes before a quest starts
+const BED_REMINDER = {h:20, m:50};  // daily bedtime reminder, independent of quests
 function checkReminders(){
   if(!reminders.on || editMode || activeReminder || !data) return;
   const now = new Date(), nowMin = now.getHours()*60+now.getMinutes();
   const fired = getFired();
   const list = (data.schedule[currentKid] && data.schedule[currentKid][actualToday]) || [];
   const checks = (data[currentKid].checks[actualToday]) || {};
+  // daily bedtime reminder (not tied to any quest); can fire from 8:50 PM until 9:30 PM
+  const bedStart = BED_REMINDER.h*60+BED_REMINDER.m, bedKey = currentKid+'|bedtime';
+  if(!fired.keys[bedKey] && nowMin >= bedStart && nowMin < bedStart+40){
+    fired.keys[bedKey] = 1; setFired(fired);
+    const nm = META[currentKid].name, sayBed = nm+', time to get ready for bed! Brush your teeth and put on your pajamas.';
+    activeReminder = {kidKey:currentKid, id:'bedtime', kind:'bed', icon:'🛏️', label:'Get ready for bed', off:0, time:'', say:sayBed};
+    playChime(); speak(sayBed); startRemindLoop(sayBed);
+    render();
+    return;
+  }
   const sorted = [...list].filter(e=>e.quest && !checks[e.id]).sort((a,b)=>timeToMinutes(a.time)-timeToMinutes(b.time));
   for(const e of sorted){
     const start = timeToMinutes(e.time);
@@ -821,7 +863,7 @@ function exportICS(kidKey){
 
 
 /* ---------------- Pet buddy ---------------- */
-const PET_TYPES = ['🦊','🐱','🐶','🐰','🐼','🦄','🐸','🦉','🐧','🐻'];
+const PET_TYPES = ['🦊','🐱','🐶','🐰','🐼','🦄','🐸','🦉','🐧','🐻','🐯','🦁','🐮','🐷','🐵','🐔','🦆','🐙','🐢','🦋','🐳','🐲','🦔','🐿️','🐨'];
 const PET_ITEMS = [
   {id:'bow',slot:'hat',emoji:'🎀',name:'Bow',cost:8},
   {id:'cap',slot:'hat',emoji:'🧢',name:'Cap',cost:12},
@@ -854,8 +896,10 @@ function petReact(text){
   }, 60);
 }
 function tapPet(){
-  unlockAudio(); tone([700,900,1100],0.07,0.12);
-  petReact(TAP_LINES[Math.floor(Math.random()*TAP_LINES.length)]); render();
+  const pt = petOf(currentKid);
+  const word = animalSound(pt.type, Math.random() < 0.5);
+  const extra = ['','',' 💕',' 🎶'];
+  petReact(word + extra[Math.floor(Math.random()*extra.length)]); render();
 }
 function hashStr(str){ let h=0; for(let i=0;i<str.length;i++){ h=(h*31+str.charCodeAt(i))|0; } return Math.abs(h); }
 function luckyId(kidKey, day){
@@ -867,13 +911,14 @@ function awardCoins(kidKey, day, taskId, gotStar){
   const pt = petOf(kidKey); if(!pt || !pt.type) return;
   const ws = data[kidKey].weekStart; let gain = 0;
   const key = ws+'|'+day+'|'+taskId;
-  if(!pt.awarded[key]){ pt.awarded[key] = 1; gain += (taskId === luckyId(kidKey, day)) ? 3 : 1; }
+  let grow = 0;
+  if(!pt.awarded[key]){ pt.awarded[key] = 1; gain += (taskId === luckyId(kidKey, day)) ? 3 : 1; grow += 1; }
   const skey = ws+'|'+day+'|star';
-  if(gotStar && !pt.awarded[skey]){ pt.awarded[skey] = 1; gain += 5; }
+  if(gotStar && !pt.awarded[skey]){ pt.awarded[skey] = 1; gain += 5; grow += 3; }
   if(gain){
-    pt.coins += gain; savePet(kidKey);
+    pt.coins += gain; const evolved = grow ? addGrowth(kidKey, grow) : false; savePet(kidKey);
     const lines = ['Yay! +'+gain+' 🪙','Nice one! +'+gain+' 🪙','Woohoo! +'+gain+' 🪙','You rock! +'+gain+' 🪙'];
-    petReact(gotStar ? 'ALL DONE!! +'+gain+' 🪙 🎉' : lines[Math.floor(Math.random()*lines.length)]);
+    if(!evolved) petReact(gotStar ? 'ALL DONE!! +'+gain+' 🪙 🎉' : lines[Math.floor(Math.random()*lines.length)]);
   } else { petReact('Done again! 👏'); }
 }
 function choosePetType(t){ petDraft.type = t; render(); }
@@ -909,21 +954,33 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
   const bgItem = item('bg');
   const mood = allDone ? 'party' : (anyStarted ? 'idle' : 'sleepy');
   const reacting = petMsg && petMsg.until > Date.now();
-  const text = reacting ? petMsg.text : (mood==='sleepy' && currentDay===actualToday ? 'Zzz… wake me up by finishing a quest! 💤' : msgDefault);
+  const happy = petHappy(pt);
+  const gp = pt.growth||0, sidx = stageIdx(gp), stage = STAGES[sidx], nextSt = STAGES[sidx+1];
+  const growPct = nextSt ? Math.round((gp-stage.min)/(nextSt.min-stage.min)*100) : 100;
+  const text = reacting ? petMsg.text : (mood==='sleepy' && currentDay===actualToday ? 'Zzz… wake me up by finishing a quest! 💤' : (happy < 45 ? 'I\'m a little hungry… got a treat? '+treatFor(pt.type) : msgDefault));
   return `<div class="petstage" style="background:${bgItem?bgItem.css:DEFAULT_BG}">
     <div class="petchip left">🔥 ${currentStreak(kidKey)}</div>
+    <div class="petmood" title="Happiness"><span>${happy>=70?'😄':(happy>=40?'🙂':'🥺')}</span><div class="mbar"><div style="width:${happy}%"></div></div></div>
     <div class="petchip right">🪙 ${pt.coins}</div>
     <div class="petbubble ${reacting?'pulse':''}">${text}</div>
-    <div class="petwrap pet-${mood} ${reacting?'hop':''}" onclick="tapPet()">
+    <div class="petwrap pet-${mood} ${reacting?'hop':''}" onclick="tapPet()"><div class="petscale" style="--ps:${stage.scale}">
+      ${sidx===3?'<div class="petaura"></div>':''}
       ${item('hat')?`<div class="petacc hat">${item('hat').emoji}</div>`:''}
       <div class="petbody">${pt.type}</div>
       ${item('face')?`<div class="petacc face">${item('face').emoji}</div>`:''}
       ${item('item')?`<div class="petacc held">${item('item').emoji}</div>`:''}
       ${mood==='sleepy'?'<div class="petzzz">💤</div>':''}
       ${mood==='party'?'<div class="petparty">🎉</div>':''}
-    </div>
-    <div class="petname">${pt.name}</div>
-    <button class="shopbtn" onclick="openShop()">🛍️ Pet Shop</button>
+    </div></div>
+    <div class="petname">${pt.name} · ${stage.name}</div>
+    <button class="shopbtn" onclick="openShop()">🛍️ Shop</button>
+  </div>
+  <div class="growline">🌱 ${nextSt ? 'Growing to '+nextSt.name+' · '+(gp-stage.min)+'/'+(nextSt.min-stage.min) : 'Fully grown! 🌟'}<div class="gbar"><div style="width:${growPct}%"></div></div></div>
+  <div class="carerow">
+    <button class="carebtn" onclick="careAction('feed')"><span>${treatFor(pt.type)}</span>Feed <small>🪙2</small></button>
+    <button class="carebtn" onclick="careAction('play')"><span>⚽</span>Play</button>
+    <button class="carebtn" onclick="careAction('hug')"><span>🤗</span>Hug</button>
+    <button class="carebtn" onclick="openGames()"><span>🎮</span>Games</button>
   </div>`;
 }
 function petOverlays(kidKey){
@@ -963,6 +1020,206 @@ function petOverlays(kidKey){
     </div></div>`;
   }
   return out;
+}
+
+
+
+/* ---------------- Growing up ---------------- */
+const STAGES = [{name:'Baby',min:0,scale:.62},{name:'Kid',min:30,scale:.8},{name:'Teen',min:100,scale:1.0},{name:'Grown-up',min:250,scale:1.2}];
+function stageIdx(pts){ let i=0; STAGES.forEach((st,k)=>{ if(pts>=st.min) i=k; }); return i; }
+function addGrowth(kidKey, n){
+  const pt = petOf(kidKey); const before = stageIdx(pt.growth||0);
+  pt.growth = (pt.growth||0) + n;
+  const after = stageIdx(pt.growth);
+  if(after > before){
+    setTimeout(()=>{ burstConfetti(); playFanfare(); }, 200);
+    petReact('✨ I grew up into a '+STAGES[after].name+'!! ✨');
+    return true;
+  }
+  return false;
+}
+
+/* ---------------- Animal sounds & care ---------------- */
+function sweep(type, f0, f1, dur, vol, delay){
+  try{
+    unlockAudio(); if(!audioCtx) return;
+    const t0 = audioCtx.currentTime + (delay||0);
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0+dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0+dur+0.05);
+  }catch(e){}
+}
+const SOUND_KIND = {'🐱':'meow','🦁':'roar','🐯':'roar','🐻':'roar','🐲':'roar','🐶':'bark','🦊':'yip','🐰':'squeak','🐿️':'squeak','🐸':'ribbit','🦉':'hoot','🐧':'bird','🐔':'bird','🦆':'quack','🐮':'moo','🐷':'oink','🐵':'monkey','🐼':'hum','🐨':'hum','🐢':'hum','🦔':'squeak','🦄':'neigh','🐙':'blub','🐳':'whale','🦋':'tinkle'};
+const SOUND_WORD = {meow:['Meow!',1.5],roar:['Rawr!',0.6],bark:['Woof woof!',1.0],yip:['Yip yip!',1.6],squeak:['Squeak squeak!',2],ribbit:['Ribbit!',0.9],hoot:['Hoo hoo!',0.8],bird:['Tweet tweet!',1.9],quack:['Quack quack!',1.3],moo:['Mooo!',0.6],oink:['Oink oink!',1.0],monkey:['Ooh ooh aah aah!',1.4],hum:['Hmm hmm!',1.0],neigh:['Neigh!',1.2],blub:['Blub blub!',1.5],whale:['Wooooo!',0.5],tinkle:['Flutter flutter!',2]};
+function animalSound(type, withWord){
+  const k = SOUND_KIND[type] || 'hum';
+  switch(k){
+    case 'meow': sweep('sawtooth',500,900,.25,.1); sweep('sawtooth',900,500,.3,.1,.25); break;
+    case 'bark': sweep('square',300,150,.12,.12); sweep('square',320,160,.12,.12,.2); break;
+    case 'yip': sweep('square',700,1100,.1,.08); sweep('square',900,1300,.1,.08,.15); break;
+    case 'squeak': sweep('sine',1400,2200,.08,.1); sweep('sine',1500,2300,.08,.1,.14); break;
+    case 'ribbit': sweep('sawtooth',120,200,.1,.1); sweep('sawtooth',130,210,.1,.1,.16); break;
+    case 'hoot': sweep('sine',400,350,.25,.14); sweep('sine',400,330,.3,.14,.35); break;
+    case 'bird': for(let i=0;i<4;i++) sweep('sine',2000,3000,.06,.07,i*.09); break;
+    case 'quack': sweep('sawtooth',500,300,.15,.1); sweep('sawtooth',520,310,.15,.1,.22); break;
+    case 'moo': sweep('sawtooth',160,130,.7,.12); break;
+    case 'oink': sweep('sawtooth',250,150,.1,.1); sweep('sawtooth',260,150,.1,.1,.15); break;
+    case 'monkey': sweep('sine',500,800,.12,.12); sweep('sine',800,500,.12,.12,.15); sweep('sine',500,800,.12,.12,.3); break;
+    case 'roar': sweep('sawtooth',200,70,.6,.15); break;
+    case 'neigh': sweep('sawtooth',700,1200,.2,.08); sweep('sawtooth',1200,500,.4,.08,.2); break;
+    case 'blub': for(let i=0;i<3;i++) sweep('sine',300,600,.1,.1,i*.14); break;
+    case 'whale': sweep('sine',200,400,.8,.12); sweep('sine',400,250,.8,.12,.8); break;
+    case 'tinkle': tone([1568,1760,2093],0.08,0.09); break;
+    default: sweep('sine',250,260,.5,.1);
+  }
+  const w = SOUND_WORD[k] || SOUND_WORD.hum;
+  if(withWord){
+    try{ if(window.speechSynthesis){ const u = new SpeechSynthesisUtterance(w[0]); u.pitch = w[1]; u.rate = 1.0; u.lang='en-US'; setTimeout(()=>speechSynthesis.speak(u), 350); } }catch(e){}
+  }
+  return w[0];
+}
+function treatFor(type){
+  const m = {'🐱':'🐟','🐧':'🐟','🐳':'🐟','🐙':'🦐','🐰':'🥕','🐿️':'🌰','🐼':'🎋','🐨':'🌿','🐻':'🍯','🐶':'🦴','🐵':'🍌','🐸':'🪰','🦆':'🍞','🐔':'🌽','🐮':'🌾','🐷':'🥔','🐢':'🥬','🦋':'🌸','🦔':'🍄','🦉':'🐭','🐲':'🍖','🦁':'🍖','🐯':'🍖'};
+  return m[type] || '🍎';
+}
+function petHappy(pt){
+  if(pt.happy == null){ pt.happy = 70; pt.lastTs = Date.now(); }
+  const hrs = (Date.now() - (pt.lastTs||Date.now()))/3600000;
+  return Math.max(20, Math.round(pt.happy - hrs*4));   // drifts down slowly, never below 20
+}
+function setHappy(pt, delta){ pt.happy = Math.max(20, Math.min(100, petHappy(pt)+delta)); pt.lastTs = Date.now(); }
+function flyItem(emoji, cls){
+  setTimeout(()=>{
+    const st = document.querySelector('.petstage'); if(!st) return;
+    const el = document.createElement('div'); el.className = 'flyitem '+cls; el.textContent = emoji;
+    st.appendChild(el); setTimeout(()=>el.remove(), 1500);
+  }, 40);
+}
+let careCooldown = {};
+function careAction(kind){
+  const pt = petOf(currentKid); if(!pt.type) return;
+  unlockAudio();
+  const now = Date.now();
+  if(kind==='feed'){
+    if(pt.coins < 2){ petReact('Treats cost 🪙2 — finish a quest to get coins!'); render(); return; }
+    pt.coins -= 2; setHappy(pt, 25);
+    flyItem(treatFor(pt.type), 'toface'); tone([500,700,500,700],0.09,0.12);
+    if(!addGrowth(currentKid, 2)) petReact('Yum yum! Thank you! '+treatFor(pt.type)+' 😋');
+  } else if(kind==='play'){
+    if(careCooldown.play && now - careCooldown.play < 15000){ petReact('Whew, let me catch my breath! 😅'); render(); return; }
+    careCooldown.play = now; setHappy(pt, 15);
+    flyItem(['⚽','🎾','🏀'][Math.floor(Math.random()*3)], 'ball'); tone([392,523,659],0.1,0.1);
+    if(!addGrowth(currentKid, 1)) petReact('Wheee! Catch! 🎉');
+  } else {
+    if(careCooldown.hug && now - careCooldown.hug < 10000){ petReact('Still feeling the love! 💗'); render(); return; }
+    careCooldown.hug = now; setHappy(pt, 10);
+    flyItem('💗', 'hearts'); sweep('sine',600,900,.2,.08);
+    petReact('Awww, I love hugs! 🥰');
+  }
+  savePet(currentKid); render();
+}
+
+
+/* ---------------- Mini games ---------------- */
+function gameCoinsLeft(pt){
+  const d = new Date().toDateString();
+  if(!pt.gameLog || pt.gameLog.date !== d) pt.gameLog = {date:d, n:0};
+  return Math.max(0, 3 - pt.gameLog.n);
+}
+function closeGames(){ const o = document.getElementById('gameov'); if(o) o.remove(); gameRun = false; render(); }
+let gameRun = false;
+function openGames(){
+  const old = document.getElementById('gameov'); if(old) old.remove();
+  const ov = document.createElement('div'); ov.id = 'gameov'; ov.className = 'gameov'; document.body.appendChild(ov);
+  const pt = petOf(currentKid), left = gameCoinsLeft(pt);
+  ov.innerHTML = `<div class="gbox"><div class="gtitle">🎮 Play with ${pt.name}!</div>
+    <div class="gsub">${left>0?'Win coins in '+left+' more game'+(left>1?'s':'')+' today!':'Coin limit reached today — still fun to play!'}</div>
+    <button class="rbtn go" onclick="startCatch()">🧺 Catch the Treats</button>
+    <button class="rbtn go" style="background:var(--green);" onclick="startMemory()">🧠 Copy Me!</button>
+    <button class="rbtn snz" onclick="closeGames()">Close</button></div>`;
+}
+function finishGame(score, kind){
+  gameRun = false;
+  const pt = petOf(currentKid); const left = gameCoinsLeft(pt);
+  let coins = kind==='catch' ? Math.min(5, Math.floor(score/4)) : Math.min(5, score);
+  if(left <= 0) coins = 0; else pt.gameLog.n++;
+  pt.coins += coins; setHappy(pt, 15); const grew = addGrowth(currentKid, 2); savePet(currentKid);
+  playFanfare();
+  const ov = document.getElementById('gameov'); if(!ov) return;
+  ov.innerHTML = `<div class="gbox"><div class="gtitle">${coins>0?'🎉 Great job!':'👏 Nice game!'}</div>
+    <div style="font-size:54px;margin:6px 0;">${pt.type}</div>
+    <div class="gsub">Score: <b>${score}</b>${coins>0?' · You won 🪙 '+coins+'!':(left<=0?' · (coin limit reached today)':' · Try for more!')}</div>
+    <div class="gsub">${pt.name} is happier now 💗${grew?' and grew up! ✨':''}</div>
+    <button class="rbtn go" onclick="${kind==='catch'?'startCatch()':'startMemory()'}">Play again</button>
+    <button class="rbtn snz" onclick="openGames()">Back</button></div>`;
+}
+function startCatch(){
+  const ov = document.getElementById('gameov'); if(!ov) return;
+  const pt = petOf(currentKid), treat = treatFor(pt.type);
+  ov.innerHTML = `<div class="gbox"><div class="gtitle">🧺 Catch ${treat}!</div>
+    <div class="gsub">Slide your finger to move ${pt.name}. Dodge the 🪨!</div>
+    <div class="garena" id="garena"><div class="gpet" id="gpet">${pt.type}</div></div>
+    <div class="gsub"><span id="gtime">25</span>s · Score <b id="gsc">0</b></div></div>`;
+  const arena = document.getElementById('garena'), pe = document.getElementById('gpet');
+  const W = arena.clientWidth, H = arena.clientHeight;
+  let x = W/2, items = [], score = 0, spawn = 0, last = performance.now(); const t0 = last; gameRun = true; unlockAudio();
+  const mv = ev=>{ const r = arena.getBoundingClientRect(); x = Math.max(24, Math.min(W-24, ev.clientX - r.left)); };
+  arena.addEventListener('pointerdown', mv); arena.addEventListener('pointermove', mv);
+  function frame(now){
+    if(!gameRun || !document.getElementById('garena')) return;
+    const dt = Math.min(0.05,(now-last)/1000); last = now;
+    const remain = 25 - (now-t0)/1000;
+    document.getElementById('gtime').textContent = Math.max(0, Math.ceil(remain));
+    if(remain <= 0){ finishGame(score,'catch'); return; }
+    spawn += dt;
+    if(spawn > 0.55){ spawn = 0;
+      const bad = Math.random() < 0.25, el = document.createElement('div'); el.className = 'gitem'; el.textContent = bad ? '🪨' : treat;
+      arena.appendChild(el); items.push({el, bad, x: 20+Math.random()*(W-40), y:-30, v: 130+Math.random()*90+ (25-remain)*3});
+    }
+    pe.style.transform = `translateX(${x-26}px)`;
+    items = items.filter(it=>{
+      it.y += it.v*dt; it.el.style.transform = `translate(${it.x-16}px,${it.y}px)`;
+      if(it.y > H-62 && it.y < H-14 && Math.abs(it.x-x) < 36){
+        score += it.bad ? -2 : 1; if(score<0) score = 0;
+        it.bad ? sweep('square',200,90,.15,.12) : tone([784,1047],0.05,0.1);
+        document.getElementById('gsc').textContent = score; it.el.remove(); return false;
+      }
+      if(it.y > H){ it.el.remove(); return false; }
+      return true;
+    });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function startMemory(){
+  const ov = document.getElementById('gameov'); if(!ov) return;
+  const cols = ['#FF6B6B','#4CD07A','#5B9DFF','#FFC857'], freqs = [330,415,523,659];
+  ov.innerHTML = `<div class="gbox"><div class="gtitle">🧠 Copy Me!</div>
+    <div class="gsub" id="mmsg">Watch carefully…</div>
+    <div class="mpads">${cols.map((c,i)=>`<div class="mpad" id="mp${i}" style="background:${c}" onclick="memPress(${i})"></div>`).join('')}</div>
+    <div class="gsub">Round <b id="mround">1</b></div></div>`;
+  window.__mem = {seq:[], pos:0, input:false, freqs};
+  gameRun = true; unlockAudio(); setTimeout(memNext, 700);
+}
+function memFlash(i){
+  const el = document.getElementById('mp'+i); if(!el) return;
+  el.classList.add('lit'); tone([window.__mem.freqs[i]],0.25,0.18); setTimeout(()=>el.classList.remove('lit'), 320);
+}
+function memNext(){
+  const m = window.__mem; if(!m || !document.getElementById('mmsg')) return;
+  m.seq.push(Math.floor(Math.random()*4)); m.pos = 0; m.input = false;
+  document.getElementById('mround').textContent = m.seq.length;
+  document.getElementById('mmsg').textContent = 'Watch carefully…';
+  m.seq.forEach((v,i)=>setTimeout(()=>memFlash(v), 600+i*650));
+  setTimeout(()=>{ const mm = document.getElementById('mmsg'); if(mm){ mm.textContent = 'Your turn! 👆'; window.__mem.input = true; } }, 600+m.seq.length*650);
+}
+function memPress(i){
+  const m = window.__mem; if(!m || !m.input) return;
+  memFlash(i);
+  if(i !== m.seq[m.pos]){ m.input = false; sweep('square',200,90,.3,.12); setTimeout(()=>finishGame(m.seq.length-1,'memory'), 500); return; }
+  m.pos++;
+  if(m.pos === m.seq.length){ m.input = false; document.getElementById('mmsg').textContent = 'Great! ✨'; setTimeout(memNext, 900); }
 }
 
 /* ---------------- Edit-mode actions ---------------- */
@@ -1298,14 +1555,24 @@ function render(){
 
   let remindHtml = '';
   if(activeReminder && activeReminder.kidKey === currentKid){
-    const soon = activeReminder.off < 10;
-    remindHtml = `<div class="remind-overlay"><div class="remind-box">
+    if(activeReminder.kind === 'bed'){
+      remindHtml = `<div class="remind-overlay"><div class="remind-box">
+      <div class="rbig">🌙</div>
+      <div class="rtitle">Bedtime soon!</div>
+      <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;margin-bottom:2px;">Time to get ready for bed</div>
+      <div class="rsub">🪥 Brush teeth · 👕 Pajamas · 🛏️ Into bed</div>
+      <button class="rbtn go" onclick="dismissReminder()">OK, going! 😴</button>
+    </div></div>`;
+    } else {
+      const soon = activeReminder.off < 10;
+      remindHtml = `<div class="remind-overlay"><div class="remind-box">
       <div class="rbig">${activeReminder.icon}</div>
       <div class="rtitle">${soon?'Almost time!':'Heads up!'}</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px;">${activeReminder.label}</div>
       <div class="rsub">starts in ${activeReminder.off} minutes · ${activeReminder.time}</div>
       <button class="rbtn go" onclick="dismissReminder()">${soon?"I'm ready! 💪":'Got it! 👍'}</button>
     </div></div>`;
+    }
   }
   const nowStr = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}) + ' · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
 
@@ -1511,7 +1778,7 @@ window.claimReward = claimReward;
 window.selectKid = selectKid;
 window.selectDay = selectDay;
 window.openChest = openChest;
-window.tapPet = tapPet; window.choosePetType = choosePetType; window.startPet = startPet; window.openShop = openShop; window.closeShop = closeShop; window.shopAction = shopAction; window.editPet = editPet; window.cancelChangePet = cancelChangePet;
+window.tapPet = tapPet; window.choosePetType = choosePetType; window.startPet = startPet; window.openShop = openShop; window.closeShop = closeShop; window.shopAction = shopAction; window.careAction = careAction; window.openGames = openGames; window.closeGames = closeGames; window.startCatch = startCatch; window.startMemory = startMemory; window.memPress = memPress; window.editPet = editPet; window.cancelChangePet = cancelChangePet;
 window.petDraft = petDraft;
 window.toggleReminders = toggleReminders; window.toggleReminderVoice = toggleReminderVoice;
 window.dismissReminder = dismissReminder;

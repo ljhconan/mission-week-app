@@ -678,12 +678,23 @@ function toggleReminders(){
 }
 function toggleReminderVoice(){ reminders.voice = !reminders.voice; saveReminders(); renderEdit(); }
 const REMIND_OFFSETS = [15, 3];   // minutes before a quest starts
+const BED_REMINDER = {h:20, m:50};  // daily bedtime reminder, independent of quests
 function checkReminders(){
   if(!reminders.on || editMode || activeReminder || !data) return;
   const now = new Date(), nowMin = now.getHours()*60+now.getMinutes();
   const fired = getFired();
   const list = (data.schedule[currentKid] && data.schedule[currentKid][actualToday]) || [];
   const checks = (data[currentKid].checks[actualToday]) || {};
+  // daily bedtime reminder (not tied to any quest); can fire from 8:50 PM until 9:30 PM
+  const bedStart = BED_REMINDER.h*60+BED_REMINDER.m, bedKey = currentKid+'|bedtime';
+  if(!fired.keys[bedKey] && nowMin >= bedStart && nowMin < bedStart+40){
+    fired.keys[bedKey] = 1; setFired(fired);
+    const nm = META[currentKid].name, sayBed = nm+', time to get ready for bed! Brush your teeth and put on your pajamas.';
+    activeReminder = {kidKey:currentKid, id:'bedtime', kind:'bed', icon:'🛏️', label:'Get ready for bed', off:0, time:'', say:sayBed};
+    playChime(); speak(sayBed); startRemindLoop(sayBed);
+    render();
+    return;
+  }
   const sorted = [...list].filter(e=>e.quest && !checks[e.id]).sort((a,b)=>timeToMinutes(a.time)-timeToMinutes(b.time));
   for(const e of sorted){
     const start = timeToMinutes(e.time);
@@ -1064,14 +1075,24 @@ function render(){
 
   let remindHtml = '';
   if(activeReminder && activeReminder.kidKey === currentKid){
-    const soon = activeReminder.off < 10;
-    remindHtml = `<div class="remind-overlay"><div class="remind-box">
+    if(activeReminder.kind === 'bed'){
+      remindHtml = `<div class="remind-overlay"><div class="remind-box">
+      <div class="rbig">🌙</div>
+      <div class="rtitle">Bedtime soon!</div>
+      <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;margin-bottom:2px;">Time to get ready for bed</div>
+      <div class="rsub">🪥 Brush teeth · 👕 Pajamas · 🛏️ Into bed</div>
+      <button class="rbtn go" onclick="dismissReminder()">OK, going! 😴</button>
+    </div></div>`;
+    } else {
+      const soon = activeReminder.off < 10;
+      remindHtml = `<div class="remind-overlay"><div class="remind-box">
       <div class="rbig">${activeReminder.icon}</div>
       <div class="rtitle">${soon?'Almost time!':'Heads up!'}</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px;">${activeReminder.label}</div>
       <div class="rsub">starts in ${activeReminder.off} minutes · ${activeReminder.time}</div>
       <button class="rbtn go" onclick="dismissReminder()">${soon?"I'm ready! 💪":'Got it! 👍'}</button>
     </div></div>`;
+    }
   }
   const nowStr = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}) + ' · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
 
