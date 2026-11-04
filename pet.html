@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mission Pals">
+<title>Mission Week Pals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --panel:#FFFFFF; --panel2:#F4F5FB; --line:#E7E9F5;
+    --ink:#282A32; --muted:#9A9EC0; --gold:#E8A317; --cyan:#2FB6D9; --pink:#FF6FA5; --green:#2FAE72; --red:#FF5C5C;
+    --shadow:0 2px 10px rgba(38,40,74,.07);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); font-family:'Nunito',sans-serif; color:var(--ink); -webkit-tap-highlight-color:transparent; min-height:100vh; transition:background .3s ease; }
+  .app{ max-width:640px; margin:0 auto; padding:20px 16px 60px; }
+  h1,h2,h3{ font-family:'Baloo 2',sans-serif; margin:0; }
+
+  .topbar{ display:flex; gap:10px; margin-bottom:16px; align-items:center; }
+  .kidbar{ display:flex; gap:10px; flex:1; }
+  .kidtab{ flex:1; border:2px solid var(--line); border-radius:18px; padding:10px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; background:var(--panel); color:var(--muted); display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:var(--shadow); }
+  .kidtab.active{ color:#fff; border-color:var(--kidcolor); background:var(--kidcolor); box-shadow:0 6px 14px rgba(38,40,74,.18); }
+  .gearbtn{ width:44px;height:44px;border-radius:14px;border:2px solid var(--line);background:var(--panel);color:var(--ink);font-size:18px;cursor:pointer;flex-shrink:0; box-shadow:var(--shadow); }
+
+  .levelcard{ display:flex; align-items:center; gap:12px; background:var(--panel); border:2px solid var(--line); border-radius:18px; padding:12px 14px; margin-bottom:14px; box-shadow:var(--shadow); }
+  .levelbadge{ width:46px;height:46px;border-radius:50%; background:conic-gradient(var(--kidcolor) calc(var(--xp,0)*3.6deg), var(--line) 0deg); display:flex;align-items:center;justify-content:center;flex-shrink:0; font-family:'Baloo 2',sans-serif;font-weight:800;font-size:12px; position:relative; }
+  .levelbadge::after{ content:'';position:absolute;inset:4px;border-radius:50%;background:var(--panel); }
+  .levelbadge span{ position:relative; z-index:1; }
+  .levelinfo{ flex:1; }
+  .levelinfo .lvltitle{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px; }
+  .xpbar{ height:8px; background:var(--line); border-radius:5px; overflow:hidden; margin-top:5px; }
+  .xpbar > div{ height:100%; background:var(--kidcolor); transition:width .3s ease; }
+  .streak{ display:flex; align-items:center; gap:4px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px; color:var(--gold); flex-shrink:0; }
+
+  .daytabs{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:16px; }
+  .daytab{ border:2px solid var(--line); background:var(--panel); color:var(--muted); border-radius:14px; padding:11px 0; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:14px; cursor:pointer; box-shadow:var(--shadow); position:relative; }
+  .daytab.selected{ background:var(--kidcolor); border-color:var(--kidcolor); color:#fff; }
+  .daytab.istoday::after{ content:''; position:absolute; bottom:4px; left:50%; width:5px; height:5px; margin-left:-2.5px; border-radius:50%; background:var(--gold); }
+  .weekstrip{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:16px; }
+  .daycell{ background:var(--panel); border-radius:14px; border:2px solid var(--line); padding:8px 4px 10px; text-align:center; cursor:pointer; box-shadow:var(--shadow); }
+  .daycell.selected{ border-color:var(--kidcolor); }
+  .daycell .dlabel{ font-size:11px; font-weight:800; color:var(--muted); margin-bottom:6px; display:block; }
+  .ring{ width:34px;height:34px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800; }
+
+  .panel{ background:var(--panel); border-radius:22px; padding:18px; border:2px solid var(--line); margin-bottom:16px; box-shadow:var(--shadow); }
+  .panel h2{ font-size:19px; margin-bottom:2px; color:var(--kidcolor); }
+  .panelsub{ color:var(--muted); font-weight:700; font-size:12px; margin-bottom:12px; }
+
+  .timeline{ position:relative; padding-left:6px; }
+  .trow{ display:flex; align-items:flex-start; gap:10px; padding:9px 6px; border-radius:14px; position:relative; }
+  .trow.now{ background:rgba(255,200,87,.1); border:1.5px solid var(--gold); }
+  .ttime{ width:64px; flex-shrink:0; font-size:11px; font-weight:800; color:var(--muted); padding-top:8px; }
+  .ttime-end{ font-size:9px; font-weight:700; color:var(--muted); opacity:.75; margin-top:1px; }
+  .trow.now .ttime{ color:var(--gold); }
+  .tbody{ flex:1; display:flex; align-items:center; gap:10px; background:var(--panel2); border-radius:12px; padding:8px 10px; }
+  .trow.passive .tbody{ background:transparent; opacity:.6; }
+  .ticon{ font-size:18px; width:24px; text-align:center; }
+  .tlabel{ flex:1; font-weight:700; font-size:14px; }
+  .trow.quest.checked .tlabel{ color:var(--muted); text-decoration:line-through; }
+  .checkbox{ width:28px;height:28px;border-radius:9px;border:2.5px solid var(--line); display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer; background:var(--panel); color:transparent; flex-shrink:0; }
+  .checkbox.on{ background:var(--kidcolor); border-color:var(--kidcolor); color:#fff; animation:pop .28s ease; }
+  @keyframes pop{ 0%{transform:scale(1);} 40%{transform:scale(1.3) rotate(8deg);} 100%{transform:scale(1);} }
+  .nowtag{ font-size:9px; font-weight:800; color:var(--bg); background:var(--gold); border-radius:6px; padding:2px 6px; margin-left:4px; }
+
+  .chestwrap{ text-align:center; padding:14px 10px 6px; }
+  .chest{ font-size:56px; cursor:pointer; display:inline-block; animation:wiggle 1.6s ease-in-out infinite; filter:drop-shadow(0 0 14px rgba(255,200,87,.5)); }
+  @keyframes wiggle{ 0%,100%{transform:rotate(-4deg);} 50%{transform:rotate(4deg);} }
+  .chesttitle{ font-family:'Baloo 2',sans-serif; color:var(--gold); font-size:20px; margin:8px 0 2px; }
+  .chestsub{ color:var(--muted); font-weight:700; font-size:13px; margin-bottom:10px; }
+  .rewardgrid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+  .rewardbtn{ background:var(--panel2); border:2px solid var(--line); color:var(--ink); border-radius:14px; padding:12px 6px; font-family:'Nunito',sans-serif; font-weight:800; font-size:13px; cursor:pointer; }
+  .rewardbtn:hover{ border-color:var(--gold); }
+  .claimed{ background:rgba(255,200,87,.12); border:2px solid var(--gold); border-radius:14px; padding:14px; font-weight:800; color:var(--gold); }
+  .rewardcard{ border:2px solid var(--gold); background:radial-gradient(circle at top, rgba(255,200,87,.12), transparent 70%); }
+
+  .badgerow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+  .badge{ background:var(--panel2); border:2px solid var(--line); border-radius:12px; padding:6px 10px; font-size:12px; font-weight:800; display:flex; align-items:center; gap:5px; opacity:.35; filter:grayscale(1); }
+  .badge.unlocked{ opacity:1; filter:none; border-color:var(--gold); }
+
+  .penaltypanel{ border-color:var(--red); }
+  .balrow2{ display:flex; gap:10px; margin-bottom:10px; }
+  .balbox{ flex:1; background:var(--panel2); border-radius:14px; padding:10px; text-align:center; }
+  .balbox .ballabel{ font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; }
+  .balbox .balnum{ font-family:'Baloo 2',sans-serif; font-size:24px; font-weight:800; }
+  .balbox .balnum.low{ color:var(--red); }
+  .modal-overlay{ position:fixed; inset:0; background:rgba(20,20,35,.45); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .modal-box{ background:var(--panel); border-radius:20px; padding:20px; max-width:320px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+  .modaltitle{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:17px; margin-bottom:4px; }
+  .modalsub{ color:var(--muted); font-weight:700; font-size:13px; margin-bottom:14px; }
+  .modalbtns{ display:flex; gap:8px; margin-bottom:10px; }
+  .modalbtn{ flex:1; background:var(--red); color:#fff; border:none; border-radius:12px; padding:12px 6px; font-weight:800; font-size:14px; cursor:pointer; }
+  .modalcancel{ background:none; border:none; color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
+  .balancerow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .balancenum{ font-family:'Baloo 2',sans-serif; font-size:30px; font-weight:800; }
+  .balancenum.low{ color:var(--red); }
+  .penlist{ display:flex; flex-direction:column; gap:8px; }
+  .penrow{ display:flex; align-items:center; gap:10px; background:var(--panel2); border-radius:12px; padding:9px 10px; }
+  .penrow .ticon{ font-size:17px; }
+  .penrow .tlabel{ flex:1; font-weight:700; font-size:13.5px; }
+  .penamt{ font-weight:800; font-size:12.5px; color:var(--red); }
+  .pentoggle{ width:28px;height:28px;border-radius:9px;border:2.5px solid var(--line); display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer; background:var(--panel); color:transparent; flex-shrink:0; }
+  .pentoggle.on{ background:var(--red); border-color:var(--red); color:#fff; }
+
+  .confetti{ position:fixed; top:-10px; width:8px;height:14px; border-radius:2px; z-index:999; animation:fall linear forwards; }
+  @keyframes fall{ to{ transform:translateY(110vh) rotate(360deg); opacity:.9; } }
+
+  /* ---- Edit mode ---- */
+  .editrow{ display:flex; gap:6px; align-items:center; background:var(--panel2); border-radius:12px; padding:8px; margin-bottom:6px; }
+  .editrow input[type=text]{ background:var(--panel); border:1.5px solid var(--line); color:var(--ink); border-radius:8px; padding:7px 8px; font-family:'Nunito',sans-serif; font-weight:700; font-size:13px; }
+  .editrow .ein-time{ width:72px; }
+  .editrow .ein-icon{ width:38px; text-align:center; }
+  .editrow .ein-label{ flex:1; min-width:0; }
+  .editrow input[type=checkbox]{ width:18px;height:18px; flex-shrink:0; }
+  .editrow .draghandle{ width:30px; align-self:stretch; display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--kidcolor); cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; flex-shrink:0; border-radius:8px; }
+  .editrow .draghandle:active{ background:var(--line); }
+  .editrow.dragging{ position:relative; z-index:50; box-shadow:0 8px 22px rgba(0,0,0,.22); opacity:.95; transition:none; }
+  .editrow.shifting{ transition:transform .15s; }
+  .editrow .delbtn{ background:none; border:none; color:var(--red); font-size:16px; cursor:pointer; flex-shrink:0; }
+
+  /* ---- Quest cards (simplified view) ---- */
+  .progwrap{ position:relative; height:16px; background:var(--line); border-radius:10px; margin:22px 4px 18px; }
+  .progfill{ height:100%; background:linear-gradient(90deg,var(--kidcolor),#FFC857); border-radius:10px; transition:width .6s cubic-bezier(.3,1.4,.5,1); }
+  .progrunner{ position:absolute; top:-16px; font-size:26px; transform:translateX(-50%); transition:left .6s cubic-bezier(.3,1.4,.5,1); animation:hop 1s ease-in-out infinite; }
+  @keyframes hop{ 0%,100%{ margin-top:0; } 50%{ margin-top:-5px; } }
+  .qcard{ display:flex; align-items:center; gap:14px; background:var(--panel); border:2.5px solid var(--line); border-radius:22px; padding:14px 16px; margin-bottom:12px; cursor:pointer; box-shadow:0 4px 0 var(--line); transition:transform .1s, box-shadow .1s; user-select:none; -webkit-user-select:none; }
+  .qcard:active{ transform:translateY(4px) scale(.98); box-shadow:0 0 0 var(--line); }
+  .qcard.focus{ border-color:var(--kidcolor); background:var(--panel2); box-shadow:0 5px 0 var(--kidcolor); }
+  .qcard.focus .qicon{ animation:bob 1.4s ease-in-out infinite; }
+  .qcard.done{ opacity:.6; background:var(--panel2); box-shadow:none; }
+  .qcard.done .qlabel{ text-decoration:line-through; color:var(--muted); }
+  .qcard.celebrate{ animation:celebrate .7s ease; }
+  .qcard.green.focus{ border-color:var(--green); box-shadow:0 5px 0 var(--green); }
+  @keyframes celebrate{ 0%{transform:scale(1);} 25%{transform:scale(1.06) rotate(-1.5deg);} 50%{transform:scale(.97) rotate(1.5deg);} 100%{transform:scale(1);} }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-6deg);} 50%{transform:translateY(-5px) rotate(6deg);} }
+  .qicon{ font-size:36px; width:48px; text-align:center; flex-shrink:0; }
+  .qmid{ flex:1; min-width:0; }
+  .qlabel{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:19px; line-height:1.15; }
+  .qtime{ font-size:12px; font-weight:800; color:var(--muted); margin-top:2px; }
+  .qtag{ display:inline-block; font-size:10px; font-weight:800; color:#fff; background:var(--kidcolor); border-radius:8px; padding:2px 7px; margin-right:6px; letter-spacing:.3px; }
+  .qcheck{ width:46px; height:46px; border-radius:50%; border:3px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; background:var(--panel); }
+  .qcard.focus .qcheck{ border-color:var(--kidcolor); }
+  .qcard.done .qcheck{ background:var(--kidcolor); border-color:var(--kidcolor); }
+  .qcard.green.done .qcheck{ background:var(--green); border-color:var(--green); }
+  .qcard.celebrate .qcheck{ animation:pop2 .55s ease; }
+  @keyframes pop2{ 0%{transform:scale(.3) rotate(-90deg);} 60%{transform:scale(1.35) rotate(15deg);} 100%{transform:scale(1) rotate(0);} }
+  .spark{ position:fixed; pointer-events:none; z-index:2000; font-size:22px; margin:-11px 0 0 -11px; animation:sparkfly .85s ease-out forwards; }
+  @keyframes sparkfly{ from{transform:translate(0,0) scale(.6); opacity:1;} to{transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(var(--rot)); opacity:0;} }
+  .cheer{ position:fixed; left:50%; top:20%; z-index:2001; pointer-events:none; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:30px; color:var(--kidcolor); text-shadow:0 2px 0 #fff, 0 0 12px #fff; white-space:nowrap; animation:cheer 1.2s ease forwards; }
+  @keyframes cheer{ 0%{transform:translate(-50%,20px) scale(.5); opacity:0;} 25%{transform:translate(-50%,0) scale(1.15); opacity:1;} 70%{transform:translate(-50%,-6px) scale(1); opacity:1;} 100%{transform:translate(-50%,-40px) scale(1); opacity:0;} }
+  .ipadtop{ display:flex; align-items:center; gap:16px; margin:6px 0 16px; }
+  .pctring{ width:120px; height:120px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; position:relative; transition:background .5s; }
+  .pctring::after{ content:''; position:absolute; inset:11px; border-radius:50%; background:var(--panel); }
+  .pctring .pctnum{ position:relative; z-index:1; text-align:center; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:32px; line-height:1; }
+  .pctside{ flex:1; min-width:0; }
+  .pctside .pctmsg{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:18px; line-height:1.2; }
+  .pctside .pctsub{ color:var(--muted); font-weight:700; font-size:12px; margin-top:4px; }
+  .mintiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .mintile{ background:var(--panel2); border:2.5px solid var(--gold); border-radius:20px; padding:12px 6px; text-align:center; }
+  .mintile .md{ font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; }
+  .mintile .mn{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:30px; line-height:1.1; }
+  .mintile .mn small{ font-size:14px; }
+  .biglabel{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:15px; margin:4px 0 8px; }
+  .bigtiles{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px; }
+  .bigtile{ position:relative; background:var(--panel); border:2.5px solid var(--line); border-radius:20px; padding:14px 8px 12px; text-align:center; cursor:pointer; box-shadow:0 4px 0 var(--line); user-select:none; -webkit-user-select:none; transition:transform .1s, box-shadow .1s; }
+  .bigtile:active{ transform:translateY(4px) scale(.97); box-shadow:0 0 0 var(--line); }
+  .bigtile .bi{ font-size:40px; line-height:1.1; }
+  .bigtile .bl{ font-weight:800; font-size:12.5px; line-height:1.2; margin-top:4px; }
+  .bigtile .bmark{ position:absolute; top:6px; right:8px; font-size:18px; }
+  .bigtile.on.bad{ background:rgba(255,92,92,.1); border-color:var(--red); box-shadow:0 4px 0 var(--red); }
+  .bigtile.on.good{ background:rgba(47,174,114,.12); border-color:var(--green); box-shadow:0 4px 0 var(--green); }
+  .bigtile.shake{ animation:shake .5s ease; }
+  .bigtile.bounce{ animation:celebrate .7s ease; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 20%{transform:translateX(-7px) rotate(-3deg);} 40%{transform:translateX(7px) rotate(3deg);} 60%{transform:translateX(-5px);} 80%{transform:translateX(5px);} }
+  .alldone{ text-align:center; padding:12px 6px 4px; }
+  .alldone .big{ font-size:46px; display:inline-block; animation:wiggle 1.2s ease-in-out infinite; }
+  .alldone .tt{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:20px; color:var(--kidcolor); }
+  .linkbtn{ width:100%; background:none; border:2px dashed var(--line); color:var(--muted); border-radius:14px; padding:10px; font-weight:800; font-size:13px; cursor:pointer; margin:2px 0 14px; }
+  .remind-overlay{ position:fixed; inset:0; background:rgba(20,20,35,.55); display:flex; align-items:center; justify-content:center; z-index:3000; padding:20px; }
+  .remind-box{ background:var(--panel); border:3px solid var(--kidcolor); border-radius:28px; padding:26px 20px 20px; max-width:340px; width:100%; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.3); animation:rpop .5s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes rpop{ from{transform:scale(.4); opacity:0;} to{transform:scale(1); opacity:1;} }
+  .remind-box .rbig{ font-size:72px; display:inline-block; animation:ring 1s ease-in-out infinite; }
+  @keyframes ring{ 0%,100%{transform:rotate(0);} 20%{transform:rotate(-14deg);} 40%{transform:rotate(14deg);} 60%{transform:rotate(-8deg);} 80%{transform:rotate(8deg);} }
+  .remind-box .rtitle{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:26px; line-height:1.1; margin:8px 0 2px; color:var(--kidcolor); }
+  .remind-box .rsub{ color:var(--muted); font-weight:800; font-size:13px; margin-bottom:16px; }
+  .rbtn{ width:100%; border:none; border-radius:16px; padding:14px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:19px; cursor:pointer; margin-bottom:8px; }
+  .rbtn.go{ background:var(--kidcolor); color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.18); }
+  .rbtn.snz{ background:var(--panel2); color:var(--ink); font-size:15px; }
+  .toggle{ display:flex; align-items:center; justify-content:space-between; background:var(--panel2); border-radius:12px; padding:12px; margin-bottom:8px; font-weight:800; font-size:14px; }
+
+  /* ---- Pet buddy ---- */
+  .petstage{ position:relative; border-radius:28px; height:250px; margin-bottom:14px; overflow:hidden; border:3px solid var(--line); box-shadow:var(--shadow); }
+  .petchip{ position:absolute; top:10px; background:rgba(255,255,255,.85); border-radius:14px; padding:5px 11px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:15px; color:#444; }
+  .petchip.left{ left:10px; } .petchip.right{ right:10px; }
+  .petbubble{ position:absolute; top:46px; left:50%; transform:translateX(-50%); max-width:86%; background:#fff; color:#333; border-radius:18px; padding:8px 14px; font-weight:800; font-size:13.5px; line-height:1.25; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,.12); z-index:3; }
+  .petbubble::after{ content:''; position:absolute; bottom:-8px; left:50%; margin-left:-8px; border:8px solid transparent; border-top-color:#fff; border-bottom:0; }
+  .petbubble.pulse{ animation:bubblepop .45s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes bubblepop{ from{ transform:translateX(-50%) scale(.5); opacity:0; } to{ transform:translateX(-50%) scale(1); opacity:1; } }
+  .petwrap{ position:absolute; left:50%; bottom:34px; width:110px; height:110px; margin-left:-55px; cursor:pointer; -webkit-user-select:none; user-select:none; }
+  .petbody{ font-size:96px; line-height:110px; text-align:center; filter:drop-shadow(0 6px 4px rgba(0,0,0,.15)); }
+  .petacc{ position:absolute; pointer-events:none; }
+  .petacc.hat{ top:-28px; left:50%; font-size:44px; transform:translateX(-50%) rotate(-8deg); }
+  .petacc.face{ top:30px; left:50%; font-size:46px; transform:translateX(-50%); }
+  .petacc.held{ right:-30px; bottom:2px; font-size:44px; }
+  .petzzz{ position:absolute; right:-18px; top:-10px; font-size:28px; animation:zzz 2s ease-in-out infinite; }
+  .petparty{ position:absolute; left:-26px; top:-6px; font-size:34px; animation:zzz 1.2s ease-in-out infinite; }
+  @keyframes zzz{ 0%,100%{ transform:translateY(0) scale(1); opacity:.8; } 50%{ transform:translateY(-10px) scale(1.15); opacity:1; } }
+  .pet-idle{ animation:petbob 2.6s ease-in-out infinite; }
+  .pet-sleepy{ animation:petbob 4.5s ease-in-out infinite; filter:saturate(.7); }
+  .pet-party{ animation:petjump .7s ease-in-out infinite; }
+  .petwrap.hop{ animation:pethop .7s ease 1, petbob 2.6s ease-in-out .7s infinite; }
+  @keyframes petbob{ 0%,100%{ transform:translateY(0) rotate(-2deg); } 50%{ transform:translateY(-6px) rotate(2deg); } }
+  @keyframes petjump{ 0%,100%{ transform:translateY(0) scale(1,1); } 40%{ transform:translateY(-26px) scale(.95,1.08); } 60%{ transform:translateY(-26px); } 85%{ transform:translateY(0) scale(1.08,.92); } }
+  @keyframes pethop{ 0%{ transform:translateY(0) scale(1); } 30%{ transform:translateY(-34px) scale(.92,1.1) rotate(-8deg); } 55%{ transform:translateY(-34px) rotate(8deg); } 80%{ transform:translateY(0) scale(1.1,.9); } 100%{ transform:translateY(0) scale(1); } }
+  .petname{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,.9); padding:2px 14px; border-radius:12px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:14px; color:#444; }
+  .shopbtn{ position:absolute; right:10px; bottom:10px; background:var(--kidcolor); color:#fff; border:none; border-radius:14px; padding:8px 12px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:13px; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.18); }
+  .petgrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:10px 0 12px; }
+  .petpick{ font-size:36px; background:var(--panel2); border:3px solid transparent; border-radius:16px; padding:6px 0; cursor:pointer; }
+  .petpick.sel{ border-color:var(--kidcolor); background:var(--panel); transform:scale(1.08); }
+  .petnamein{ width:100%; border:2px solid var(--line); border-radius:14px; padding:12px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:18px; text-align:center; margin-bottom:10px; color:var(--ink); background:var(--panel); }
+  .shopbox{ max-width:380px; max-height:86vh; overflow-y:auto; text-align:center; }
+  .shopgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+  .shoptile{ background:var(--panel2); border:2.5px solid var(--line); border-radius:16px; padding:8px 2px; cursor:pointer; }
+  .shoptile.worn{ border-color:var(--kidcolor); background:var(--panel); }
+  .shoptile .si{ font-size:30px; } .shoptile .sn{ font-size:11px; font-weight:800; } .shoptile .sp{ font-size:12px; font-weight:800; color:var(--green); margin-top:2px; } .shoptile .sp.no{ color:var(--muted); }
+  .journey{ display:grid; grid-template-columns:repeat(7,1fr); position:relative; margin:2px 0 16px; }
+  .journey::before{ content:''; position:absolute; left:7%; right:7%; top:21px; height:6px; background:repeating-linear-gradient(90deg,var(--line) 0 10px,transparent 10px 18px); border-radius:3px; }
+  .jnode{ background:none; border:none; padding:0; cursor:pointer; position:relative; display:flex; flex-direction:column; align-items:center; gap:3px; font-family:'Baloo 2',sans-serif; }
+  .jc{ width:44px; height:44px; border-radius:50%; background:var(--panel); border:3px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:var(--shadow); }
+  .jl{ font-size:12px; font-weight:800; color:var(--muted); }
+  .jnode.star .jc{ background:#FFE9A8; border-color:var(--gold); }
+  .jnode.today .jc{ border-color:var(--kidcolor); animation:petbob 2s ease-in-out infinite; }
+  .jnode.sel .jc{ box-shadow:0 0 0 4px var(--line), 0 0 0 7px var(--kidcolor); }
+  .jnode.sel .jl{ color:var(--kidcolor); }
+  .hero{ background:linear-gradient(160deg,var(--panel2),var(--panel)); border:3px solid var(--kidcolor); border-radius:26px; padding:16px 14px 14px; text-align:center; margin-bottom:14px; box-shadow:0 6px 0 var(--kidcolor); }
+  .hero.celebrate{ animation:celebrate .7s ease; }
+  .herotag{ display:inline-block; background:var(--kidcolor); color:#fff; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:12px; padding:3px 12px; border-radius:12px; letter-spacing:.5px; }
+  .heroicon{ font-size:64px; line-height:1.15; margin-top:6px; animation:bob 1.6s ease-in-out infinite; }
+  .herolabel{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:25px; line-height:1.1; }
+  .herotime{ color:var(--muted); font-weight:700; font-size:13px; margin:4px 0 10px; }
+  .herotime b{ color:var(--ink); }
+  .herobar{ height:10px; background:var(--line); border-radius:6px; overflow:hidden; margin:0 8px 12px; }
+  .herobar > div{ height:100%; background:var(--kidcolor); border-radius:6px; transition:width .6s; }
+  .herobtn{ width:100%; border:none; background:var(--kidcolor); color:#fff; border-radius:18px; padding:15px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:21px; cursor:pointer; box-shadow:0 5px 0 rgba(0,0,0,.2); }
+  .herobtn:active{ transform:translateY(5px); box-shadow:0 0 0 rgba(0,0,0,.2); }
+  .edittabs{ display:flex; gap:8px; margin-bottom:14px; }
+  .edittab{ flex:1; border:2px solid var(--line); background:var(--panel); color:var(--muted); border-radius:14px; padding:9px; font-weight:800; font-size:13px; cursor:pointer; }
+  .edittab.active{ background:var(--panel2); color:var(--ink); border-color:var(--gold); }
+  .daypicker{ display:flex; gap:5px; margin-bottom:12px; flex-wrap:wrap; }
+  .daypickbtn{ border:2px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:10px; padding:6px 10px; font-weight:800; font-size:12px; cursor:pointer; }
+  .daypickbtn.active{ color:#fff; border-color:var(--gold); }
+  .addbtn{ width:100%; background:var(--panel2); border:2px dashed var(--line); color:var(--muted); border-radius:12px; padding:10px; font-weight:800; font-size:13px; cursor:pointer; margin-top:4px; }
+  .smallbtn{ background:var(--panel2); border:2px solid var(--line); color:var(--ink); border-radius:10px; padding:8px 12px; font-weight:800; font-size:12px; cursor:pointer; margin-top:8px; margin-right:6px; }
+  .backbtn{ background:none; border:none; color:var(--gold); font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; cursor:pointer; margin-bottom:14px; }
+  .allowrow{ display:flex; align-items:center; justify-content:space-between; background:var(--panel2); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .allowrow input{ width:60px; background:var(--panel); border:1.5px solid var(--line); color:var(--ink); border-radius:8px; padding:6px; font-weight:800; text-align:center; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const META = { leyna:{name:'Leyna', avatar:'🦊', color:'#FF6FA5'}, lea:{name:'Lea', avatar:'🦉', color:'#6C63FF'} };
+
+/* ---------------- Default schedule (used on first run, and for "reset to default") ---------------- */
+function E(id,time,icon,label,quest,end){ return {id,time,icon,label,quest:!!quest,end: end||null}; }
+const DEFAULT_SCHEDULE = {
+  leyna:{
+    Mon:[E('leyna-mon-1','8:30AM','🏫','School',0,'3:30PM'),E('leyna-mon-2','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-mon-3','3:45PM','🟢','Free time',0,'4:30PM'),E('leyna-mon-4','4:30PM','📐','RSM class + homework',1,'6:30PM'),E('leyna-mon-5','6:30PM','🍽️','Dinner',0,'7:00PM'),E('leyna-mon-6','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-mon-7','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-mon-8','7:30PM','📐','RSM homework',1,'8:30PM'),E('leyna-mon-9','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-mon-10','9:00PM','😴','Sleep',0,null)],
+    Tue:[E('leyna-tue-1','8:30AM','🏫','School',0,'3:30PM'),E('leyna-tue-2','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-tue-3','3:45PM','🟢','Free time',0,'4:30PM'),E('leyna-tue-4','4:30PM','✏️','Simply Draw / Chinese book',1,'5:30PM'),E('leyna-tue-5','5:30PM','➗','Math homework',1,'6:15PM'),E('leyna-tue-6','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-tue-7','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-tue-8','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-tue-9','7:30PM','🎨','Drawing',1,'8:30PM'),E('leyna-tue-10','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-tue-11','9:00PM','😴','Sleep',0,null)],
+    Wed:[E('leyna-wed-1','8:30AM','🏫','School',0,'3:30PM'),E('leyna-wed-2','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-wed-3','3:45PM','🟢','Free time',0,'4:15PM'),E('leyna-wed-4','4:15PM','✏️','Simply Draw / Chinese book',1,'5:00PM'),E('leyna-wed-5','5:00PM','➗','Math homework',1,'5:45PM'),E('leyna-wed-6','5:45PM','🟢','Free time',0,'6:15PM'),E('leyna-wed-7','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-wed-8','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-wed-9','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-wed-10','7:30PM','✍️','Writing',1,'8:00PM'),E('leyna-wed-11','8:00PM','📒','Workbook (1 page)',1,'8:30PM'),E('leyna-wed-12','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-wed-13','9:00PM','😴','Sleep',0,null)],
+    Thu:[E('leyna-thu-1','8:30AM','🏫','School',0,'3:30PM'),E('leyna-thu-2','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-thu-3','3:45PM','🏊','Free swim',0,'4:30PM'),E('leyna-thu-4','4:30PM','🏊','Swimming',0,'5:00PM'),E('leyna-thu-5','5:00PM','🟢','Free time',0,'5:45PM'),E('leyna-thu-6','5:45PM','📒','Workbook',1,'6:15PM'),E('leyna-thu-7','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-thu-8','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-thu-9','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-thu-10','7:30PM','📒','Workbook (1 page)',1,'8:00PM'),E('leyna-thu-11','8:00PM','✍️','Writing',1,'8:30PM'),E('leyna-thu-12','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-thu-13','9:00PM','😴','Sleep',0,null)],
+    Fri:[E('leyna-fri-1','8:30AM','🏫','School',0,'1:15PM'),E('leyna-fri-2','1:15PM','🍎','Snack',0,'1:45PM'),E('leyna-fri-3','1:45PM','🟢','Free time',0,'2:30PM'),E('leyna-fri-4','2:30PM','📒','Workbook (3 pages)',1,'3:00PM'),E('leyna-fri-5','3:00PM','🟢','Free time',0,'3:30PM'),E('leyna-fri-6','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-fri-7','3:45PM','➗','Math homework',1,'4:30PM'),E('leyna-fri-8','4:30PM','🟢','Free time',0,'5:00PM'),E('leyna-fri-9','5:00PM','✍️','Writing',1,'5:30PM'),E('leyna-fri-10','5:30PM','🟢','Free time',0,'5:45PM'),E('leyna-fri-11','5:45PM','🍽️','Dinner',0,'6:30PM'),E('leyna-fri-12','6:30PM','🏊','Family swim',0,'7:45PM'),E('leyna-fri-13','7:45PM','🟢','Free time',0,'8:30PM'),E('leyna-fri-14','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-fri-15','9:00PM','😴','Sleep',0,null)],
+    Sat:[E('leyna-sat-1','9:30AM','🎵','Practice',1,'10:00AM'),E('leyna-sat-2','10:00AM','🎵','Practice',1,'10:30AM'),E('leyna-sat-3','10:30AM','🟢','Free time',0,'11:15AM'),E('leyna-sat-4','11:15AM','📱','iPad/TV',0,'12:00PM'),E('leyna-sat-5','12:00PM','🍽️','Lunch',0,'1:00PM'),E('leyna-sat-6','1:00PM','🟢','Free time',0,'1:30PM'),E('leyna-sat-7','1:30PM','🎵','Practice',1,'2:00PM'),E('leyna-sat-8','2:00PM','🎵','Practice',1,'2:30PM'),E('leyna-sat-9','2:30PM','🟢','Free time',0,'3:30PM'),E('leyna-sat-10','3:30PM','🍎','Snack',0,'3:45PM'),E('leyna-sat-11','3:45PM','🟢','Free time',0,'4:30PM'),E('leyna-sat-12','4:30PM','♨️','Hot tub time',0,'4:45PM'),E('leyna-sat-13','4:45PM','🟢','Free time',0,'5:15PM'),E('leyna-sat-14','5:15PM','📱','iPad/TV',0,'5:45PM'),E('leyna-sat-15','5:45PM','🟢','Free time',0,'6:00PM'),E('leyna-sat-16','6:00PM','🚿','Shower',0,'6:15PM'),E('leyna-sat-17','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-sat-18','7:00PM','🀄','Mandarin online class',1,'8:15PM'),E('leyna-sat-19','8:15PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-sat-20','9:00PM','😴','Sleep',0,null)],
+    Sun:[E('leyna-sun-1','9:30AM','🎵','Practice',1,'10:00AM'),E('leyna-sun-2','10:00AM','🎵','Practice',1,'10:30AM'),E('leyna-sun-3','10:30AM','🟢','Free time',0,'11:15AM'),E('leyna-sun-4','11:15AM','📱','iPad/TV',0,'12:00PM'),E('leyna-sun-5','12:00PM','🍽️','Lunch',0,'1:00PM'),E('leyna-sun-6','1:00PM','🟢','Free time',0,'1:30PM'),E('leyna-sun-7','1:30PM','🎵','Practice',1,'2:00PM'),E('leyna-sun-8','2:00PM','🎵','Practice',1,'2:30PM'),E('leyna-sun-9','2:30PM','🟢','Free time',0,'3:00PM'),E('leyna-sun-10','3:00PM','📖','ZPD reading',1,'4:30PM'),E('leyna-sun-11','4:30PM','🟢','Free time',0,'5:15PM'),E('leyna-sun-12','5:15PM','📱','iPad/TV',0,'5:45PM'),E('leyna-sun-13','5:45PM','🟢','Free time',0,'6:15PM'),E('leyna-sun-14','6:15PM','🍽️','Dinner',0,'7:00PM'),E('leyna-sun-15','7:00PM','🟢','Free time',0,'7:15PM'),E('leyna-sun-16','7:15PM','🚿','Shower',0,'7:30PM'),E('leyna-sun-17','7:30PM','🟢','Free time',0,'7:45PM'),E('leyna-sun-18','7:45PM','🎲','Family game time',1,'8:30PM'),E('leyna-sun-19','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('leyna-sun-20','9:00PM','😴','Sleep',0,null)],
+  },
+  lea:{
+    Mon:[E('lea-mon-1','8:30AM','🏫','School',0,'3:30PM'),E('lea-mon-2','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-mon-3','3:45PM','🟢','Free time',0,'4:00PM'),E('lea-mon-4','4:00PM','📖','ZPD reading',1,'5:45PM'),E('lea-mon-5','5:45PM','🟢','Free time',0,'6:15PM'),E('lea-mon-6','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-mon-7','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-mon-8','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-mon-9','7:30PM','➗','Math homework',1,'8:00PM'),E('lea-mon-10','8:00PM','✍️','Writing',1,'8:30PM'),E('lea-mon-11','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-mon-12','9:00PM','😴','Sleep',0,null)],
+    Tue:[E('lea-tue-1','8:30AM','🏫','School',0,'3:30PM'),E('lea-tue-2','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-tue-3','3:45PM','🟢','Free time',0,'4:00PM'),E('lea-tue-4','4:00PM','📐','RSM class + homework',1,'6:15PM'),E('lea-tue-5','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-tue-6','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-tue-7','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-tue-8','7:30PM','📐','RSM homework',1,'8:30PM'),E('lea-tue-9','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-tue-10','9:00PM','😴','Sleep',0,null)],
+    Wed:[E('lea-wed-1','8:30AM','🏫','School',0,'3:30PM'),E('lea-wed-2','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-wed-3','3:45PM','🟢','Free time',0,'4:00PM'),E('lea-wed-4','4:00PM','🎹','Piano lesson',0,'4:30PM'),E('lea-wed-5','4:30PM','🟢','Free time',0,'4:45PM'),E('lea-wed-6','4:45PM','📐','RSM homework',1,'5:45PM'),E('lea-wed-7','5:45PM','🟢','Free time',0,'6:15PM'),E('lea-wed-8','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-wed-9','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-wed-10','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-wed-11','7:30PM','🎹','Piano practice (30 min)',1,'8:00PM'),E('lea-wed-12','8:00PM','✍️','Writing',1,'8:30PM'),E('lea-wed-13','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-wed-14','9:00PM','😴','Sleep',0,null)],
+    Thu:[E('lea-thu-1','8:30AM','🏫','School',0,'3:30PM'),E('lea-thu-2','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-thu-3','3:45PM','🏊','Free swim',0,'4:30PM'),E('lea-thu-4','4:30PM','🏊','Swimming',0,'5:00PM'),E('lea-thu-5','5:00PM','🟢','Free time',0,'5:45PM'),E('lea-thu-6','5:45PM','📒','Workbook',1,'6:15PM'),E('lea-thu-7','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-thu-8','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-thu-9','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-thu-10','7:30PM','🎹','Piano practice (30 min)',1,'8:00PM'),E('lea-thu-11','8:00PM','🎨','Drawing',1,'9:00PM'),E('lea-thu-12','9:00PM','😴','Sleep',0,null)],
+    Fri:[E('lea-fri-1','8:30AM','🏫','School',0,'1:15PM'),E('lea-fri-2','1:15PM','🍎','Snack',0,'1:45PM'),E('lea-fri-3','1:45PM','🎹','Piano practice (30 min)',1,'2:30PM'),E('lea-fri-4','2:30PM','🟢','Free time',0,'3:00PM'),E('lea-fri-5','3:00PM','📒','Workbook',1,'3:30PM'),E('lea-fri-6','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-fri-7','3:45PM','➗','Math homework',1,'4:30PM'),E('lea-fri-8','4:30PM','🟢','Free time',0,'5:00PM'),E('lea-fri-9','5:00PM','✍️','Writing',1,'5:30PM'),E('lea-fri-10','5:30PM','🟢','Free time',0,'5:45PM'),E('lea-fri-11','5:45PM','🍽️','Dinner',0,'6:30PM'),E('lea-fri-12','6:30PM','🏊','Family swim',0,'7:45PM'),E('lea-fri-13','7:45PM','🟢','Free time',0,'8:30PM'),E('lea-fri-14','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-fri-15','9:00PM','😴','Sleep',0,null)],
+    Sat:[E('lea-sat-1','9:30AM','🎵','Practice',1,'10:00AM'),E('lea-sat-2','10:00AM','🎵','Practice',1,'10:30AM'),E('lea-sat-3','10:30AM','🟢','Free time',0,'11:15AM'),E('lea-sat-4','11:15AM','📱','iPad/TV',0,'12:00PM'),E('lea-sat-5','12:00PM','🍽️','Lunch',0,'1:00PM'),E('lea-sat-6','1:00PM','🟢','Free time',0,'1:30PM'),E('lea-sat-7','1:30PM','🎵','Practice',1,'2:00PM'),E('lea-sat-8','2:00PM','🎵','Practice',1,'2:30PM'),E('lea-sat-9','2:30PM','🟢','Free time',0,'3:30PM'),E('lea-sat-10','3:30PM','🍎','Snack',0,'3:45PM'),E('lea-sat-11','3:45PM','🟢','Free time',0,'4:30PM'),E('lea-sat-12','4:30PM','♨️','Hot tub time',0,'4:45PM'),E('lea-sat-13','4:45PM','🟢','Free time',0,'5:15PM'),E('lea-sat-14','5:15PM','📱','iPad/TV',0,'5:45PM'),E('lea-sat-15','5:45PM','🟢','Free time',0,'6:00PM'),E('lea-sat-16','6:00PM','🚿','Shower',0,'6:15PM'),E('lea-sat-17','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-sat-18','7:00PM','🀄','Mandarin online class',1,'8:15PM'),E('lea-sat-19','8:15PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-sat-20','9:00PM','😴','Sleep',0,null)],
+    Sun:[E('lea-sun-1','9:30AM','🎵','Practice',1,'10:00AM'),E('lea-sun-2','10:00AM','🎵','Practice',1,'10:30AM'),E('lea-sun-3','10:30AM','🟢','Free time',0,'11:15AM'),E('lea-sun-4','11:15AM','📱','iPad/TV',0,'12:00PM'),E('lea-sun-5','12:00PM','🍽️','Lunch',0,'1:00PM'),E('lea-sun-6','1:00PM','🟢','Free time',0,'1:30PM'),E('lea-sun-7','1:30PM','🎵','Practice',1,'2:00PM'),E('lea-sun-8','2:00PM','🎵','Practice',1,'2:30PM'),E('lea-sun-9','2:30PM','🟢','Free time',0,'3:00PM'),E('lea-sun-10','3:00PM','📖','ZPD reading',1,'4:30PM'),E('lea-sun-11','4:30PM','🟢','Free time',0,'5:15PM'),E('lea-sun-12','5:15PM','📱','iPad/TV',0,'5:45PM'),E('lea-sun-13','5:45PM','🟢','Free time',0,'6:15PM'),E('lea-sun-14','6:15PM','🍽️','Dinner',0,'7:00PM'),E('lea-sun-15','7:00PM','🟢','Free time',0,'7:15PM'),E('lea-sun-16','7:15PM','🚿','Shower',0,'7:30PM'),E('lea-sun-17','7:30PM','🟢','Free time',0,'7:45PM'),E('lea-sun-18','7:45PM','🎲','Family game time',1,'8:30PM'),E('lea-sun-19','8:30PM','📚','Reading / Clean up',1,'9:00PM'),E('lea-sun-20','9:00PM','😴','Sleep',0,null)],
+  }
+};
+const DEFAULT_PENALTIES = [
+  {id:'pen-bathroom', icon:'🧼', label:'Bathroom not cleaned', amount:10},
+  {id:'pen-room', icon:'🛏️', label:'Room left messy', amount:10},
+  {id:'pen-attitude', icon:'😤', label:'Bad attitude / back talk', amount:10},
+  {id:'pen-latebed', icon:'⏰', label:'Not in bed on time', amount:10}
+];
+const DEFAULT_ALLOWANCE = { leyna:{sat:30,sun:30}, lea:{sat:30,sun:30} };
+const DEFAULT_BONUSES = [
+  {id:'bonus-rsm', icon:'📐', label:'RSM homework ≥90% accuracy this week', amount:20, frequency:'weekly'},
+  {id:'bonus-mathhw', icon:'➗', label:'Math homework ≥90% accuracy this week', amount:20, frequency:'weekly'}
+];
+const REWARDS = [
+  {id:'ipad10', icon:'📱', label:'+10 min iPad time'},
+  {id:'mariokart20', icon:'🏎️', label:'+20 min Mario Kart'},
+  {id:'justdance30', icon:'💃', label:'+30 min Just Dance'},
+  {id:'marioparty20', icon:'🎲', label:'+20 min Mario Party'}
+];
+const XP_PER_LEVEL = 20;
+
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function hexToRgba(hex, a){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function minutesToTime(m){
+  m = Math.max(0, Math.min(23*60+59, Math.round(m)));
+  let h = Math.floor(m/60), mi = m%60;
+  const ap = h>=12 ? 'PM' : 'AM';
+  h = h%12; if(h===0) h=12;
+  return h+':'+String(mi).padStart(2,'0')+ap;
+}
+function applyTheme(color){
+  document.documentElement.style.setProperty('--kidcolor', color);
+  document.documentElement.style.setProperty('--line', hexToRgba(color,0.22));
+  document.documentElement.style.setProperty('--panel2', hexToRgba(color,0.08));
+  document.body.style.background = `linear-gradient(180deg, ${hexToRgba(color,0.14)} 0%, #FFFFFF 420px)`;
+}
+function timeToMinutes(t){
+  const m = (t||'').match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if(!m) return 0;
+  let h = parseInt(m[1])%12; if(m[3].toUpperCase()==='PM') h+=12;
+  return h*60+parseInt(m[2]);
+}
+
+/* ---------------- State ---------------- */
+const STORAGE_KEY = 'kids_quest_pet1';
+let currentKid = 'leyna';
+let currentDay = todayKey();
+let actualToday = currentDay;
+let lastKnownDate = new Date().toDateString();
+let data = null;
+let chestOpen = false;
+let editMode = null;        // null | 'schedule' | 'penalties'
+let editKid = 'leyna';
+let editDay = 'Mon';
+
+function todayKey(){
+  const map = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const idx = DAYS.indexOf(map[new Date().getDay()]);
+  return idx === -1 ? 'Mon' : DAYS[idx];
+}
+function mondayOf(date){
+  const d = new Date(date); const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1) - day); d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+function freshKidState(carryLog){
+  const checks = {}; const penaltyHits = {}; const dayStarAwarded = {}; const exerciseDone = {}; const daySportAwarded = {}; const bonusHitsDaily = {};
+  DAYS.forEach(d => { checks[d] = {}; penaltyHits[d] = {}; dayStarAwarded[d] = false; exerciseDone[d] = false; daySportAwarded[d] = false; bonusHitsDaily[d] = {}; });
+  return { weekStart: mondayOf(new Date()), checks, penaltyHits, dayStarAwarded, exerciseDone, daySportAwarded, bonusHitsWeekly:{}, bonusHitsDaily,
+    lifetimeStars:0, perfectWeeks:0, maxStreakEver:0, ever50:false, taobaoRedemptions:0,
+    sportBadges:0, everSport50:false, sportRedemptions:0, rewardClaimed:false, rewardChoice:null,
+    weekLog: carryLog || [] };
+}
+function defaultData(){
+  return { schedule: clone(DEFAULT_SCHEDULE), penalties: clone(DEFAULT_PENALTIES), bonuses: clone(DEFAULT_BONUSES), allowance: clone(DEFAULT_ALLOWANCE),
+    leyna: freshKidState(), lea: freshKidState() };
+}
+
+async function loadData(){
+  let cloud = null;
+  try{
+    const res = await fetch('/api/data', {cache:'no-store'});
+    if(res.ok) cloud = await res.json();
+  }catch(e){ /* offline or function unreachable — fall back to local cache below */ }
+  let cached = null;
+  if(!cloud || !cloud.schedule || !cloud.penalties || !cloud.bonuses || !cloud.allowance || !cloud.leyna || !cloud.lea){
+    try{ const raw = localStorage.getItem(STORAGE_KEY); cached = raw ? JSON.parse(raw) : null; }catch(e){}
+  }
+  cloud = cloud || {};
+  data = {};
+  data.schedule = cloud.schedule || (cached && cached.schedule) || clone(DEFAULT_SCHEDULE);
+  data.penalties = cloud.penalties || (cached && cached.penalties) || clone(DEFAULT_PENALTIES);
+  data.bonuses = cloud.bonuses || (cached && cached.bonuses) || clone(DEFAULT_BONUSES);
+  data.bonuses.forEach(b=>{ if(!b.frequency) b.frequency = 'daily'; });
+  data.allowance = cloud.allowance || (cached && cached.allowance) || clone(DEFAULT_ALLOWANCE);
+  data.leyna = cloud.leyna || (cached && cached.leyna) || freshKidState();
+  data.lea = cloud.lea || (cached && cached.lea) || freshKidState();
+  Object.keys(META).forEach(k=>{
+    const pk = 'pet'+k;
+    data[pk] = cloud[pk] || (cached && cached[pk]) || newPet();
+    const pt = data[pk];
+    if(!pt.owned) pt.owned = []; if(!pt.equipped) pt.equipped = {}; if(!pt.awarded) pt.awarded = {}; if(pt.coins==null) pt.coins = 0;
+    // forget coin-award records older than ~5 weeks
+    const cutoff = mondayOf(new Date(Date.now()-35*86400000));
+    Object.keys(pt.awarded).forEach(key=>{ if(key.split('|')[0] < cutoff) delete pt.awarded[key]; });
+  });
+
+  Object.keys(META).forEach(k=>{
+    if(typeof data.allowance[k] !== 'object' || data.allowance[k] == null){ data.allowance[k] = {sat:30, sun:30}; }
+    if(data.allowance[k].sat == null) data.allowance[k].sat = 30;
+    if(data.allowance[k].sun == null) data.allowance[k].sun = 30;
+  });
+  const thisMonday = mondayOf(new Date());
+  Object.keys(META).forEach(k=>{
+    if(!data[k]) data[k] = freshKidState();
+    if(!data[k].penaltyHits) data[k].penaltyHits = {};
+    if(!data[k].dayStarAwarded) data[k].dayStarAwarded = {};
+    if(!data[k].exerciseDone) data[k].exerciseDone = {};
+    if(!data[k].daySportAwarded) data[k].daySportAwarded = {};
+    if(!data[k].bonusHitsWeekly) data[k].bonusHitsWeekly = {};
+    if(!data[k].bonusHitsDaily) data[k].bonusHitsDaily = {};
+    if(!data[k].weekLog) data[k].weekLog = [];
+    DAYS.forEach(d=>{
+      if(!data[k].penaltyHits[d]) data[k].penaltyHits[d] = {};
+      if(!data[k].checks[d]) data[k].checks[d]={};
+      if(!data[k].bonusHitsDaily[d]) data[k].bonusHitsDaily[d] = {};
+      if(data[k].dayStarAwarded[d]===undefined) data[k].dayStarAwarded[d]=false;
+      if(data[k].exerciseDone[d]===undefined) data[k].exerciseDone[d]=false;
+      if(data[k].daySportAwarded[d]===undefined) data[k].daySportAwarded[d]=false;
+    });
+    if(data[k].weekStart !== thisMonday){
+      // snapshot the outgoing week into a permanent log before resetting
+      const outgoing = data[k];
+      const daysSummary = {};
+      DAYS.forEach(d=>{
+        const qs = data.schedule[k][d].filter(e=>e.quest);
+        const checks = outgoing.checks[d] || {};
+        const done = qs.filter(q=>checks[q.id]).length;
+        const penLabels = Object.keys(outgoing.penaltyHits[d]||{}).map(pid=>{
+          const hit = outgoing.penaltyHits[d][pid]; const p = data.penalties.find(x=>x.id===pid);
+          return p ? `${p.label} (-${p.amount}%)` : null;
+        }).filter(Boolean);
+        const dailyBonusLabels = Object.keys(outgoing.bonusHitsDaily[d]||{}).map(bid=>{
+          const hit = outgoing.bonusHitsDaily[d][bid]; const b = data.bonuses.find(x=>x.id===bid);
+          return (hit && b) ? `${b.label} (+${b.amount}%)` : null;
+        }).filter(Boolean);
+        daysSummary[d] = { done, total: qs.length, star: !!outgoing.dayStarAwarded[d], exercise: !!outgoing.exerciseDone[d], medal: !!outgoing.daySportAwarded[d], penalties: penLabels, dailyBonuses: dailyBonusLabels };
+      });
+      const weeklyBonusLabels = Object.keys(outgoing.bonusHitsWeekly||{}).map(bid=>{
+        const hit = outgoing.bonusHitsWeekly[bid]; const b = data.bonuses.find(x=>x.id===bid);
+        return (hit && b) ? `${b.label} (+${b.amount}%)` : null;
+      }).filter(Boolean);
+      const logEntry = { weekStart: outgoing.weekStart, days: daysSummary, bonuses: weeklyBonusLabels, rewardClaimed: !!outgoing.rewardClaimed, rewardChoice: outgoing.rewardChoice||null };
+      const weekLog = (outgoing.weekLog||[]).concat([logEntry]).slice(-12);
+      const carry = { lifetimeStars:data[k].lifetimeStars||0, perfectWeeks:data[k].perfectWeeks||0, maxStreakEver:data[k].maxStreakEver||0,
+        ever50:data[k].ever50||false, taobaoRedemptions:data[k].taobaoRedemptions||0,
+        sportBadges:data[k].sportBadges||0, everSport50:data[k].everSport50||false, sportRedemptions:data[k].sportRedemptions||0 };
+      data[k] = Object.assign(freshKidState(weekLog), carry); data[k].weekStart = thisMonday;
+    }
+  });
+  await saveData('all');
+}
+async function saveData(scope){
+  // local cache always mirrors everything, for instant offline reads
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+  const parts = scope === 'all' ? ['schedule','penalties','bonuses','allowance','leyna','lea','petleyna','petlea'] : [scope];
+  parts.forEach(part=>{
+    try{
+      fetch('/api/data?part='+part, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data[part])
+      }).catch(()=>{ /* offline — local cache above still has it; will sync next time online */ });
+    }catch(e){}
+  });
+}
+
+/* ---------------- Logic ---------------- */
+function sortedEntries(kidKey, day){
+  return [...data.schedule[kidKey][day]].sort((a,b)=>timeToMinutes(a.time)-timeToMinutes(b.time));
+}
+function questsOf(kidKey, day){ return data.schedule[kidKey][day].filter(e=>e.quest); }
+function dayTotals(kidKey, day){
+  const qs = questsOf(kidKey, day);
+  const checks = data[kidKey].checks[day] || {};
+  const done = qs.filter(q => checks[q.id]).length;
+  return {done, total: qs.length};
+}
+function weekComplete(kidKey){
+  return DAYS.every(d => { const {done,total} = dayTotals(kidKey, d); return total > 0 ? done === total : true; })
+    && DAYS.some(d => questsOf(kidKey,d).length > 0);
+}
+function currentStreak(kidKey){
+  let streak = 0;
+  for(let i = DAYS.indexOf(actualToday); i >= 0; i--){
+    const {done,total} = dayTotals(kidKey, DAYS[i]);
+    if(total > 0 && done === total) streak++; else break;
+  }
+  return streak;
+}
+function levelInfo(stars){
+  const level = Math.floor(stars / XP_PER_LEVEL) + 1;
+  const xp = stars % XP_PER_LEVEL;
+  return { level, xp, pct: Math.round(xp / XP_PER_LEVEL * 100) };
+}
+function badgeList(kstate){
+  const streak = kstate.maxStreakEver||0;
+  return [
+    {icon:'🔥', label:'3-Day Streak', unlocked: streak>=3},
+    {icon:'🚀', label:'First Perfect Week', unlocked:(kstate.perfectWeeks||0)>=1},
+    {icon:'💯', label:'50 Stars', unlocked: !!kstate.ever50},
+    {icon:'👑', label:'5 Perfect Weeks', unlocked:(kstate.perfectWeeks||0)>=5}
+  ];
+}
+function bucketRemaining(kidKey, bucket){
+  const allow = data.allowance[kidKey] || {sat:30,sun:30};
+  const base = allow[bucket] != null ? allow[bucket] : 30;
+  let deduct = 0, add = 0;
+  DAYS.forEach(d=>{
+    const hits = data[kidKey].penaltyHits[d] || {};
+    Object.keys(hits).forEach(pid=>{
+      const h = hits[pid];
+      if(h && h.bucket === bucket){ const p = data.penalties.find(x=>x.id===pid); if(p) deduct += (p.amount||0); }
+    });
+  });
+  const weeklyHits = data[kidKey].bonusHitsWeekly || {};
+  Object.keys(weeklyHits).forEach(bid=>{
+    const h = weeklyHits[bid];
+    if(h && h.bucket === bucket){ const b = data.bonuses.find(x=>x.id===bid); if(b) add += (b.amount||0); }
+  });
+  DAYS.forEach(d=>{
+    const dailyHits = (data[kidKey].bonusHitsDaily && data[kidKey].bonusHitsDaily[d]) || {};
+    Object.keys(dailyHits).forEach(bid=>{
+      const h = dailyHits[bid];
+      if(h && h.bucket === bucket){ const b = data.bonuses.find(x=>x.id===bid); if(b) add += (b.amount||0); }
+    });
+  });
+  return { base, remaining: Math.max(0, base - deduct + add) };
+}
+
+function awardOrRevokeDayStar(kidKey, day){
+  const kstate = data[kidKey];
+  const {done,total} = dayTotals(kidKey, day);
+  const isComplete = total > 0 && done === total;
+  const wasAwarded = !!kstate.dayStarAwarded[day];
+  if(isComplete && !wasAwarded){
+    kstate.dayStarAwarded[day] = true;
+    kstate.lifetimeStars = (kstate.lifetimeStars||0) + 1;
+    if(kstate.lifetimeStars >= 50) kstate.ever50 = true;
+    return true; // newly earned
+  }
+  if(!isComplete && wasAwarded){
+    kstate.dayStarAwarded[day] = false;
+    kstate.lifetimeStars = Math.max(0, (kstate.lifetimeStars||0) - 1);
+  }
+  return false;
+}
+function toggleExercise(kidKey, day, ev){
+  const kstate = data[kidKey];
+  kstate.exerciseDone[day] = !kstate.exerciseDone[day];
+  if(kstate.exerciseDone[day]){ celebrateTap(ev); justDone = 'exercise'; }
+  saveData(kidKey); render(); justDone = null;
+}
+function toggleTask(kidKey, day, taskId, ev){
+  const kstate = data[kidKey];
+  const wasChecked = !!kstate.checks[day][taskId];
+  const wasWeekDone = weekComplete(kidKey);
+  if(wasChecked){ delete kstate.checks[day][taskId]; }
+  else { kstate.checks[day][taskId] = true; }
+  const earnedDayStar = awardOrRevokeDayStar(kidKey, day);
+  kstate.maxStreakEver = Math.max(kstate.maxStreakEver||0, currentStreak(kidKey));
+  const nowWeekDone = weekComplete(kidKey);
+  if(!wasChecked){ celebrateTap(ev); justDone = taskId; awardCoins(kidKey, day, taskId, earnedDayStar); }
+  saveData(kidKey); render(); justDone = null;
+  if(earnedDayStar || (nowWeekDone && !wasWeekDone)){ burstConfetti(); playFanfare(); }
+}
+function claimStarReward(kidKey){
+  const kstate = data[kidKey];
+  if((kstate.lifetimeStars||0) < 50) return;
+  kstate.lifetimeStars = 0;
+  kstate.taobaoRedemptions = (kstate.taobaoRedemptions||0) + 1;
+  saveData(kidKey); render(); burstConfetti();
+}
+const EXERCISE_POINTS = 4;  // each exercise day adds this many % toward the weekly extra-credit cap
+const MAX_EXTRA = 20;   // extra credit never adds more than +20% in a week
+const WEEKDAYS_FOR_TIME = ['Mon','Tue','Wed','Thu','Fri'];
+function weekStats(kidKey){
+  let done = 0, total = 0;
+  WEEKDAYS_FOR_TIME.forEach(d=>{ const t = dayTotals(kidKey, d); done += t.done; total += t.total; });
+  const completion = total ? done/total*100 : 0;
+  const k = data[kidKey];
+  let pen = 0, bon = 0;
+  DAYS.forEach(d=>{
+    Object.keys((k.penaltyHits||{})[d]||{}).forEach(pid=>{ const p = data.penalties.find(x=>x.id===pid); if(p) pen += (p.amount||0); });
+    Object.keys((k.bonusHitsDaily||{})[d]||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) bon += (b.amount||0); });
+  });
+  Object.keys(k.bonusHitsWeekly||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) bon += (b.amount||0); });
+  DAYS.forEach(d=>{ if((k.exerciseDone||{})[d]) bon += EXERCISE_POINTS; });
+  // extra credit can only ever add up to MAX_EXTRA points total, and can't be used to cover missed quests/penalties above 100
+  const base = Math.max(0, Math.min(100, completion - pen));
+  const extra = Math.min(MAX_EXTRA, bon);
+  const pct = Math.max(0, Math.min(100 + MAX_EXTRA, Math.round(base + extra)));
+  return {pct, completion:Math.round(completion), pen, bon, extra};
+}
+function weekendMinutes(kidKey, bucket){
+  const allow = data.allowance[kidKey] || {sat:30,sun:30};
+  const base = allow[bucket] != null ? allow[bucket] : 30;
+  return Math.round(base * weekStats(kidKey).pct / 100);
+}
+let pendingChoice = null; // {kind:'penalty'|'bonus', kidKey, day, id}
+function togglePenalty(kidKey, day, penId, ev){
+  const hits = data[kidKey].penaltyHits[day];
+  if(hits[penId]){ delete hits[penId]; }
+  else { hits[penId] = {bucket:'sat'}; justDone = 'pen:'+penId; unlockAudio(); tone([330,220],0.12,0.2); }
+  saveData(kidKey); render(); justDone = null;
+}
+function toggleBonus(kidKey, day, bonusId, ev){
+  const kstate = data[kidKey];
+  const b = data.bonuses.find(x=>x.id===bonusId);
+  if(!b) return;
+  const store = b.frequency === 'daily' ? kstate.bonusHitsDaily[day] : kstate.bonusHitsWeekly;
+  if(store[bonusId]){ delete store[bonusId]; }
+  else { store[bonusId] = {bucket:'sat'}; justDone = 'bon:'+bonusId; celebrateTap(ev); }
+  saveData(kidKey); render(); justDone = null;
+}
+function confirmChoice(bucket){
+  if(!pendingChoice) return;
+  const {kind, kidKey, day, id} = pendingChoice;
+  if(kind === 'penalty'){
+    data[kidKey].penaltyHits[day][id] = {bucket};
+  } else {
+    const b = data.bonuses.find(x=>x.id===id);
+    if(b && b.frequency === 'daily') data[kidKey].bonusHitsDaily[day][id] = {bucket};
+    else data[kidKey].bonusHitsWeekly[id] = {bucket};
+  }
+  pendingChoice = null;
+  saveData(kidKey); render();
+}
+function cancelChoice(){ pendingChoice = null; render(); }
+function claimReward(kidKey, rewardId){
+  const kstate = data[kidKey];
+  kstate.rewardClaimed = true; kstate.rewardChoice = rewardId; kstate.perfectWeeks = (kstate.perfectWeeks||0)+1;
+  saveData(kidKey); render(); burstConfetti();
+}
+function burstConfetti(){
+  const colors = ['#3FC7DE','#FF6FA5','#FFC857','#4CD07A','#B39DFF'];
+  for(let i=0;i<50;i++){
+    const el = document.createElement('div'); el.className = 'confetti';
+    el.style.left = Math.random()*100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    document.body.appendChild(el); setTimeout(()=>el.remove(), 3600);
+  }
+}
+
+
+/* ---------------- Fun: sounds, sparkles, cheers ---------------- */
+let showFull = false, showMore = false, justDone = null;
+let audioCtx = null;
+function unlockAudio(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }catch(e){}
+}
+function tone(freqs, step, vol){
+  try{
+    unlockAudio(); if(!audioCtx) return;
+    freqs.forEach((f,i)=>{
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      const t0 = audioCtx.currentTime + i*step;
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol, t0+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+step*1.6);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t0); o.stop(t0+step*1.7);
+    });
+  }catch(e){}
+}
+function playPop(){ tone([660,990], 0.08, 0.15); }
+function playChime(){ tone([784,988,1175,1568,1175,1568], 0.16, 0.28); }
+function playFanfare(){ tone([523,659,784,1047,784,1047,1319], 0.11, 0.22); }
+const CHEERS = ['Nice! 🎉','Awesome! ⭐','You did it! 💪','Super! 🌟','Yay! 🥳','Great job! 👏','Boom! 💥','Way to go! 🚀'];
+function sparkle(x, y){
+  const em = ['⭐','✨','💖','🌟','🎈'];
+  for(let i=0;i<10;i++){
+    const el = document.createElement('div'); el.className = 'spark';
+    el.textContent = em[Math.floor(Math.random()*em.length)];
+    const a = Math.random()*Math.PI*2, r = 50 + Math.random()*60;
+    el.style.left = x+'px'; el.style.top = y+'px';
+    el.style.setProperty('--dx', Math.cos(a)*r+'px');
+    el.style.setProperty('--dy', Math.sin(a)*r-20+'px');
+    el.style.setProperty('--rot', (Math.random()*240-120)+'deg');
+    document.body.appendChild(el); setTimeout(()=>el.remove(), 900);
+  }
+}
+function cheer(msg){
+  const el = document.createElement('div'); el.className = 'cheer'; el.textContent = msg;
+  document.body.appendChild(el); setTimeout(()=>el.remove(), 1250);
+}
+function celebrateTap(ev){
+  unlockAudio(); playPop();
+  const x = ev && ev.clientX ? ev.clientX : window.innerWidth/2;
+  const y = ev && ev.clientY ? ev.clientY : window.innerHeight/2;
+  sparkle(x, y);
+}
+
+/* ---------------- Reminders (while the app is open) ---------------- */
+const REM_KEY = 'mw_reminders', FIRED_KEY = 'mw_fired';
+let reminders = {on:false, voice:true};
+let activeReminder = null;      // {kidKey, id, icon, label}
+let snoozeUntil = {};           // key -> minute-of-day
+let wakeLock = null;
+try{ Object.assign(reminders, JSON.parse(localStorage.getItem(REM_KEY)||'{}')); }catch(e){}
+function saveReminders(){ try{ localStorage.setItem(REM_KEY, JSON.stringify(reminders)); }catch(e){} }
+function getFired(){
+  try{
+    const o = JSON.parse(localStorage.getItem(FIRED_KEY)||'{}');
+    if(o.date !== new Date().toDateString()) return {date:new Date().toDateString(), keys:{}};
+    return o;
+  }catch(e){ return {date:new Date().toDateString(), keys:{}}; }
+}
+function setFired(o){ try{ localStorage.setItem(FIRED_KEY, JSON.stringify(o)); }catch(e){} }
+async function requestWake(){
+  try{
+    if(reminders.on && 'wakeLock' in navigator && document.visibilityState === 'visible'){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible'){ requestWake(); checkReminders(); } });
+function speak(text){
+  try{
+    if(!reminders.voice || !window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.95; u.pitch = 1.1;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(e){}
+}
+function toggleReminders(){
+  unlockAudio();
+  reminders.on = !reminders.on; saveReminders();
+  if(reminders.on){ playChime(); speak('Reminders are on!'); requestWake(); }
+  else { try{ if(wakeLock) wakeLock.release(); }catch(e){} }
+  if(editMode) renderEdit(); else render();
+}
+function toggleReminderVoice(){ reminders.voice = !reminders.voice; saveReminders(); renderEdit(); }
+const REMIND_OFFSETS = [15, 3];   // minutes before a quest starts
+function checkReminders(){
+  if(!reminders.on || editMode || activeReminder || !data) return;
+  const now = new Date(), nowMin = now.getHours()*60+now.getMinutes();
+  const fired = getFired();
+  const list = (data.schedule[currentKid] && data.schedule[currentKid][actualToday]) || [];
+  const checks = (data[currentKid].checks[actualToday]) || {};
+  const sorted = [...list].filter(e=>e.quest && !checks[e.id]).sort((a,b)=>timeToMinutes(a.time)-timeToMinutes(b.time));
+  for(const e of sorted){
+    const start = timeToMinutes(e.time);
+    for(let i=0;i<REMIND_OFFSETS.length;i++){
+      const off = REMIND_OFFSETS[i];
+      const key = currentKid+'|'+e.id+'|'+off;
+      const winStart = start - off;
+      const winEnd = (i+1 < REMIND_OFFSETS.length) ? start - REMIND_OFFSETS[i+1] : start;  // don't replay an old stage once the next one is due
+      if(fired.keys[key] || nowMin < winStart || nowMin >= winEnd) continue;
+      fired.keys[key] = 1; setFired(fired);
+      activeReminder = {kidKey:currentKid, id:e.id, icon:e.icon, label:e.label, off, time:e.time};
+      playChime();
+      const nm = META[currentKid].name;
+      const sayText = off>=10 ? nm+', '+e.label+' starts in '+off+' minutes.' : nm+', almost time! '+e.label+' starts in '+off+' minutes. Get ready!';
+      speak(sayText); startRemindLoop(sayText);
+      render();
+      return;
+    }
+  }
+}
+let remindLoop = null;
+function startRemindLoop(text){
+  stopRemindLoop();
+  remindLoop = setInterval(()=>{
+    if(!activeReminder){ stopRemindLoop(); return; }
+    playChime(); setTimeout(()=>speak(text), 1100);
+  }, 10000);
+}
+function stopRemindLoop(){
+  if(remindLoop){ clearInterval(remindLoop); remindLoop = null; }
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){}
+}
+function dismissReminder(){ stopRemindLoop(); activeReminder = null; render(); }
+
+/* ---------------- Calendar export (.ics) ---------------- */
+function icsEsc(t){ return String(t).replace(/\\/g,'\\\\').replace(/;/g,'\;').replace(/,/g,'\\,').replace(/\n/g,'\\n'); }
+function exportICS(kidKey){
+  const pad = n=>String(n).padStart(2,'0');
+  const fmtD = d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+  const fmtT = m=>pad(Math.floor(m/60))+pad(m%60)+'00';
+  const stamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const dow = {Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:0};
+  const byday = {Mon:'MO',Tue:'TU',Wed:'WE',Thu:'TH',Fri:'FR',Sat:'SA',Sun:'SU'};
+  const name = META[kidKey].name;
+  const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Mission Week//EN','CALSCALE:GREGORIAN','X-WR-CALNAME:'+name+' Mission Week'];
+  let count = 0;
+  DAYS.forEach(day=>{
+    const d = new Date(); d.setHours(0,0,0,0);
+    while(d.getDay() !== dow[day]) d.setDate(d.getDate()+1);
+    data.schedule[kidKey][day].filter(e=>e.quest).forEach(e=>{
+      const s = timeToMinutes(e.time);
+      let en = e.end ? timeToMinutes(e.end) : s+30; if(en <= s) en = s+30;
+      const ds = fmtD(d);
+      L.push('BEGIN:VEVENT','UID:mw-'+kidKey+'-'+day+'-'+e.id+'@missionweek','DTSTAMP:'+stamp,
+        'DTSTART:'+ds+'T'+fmtT(s),'DTEND:'+ds+'T'+fmtT(en),'RRULE:FREQ=WEEKLY;BYDAY='+byday[day],
+        'SUMMARY:'+icsEsc(e.icon+' '+e.label),
+        'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(name+': '+e.label+' starts in 15 minutes'),'TRIGGER:-PT15M','END:VALARM',
+        'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(name+': '+e.label+' starts in 3 minutes!'),'TRIGGER:-PT3M','END:VALARM',
+        'END:VEVENT');
+      count++;
+    });
+  });
+  L.push('END:VCALENDAR');
+  const blob = new Blob([L.join('\r\n')], {type:'text/calendar'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'mission-week-'+kidKey+'.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 10000);
+  return count;
+}
+
+
+/* ---------------- Pet buddy ---------------- */
+const PET_TYPES = ['🦊','🐱','🐶','🐰','🐼','🦄','🐸','🦉','🐧','🐻'];
+const PET_ITEMS = [
+  {id:'bow',slot:'hat',emoji:'🎀',name:'Bow',cost:8},
+  {id:'cap',slot:'hat',emoji:'🧢',name:'Cap',cost:12},
+  {id:'tophat',slot:'hat',emoji:'🎩',name:'Top Hat',cost:15},
+  {id:'grad',slot:'hat',emoji:'🎓',name:'Grad Cap',cost:20},
+  {id:'crown',slot:'hat',emoji:'👑',name:'Crown',cost:40},
+  {id:'shades',slot:'face',emoji:'🕶️',name:'Cool Shades',cost:12},
+  {id:'icecream',slot:'item',emoji:'🍦',name:'Ice Cream',cost:6},
+  {id:'balloon',slot:'item',emoji:'🎈',name:'Balloon',cost:10},
+  {id:'wand',slot:'item',emoji:'🪄',name:'Magic Wand',cost:15},
+  {id:'guitar',slot:'item',emoji:'🎸',name:'Guitar',cost:25},
+  {id:'bg-sunset',slot:'bg',emoji:'🌇',name:'Sunset',cost:15,css:'linear-gradient(180deg,#FFB68A 0%,#FF8FA3 55%,#8E6BBF 100%)'},
+  {id:'bg-beach',slot:'bg',emoji:'🏖️',name:'Beach',cost:20,css:'linear-gradient(180deg,#8FD3F4 0%,#CFF1FF 58%,#F6DFA5 59%,#F2CF86 100%)'},
+  {id:'bg-space',slot:'bg',emoji:'🌌',name:'Space',cost:25,css:'linear-gradient(180deg,#14143A 0%,#3B2F8F 100%)'},
+  {id:'bg-candy',slot:'bg',emoji:'🍭',name:'Candy Land',cost:30,css:'linear-gradient(180deg,#FFD1EC 0%,#E0C3FF 100%)'}
+];
+const DEFAULT_BG = 'linear-gradient(180deg,#CFF0FF 0%,#EAFBE0 60%,#B7E4A0 61%,#9ED585 100%)';
+const TAP_LINES = ['Hehe, that tickles! 🥰','Boop! 💕','I believe in you! 💪','Wanna play later? 🎮','You\'re my best friend! 💖','Hi hi hi! 👋'];
+function newPet(){ return {type:null, name:'', coins:0, owned:[], equipped:{}, awarded:{}}; }
+function petOf(kidKey){ return data['pet'+kidKey]; }
+function savePet(kidKey){ saveData('pet'+kidKey); }
+let petMsg = null, showShop = false, petDraft = {type:null, name:''};
+function petReact(text){
+  petMsg = {text, until: Date.now()+4200};
+  setTimeout(()=>{ if(!editMode && !activeReminder) render(); }, 4300);
+  setTimeout(()=>{
+    const el = document.querySelector('.petwrap'); if(!el) return;
+    const r = el.getBoundingClientRect(); sparkle(r.left+r.width/2, r.top+r.height/3);
+  }, 60);
+}
+function tapPet(){
+  unlockAudio(); tone([700,900,1100],0.07,0.12);
+  petReact(TAP_LINES[Math.floor(Math.random()*TAP_LINES.length)]); render();
+}
+function hashStr(str){ let h=0; for(let i=0;i<str.length;i++){ h=(h*31+str.charCodeAt(i))|0; } return Math.abs(h); }
+function luckyId(kidKey, day){
+  const qs = sortedEntries(kidKey, day).filter(e=>e.quest);
+  if(!qs.length) return null;
+  return qs[hashStr(kidKey+'|'+data[kidKey].weekStart+'|'+day) % qs.length].id;
+}
+function awardCoins(kidKey, day, taskId, gotStar){
+  const pt = petOf(kidKey); if(!pt || !pt.type) return;
+  const ws = data[kidKey].weekStart; let gain = 0;
+  const key = ws+'|'+day+'|'+taskId;
+  if(!pt.awarded[key]){ pt.awarded[key] = 1; gain += (taskId === luckyId(kidKey, day)) ? 3 : 1; }
+  const skey = ws+'|'+day+'|star';
+  if(gotStar && !pt.awarded[skey]){ pt.awarded[skey] = 1; gain += 5; }
+  if(gain){
+    pt.coins += gain; savePet(kidKey);
+    const lines = ['Yay! +'+gain+' 🪙','Nice one! +'+gain+' 🪙','Woohoo! +'+gain+' 🪙','You rock! +'+gain+' 🪙'];
+    petReact(gotStar ? 'ALL DONE!! +'+gain+' 🪙 🎉' : lines[Math.floor(Math.random()*lines.length)]);
+  } else { petReact('Done again! 👏'); }
+}
+function choosePetType(t){ petDraft.type = t; render(); }
+function startPet(){
+  if(!petDraft.type) return;
+  const pt = petOf(currentKid);
+  pt.type = petDraft.type; pt.name = (petDraft.name||'').trim().slice(0,14) || 'Buddy';
+  petDraft = {type:null, name:''}; savePet(currentKid);
+  petReact('Hi! I\'m '+pt.name+'! Let\'s do this together! 🎉'); render();
+}
+function openShop(){ showShop = true; render(); }
+function closeShop(){ showShop = false; render(); }
+function shopAction(itemId){
+  const pt = petOf(currentKid); const it = PET_ITEMS.find(x=>x.id===itemId); if(!it) return;
+  if(pt.owned.indexOf(itemId) === -1){
+    if(pt.coins < it.cost) return;
+    pt.coins -= it.cost; pt.owned.push(itemId); pt.equipped[it.slot] = itemId;
+    unlockAudio(); playFanfare(); petReact('Ooh, new '+it.name+'! Thank you! 💖');
+  } else {
+    pt.equipped[it.slot] = (pt.equipped[it.slot] === itemId) ? null : itemId;
+  }
+  savePet(currentKid); render();
+}
+function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
+  const pt = petOf(kidKey); const eq = pt.equipped || {};
+  const item = slot => PET_ITEMS.find(x=>x.id===eq[slot]);
+  const bgItem = item('bg');
+  const mood = allDone ? 'party' : (anyStarted ? 'idle' : 'sleepy');
+  const reacting = petMsg && petMsg.until > Date.now();
+  const text = reacting ? petMsg.text : (mood==='sleepy' && currentDay===actualToday ? 'Zzz… wake me up by finishing a quest! 💤' : msgDefault);
+  return `<div class="petstage" style="background:${bgItem?bgItem.css:DEFAULT_BG}">
+    <div class="petchip left">🔥 ${currentStreak(kidKey)}</div>
+    <div class="petchip right">🪙 ${pt.coins}</div>
+    <div class="petbubble ${reacting?'pulse':''}">${text}</div>
+    <div class="petwrap pet-${mood} ${reacting?'hop':''}" onclick="tapPet()">
+      ${item('hat')?`<div class="petacc hat">${item('hat').emoji}</div>`:''}
+      <div class="petbody">${pt.type}</div>
+      ${item('face')?`<div class="petacc face">${item('face').emoji}</div>`:''}
+      ${item('item')?`<div class="petacc held">${item('item').emoji}</div>`:''}
+      ${mood==='sleepy'?'<div class="petzzz">💤</div>':''}
+      ${mood==='party'?'<div class="petparty">🎉</div>':''}
+    </div>
+    <div class="petname">${pt.name}</div>
+    <button class="shopbtn" onclick="openShop()">🛍️ Pet Shop</button>
+  </div>`;
+}
+function petOverlays(kidKey){
+  const pt = petOf(kidKey); let out = '';
+  if(!pt.type){
+    out += `<div class="remind-overlay"><div class="remind-box" style="max-width:360px;">
+      <div class="rtitle" style="margin-bottom:4px;">Choose your buddy!</div>
+      <div class="rsub">${META[kidKey].name}, who will be on your team?</div>
+      <div class="petgrid">${PET_TYPES.map(t=>`<div class="petpick ${petDraft.type===t?'sel':''}" onclick="choosePetType('${t}')">${t}</div>`).join('')}</div>
+      <input class="petnamein" type="text" maxlength="14" placeholder="Name your buddy" value="${(petDraft.name||'').replace(/"/g,'&quot;')}" oninput="petDraft.name=this.value">
+      <button class="rbtn go" style="${petDraft.type?'':'opacity:.4;'}" onclick="startPet()">Let's go! 🎉</button>
+    </div></div>`;
+  }
+  if(showShop){
+    const tile = it=>{
+      const owned = pt.owned.indexOf(it.id) !== -1, worn = pt.equipped[it.slot] === it.id;
+      const afford = pt.coins >= it.cost;
+      return `<div class="shoptile ${worn?'worn':''}" onclick="shopAction('${it.id}')">
+        <div class="si">${it.emoji}</div><div class="sn">${it.name}</div>
+        <div class="sp ${(!owned && !afford)?'no':''}">${owned ? (worn?'✓ Wearing':'Wear') : '🪙 '+it.cost}</div></div>`;
+    };
+    const sect = (title, slot)=>`<div class="biglabel">${title}</div><div class="shopgrid">${PET_ITEMS.filter(x=>x.slot===slot).map(tile).join('')}</div>`;
+    out += `<div class="remind-overlay" onclick="if(event.target===this)closeShop()"><div class="remind-box shopbox">
+      <div class="rtitle" style="font-size:22px;">🛍️ ${pt.name}'s Shop</div>
+      <div class="rsub">You have 🪙 ${pt.coins} · earn coins by finishing quests</div>
+      ${sect('🎩 Hats','hat')}${sect('🕶️ Style','face')}${sect('🎈 Fun stuff','item')}${sect('🌈 Places','bg')}
+      <button class="rbtn go" onclick="closeShop()">Done</button>
+    </div></div>`;
+  }
+  return out;
+}
+
+/* ---------------- Edit-mode actions ---------------- */
+function openEdit(section){ editMode = section; editKid = currentKid; editDay = currentDay; renderEdit(); }
+function closeEdit(){ editMode = null; render(); }
+function addScheduleItem(){
+  const id = 'custom-'+Date.now();
+  data.schedule[editKid][editDay].push({id, time:'12:00PM', icon:'📌', label:'New item', quest:false});
+  saveData('schedule'); renderEdit();
+}
+function deleteScheduleItem(id){
+  data.schedule[editKid][editDay] = data.schedule[editKid][editDay].filter(e=>e.id!==id);
+  saveData('schedule'); renderEdit();
+}
+function resetDayToDefault(){
+  data.schedule[editKid][editDay] = clone(DEFAULT_SCHEDULE[editKid][editDay]);
+  saveData('schedule'); renderEdit();
+}
+function resetKidScheduleToDefault(){
+  data.schedule[editKid] = clone(DEFAULT_SCHEDULE[editKid]);
+  saveData('schedule'); renderEdit();
+}
+function onSchedFieldChange(ev){
+  const el = ev.target;
+  const id = el.dataset.id, field = el.dataset.field;
+  const entry = data.schedule[editKid][editDay].find(e=>e.id===id);
+  if(!entry) return;
+  if(field==='quest') entry.quest = el.checked; else entry[field] = el.value;
+  saveData('schedule');
+}
+function addPenalty(){
+  data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:10});
+  saveData('penalties'); renderEdit();
+}
+function deletePenalty(id){
+  data.penalties = data.penalties.filter(p=>p.id!==id);
+  saveData('penalties'); renderEdit();
+}
+function onPenFieldChange(ev){
+  const el = ev.target;
+  const id = el.dataset.id, field = el.dataset.field;
+  const p = data.penalties.find(x=>x.id===id);
+  if(!p) return;
+  p[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
+  saveData('penalties');
+}
+function addBonus(){
+  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:10, frequency:'daily'});
+  saveData('bonuses'); renderEdit();
+}
+function deleteBonus(id){
+  data.bonuses = data.bonuses.filter(b=>b.id!==id);
+  saveData('bonuses'); renderEdit();
+}
+function onBonusFieldChange(ev){
+  const el = ev.target;
+  const id = el.dataset.id, field = el.dataset.field;
+  const b = data.bonuses.find(x=>x.id===id);
+  if(!b) return;
+  b[field] = field==='amount' ? (parseInt(el.value)||0) : el.value;
+  saveData('bonuses');
+}
+function onBonusFrequencyChange(ev){
+  const el = ev.target;
+  const id = el.dataset.id;
+  const b = data.bonuses.find(x=>x.id===id);
+  if(!b) return;
+  b.frequency = el.value;
+  saveData('bonuses'); renderEdit();
+}
+function onAllowanceChange(kid, bucket, val){
+  if(!data.allowance[kid]) data.allowance[kid] = {sat:30,sun:30};
+  data.allowance[kid][bucket] = parseInt(val)||0;
+  saveData('allowance');
+}
+function moveScheduleItem(id, beforeId){
+  // beforeId: id of the item that should come right after the moved one (null = last)
+  const list = data.schedule[editKid][editDay];
+  const item = list.find(e=>e.id===id); if(!item) return;
+  const others = sortedEntries(editKid, editDay).filter(e=>e.id!==id);
+  const idx = beforeId ? others.findIndex(e=>e.id===beforeId) : others.length;
+  const prev = idx>0 ? others[idx-1] : null;
+  const next = idx<others.length ? others[idx] : null;
+  const s0 = timeToMinutes(item.time);
+  const dur = item.end ? Math.max(5, timeToMinutes(item.end)-s0) : 0;
+  const prevStart = prev ? timeToMinutes(prev.time) : null;
+  const prevEnd = prev ? (prev.end ? timeToMinutes(prev.end) : prevStart) : null;
+  const nextStart = next ? timeToMinutes(next.time) : null;
+  let ns;
+  if(!prev && next){ ns = nextStart - (dur||15); if(ns<0) ns = Math.max(0, nextStart-1); }
+  else if(prev && !next){ ns = prevEnd > prevStart ? prevEnd : prevStart + 15; }
+  else if(prev && next){
+    if(prevEnd > prevStart && prevEnd < nextStart) ns = prevEnd;
+    else ns = Math.floor((prevStart + nextStart)/2/5)*5;
+    if(ns<=prevStart) ns = prevStart + 1;
+  } else return;
+  item.time = minutesToTime(ns);
+  if(item.end) item.end = minutesToTime(ns + dur);
+  saveData('schedule'); renderEdit();
+}
+function attachDragHandles(){
+  document.querySelectorAll('.draghandle').forEach(h=>{
+    h.addEventListener('pointerdown', ev=>{
+      ev.preventDefault();
+      const row = h.closest('.editrow');
+      const rows = [...document.querySelectorAll('.editrow[data-rowid]')];
+      const startY = ev.clientY;
+      const rects = rows.map(r=>r.getBoundingClientRect());
+      const myIdx = rows.indexOf(row);
+      const myH = rects[myIdx].height + 6;
+      row.classList.add('dragging');
+      rows.forEach(r=>{ if(r!==row) r.classList.add('shifting'); });
+      try{ h.setPointerCapture(ev.pointerId); }catch(e){}
+      let target = myIdx;
+      const move = e=>{
+        const dy = e.clientY - startY;
+        row.style.transform = `translateY(${dy}px)`;
+        const center = rects[myIdx].top + rects[myIdx].height/2 + dy;
+        let t = 0;
+        rects.forEach((r,i)=>{ if(i!==myIdx && center > r.top + r.height/2) t++; });
+        // t counts rows above the dragged center, adjust for own slot
+        target = t;
+        rows.forEach((r,i)=>{
+          if(r===row) return;
+          const pos = i - (i>myIdx?1:0); // index among others
+          let sh = 0;
+          if(pos >= target && i < myIdx) sh = myH;
+          else if(pos < target && i > myIdx) sh = -myH;
+          r.style.transform = sh ? `translateY(${sh}px)` : '';
+        });
+        // auto-scroll near edges
+        if(e.clientY < 80) window.scrollBy(0,-12);
+        else if(e.clientY > window.innerHeight-80) window.scrollBy(0,12);
+      };
+      const up = ()=>{
+        h.removeEventListener('pointermove', move);
+        h.removeEventListener('pointerup', up);
+        h.removeEventListener('pointercancel', cancel);
+        const others = rows.filter(r=>r!==row);
+        const beforeEl = others[target] || null;
+        const id = row.dataset.rowid;
+        if(target === myIdx){ renderEdit(); return; }
+        moveScheduleItem(id, beforeEl ? beforeEl.dataset.rowid : null);
+      };
+      const cancel = ()=>{
+        h.removeEventListener('pointermove', move);
+        h.removeEventListener('pointerup', up);
+        h.removeEventListener('pointercancel', cancel);
+        renderEdit();
+      };
+      h.addEventListener('pointermove', move);
+      h.addEventListener('pointerup', up);
+      h.addEventListener('pointercancel', cancel);
+    });
+  });
+}
+function attachEditListeners(){
+  attachDragHandles();
+  document.querySelectorAll('.sched-field').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'input', onSchedFieldChange));
+  document.querySelectorAll('.pen-field').forEach(el=>el.addEventListener('input', onPenFieldChange));
+  document.querySelectorAll('.bonus-field').forEach(el=>el.addEventListener('input', onBonusFieldChange));
+  document.querySelectorAll('.bonus-freq').forEach(el=>el.addEventListener('change', onBonusFrequencyChange));
+  document.querySelectorAll('.allow-field').forEach(el=>el.addEventListener('input', ev=>{
+    const el2 = ev.target;
+    onAllowanceChange(el2.dataset.kid, el2.dataset.bucket, el2.value);
+  }));
+}
+
+/* ---------------- Render: normal view ---------------- */
+function render(){
+  const kid = META[currentKid];
+  const kstate = data[currentKid];
+  const root = document.getElementById('app');
+  applyTheme(kid.color);
+  const pet = petOf(currentKid);
+
+  const {level, xp, pct} = levelInfo(kstate.lifetimeStars||0);
+  const streak = currentStreak(currentKid);
+
+  const stripHtml = DAYS.map(d=>{
+    const t = dayTotals(currentKid, d); const star = t.total>0 && t.done===t.total; const isT = d===actualToday;
+    const inner = star ? '⭐' : (isT ? (pet.type||'') : '');
+    return `<button class="jnode ${d===currentDay?'sel':''} ${star?'star':''} ${isT?'today':''}" onclick="selectDay('${d}')"><span class="jc">${inner}</span><span class="jl">${d}</span></button>`;
+  }).join('');
+
+  const entries = sortedEntries(currentKid, currentDay);
+  const nowMin = (currentDay === actualToday) ? (new Date().getHours()*60+new Date().getMinutes()) : -1;
+  let nowIdx = -1;
+  if(nowMin >= 0){ entries.forEach((e,i)=>{ if(timeToMinutes(e.time) <= nowMin) nowIdx = i; }); }
+  let timelineHtml = '';
+  entries.forEach((e,i)=>{
+    const endTime = e.end || null;
+    const timeCell = `${e.time}${endTime?`<div class="ttime-end">– ${endTime}</div>`:''}${i===nowIdx?'<div class=\"nowtag\">NOW</div>':''}`;
+    if(e.quest){
+      const checked = !!kstate.checks[currentDay][e.id];
+      timelineHtml += `<div class="trow quest ${checked?'checked':''} ${i===nowIdx?'now':''}">
+        <div class="ttime">${timeCell}</div>
+        <div class="tbody"><div class="ticon">${e.icon}</div><div class="tlabel">${e.label}</div>
+          <div class="checkbox ${checked?'on':''}" onclick="toggleTask('${currentKid}','${currentDay}','${e.id}')">${checked?'✓':''}</div>
+        </div></div>`;
+    } else {
+      timelineHtml += `<div class="trow passive ${i===nowIdx?'now':''}">
+        <div class="ttime">${timeCell}</div>
+        <div class="tbody"><div class="ticon">${e.icon}</div><div class="tlabel">${e.label}</div></div></div>`;
+    }
+  });
+
+  // ---- simplified quest cards ----
+  const qList = entries.filter(e=>e.quest);
+  const dt = dayTotals(currentKid, currentDay);
+  const exDone0 = !!kstate.exerciseDone[currentDay];
+  let focusId = null;
+  if(currentDay === actualToday){
+    const un = qList.filter(e=>!kstate.checks[currentDay][e.id]);
+    const cur = un.find(e=>{ const st = timeToMinutes(e.time); const en = e.end ? timeToMinutes(e.end) : st+30; return en > nowMin; });
+    focusId = (cur || un[0] || {}).id || null;
+  }
+  const fmtRange = e => e.time + (e.end ? ' – '+e.end : '');
+  const luckyQ = luckyId(currentKid, currentDay);
+  const cardsHtml = qList.filter(e=>e.id!==focusId).map(e=>{
+    const checked = !!kstate.checks[currentDay][e.id];
+    const lucky = e.id===luckyQ ? '<span class="qtag" style="background:var(--gold);">🍀 LUCKY ×3</span>' : '';
+    return `<div class="qcard ${checked?'done':''} ${justDone===e.id?'celebrate':''}" onclick="toggleTask('${currentKid}','${currentDay}','${e.id}',event)">
+      <div class="qicon">${e.icon}</div>
+      <div class="qmid"><div class="qlabel">${e.label}</div><div class="qtime">${lucky}${fmtRange(e)}</div></div>
+      <div class="qcheck">${checked?'⭐':''}</div></div>`;
+  }).join('');
+  let heroHtml = '';
+  const fq = qList.find(e=>e.id===focusId);
+  if(fq){
+    const st = timeToMinutes(fq.time), en = fq.end ? timeToMinutes(fq.end) : st+30;
+    const started = nowMin >= st;
+    const fmtMin = m => m>=60 ? Math.floor(m/60)+'h '+(m%60 ? (m%60)+'m' : '') : m+' min';
+    let cd, pctTime = 0;
+    if(!started){ cd = 'starts in '+fmtMin(st-nowMin); }
+    else if(nowMin < en){ cd = fmtMin(en-nowMin)+' left'; pctTime = Math.round((nowMin-st)/(en-st)*100); }
+    else { cd = "time's up — finish it!"; pctTime = 100; }
+    heroHtml = `<div class="hero ${justDone===fq.id?'celebrate':''}">
+      <div class="herotag">${started?'⏰ NOW':'NEXT UP'}${fq.id===luckyQ?' · 🍀 LUCKY ×3':''}</div>
+      <div class="heroicon">${fq.icon}</div>
+      <div class="herolabel">${fq.label}</div>
+      <div class="herotime">${fmtRange(fq)} · <b>${cd}</b></div>
+      ${started?`<div class="herobar"><div style="width:${pctTime}%"></div></div>`:''}
+      <button class="herobtn" onclick="toggleTask('${currentKid}','${currentDay}','${fq.id}',event)">✓ I did it!</button>
+    </div>`;
+  }
+  const progPct = dt.total ? Math.round(dt.done/dt.total*100) : 0;
+  const allDoneToday = dt.total>0 && dt.done===dt.total;
+  const runner = allDoneToday ? '🎉' : (progPct>=50 ? '🏃' : '🚶');
+  const progressHtml = `<div class="progwrap"><div class="progfill" style="width:${progPct}%"></div><div class="progrunner" style="left:${Math.max(4,Math.min(96,progPct))}%">${runner}</div></div>`;
+  const alldoneHtml = allDoneToday ? `<div class="alldone"><div class="big">🌟</div><div class="tt">All done today! You earned a star!</div></div>` : '';
+
+  const stageMsg = allDoneToday ? 'We did it ALL today! Best day ever! 🌟' : (fq ? (nowMin >= timeToMinutes(fq.time) && currentDay===actualToday ? fq.label+' time! You can do it! 💪' : 'Next: '+fq.label+' at '+fq.time) : (currentDay===actualToday ? 'No quests — let\'s play! 🎈' : 'Looking at '+currentDay+'…'));
+  let rewardHtml = '';
+  const isWeekDone = weekComplete(currentKid);
+  if(isWeekDone){
+    if(kstate.rewardClaimed){
+      const r = REWARDS.find(r=>r.id===kstate.rewardChoice);
+      rewardHtml = `<div class="panel rewardcard"><div class="chestwrap">
+        <div style="font-size:44px;">🎉</div><div class="chesttitle">Quest complete!</div>
+        <div class="claimed">${r ? r.icon+' '+r.label : 'Reward claimed'} — claimed</div></div></div>`;
+    } else if(chestOpen){
+      rewardHtml = `<div class="panel rewardcard"><div class="chestwrap">
+        <div style="font-size:44px;">🎁</div><div class="chesttitle">Pick your treasure!</div>
+        <div class="rewardgrid">${REWARDS.map(r=>`<button class="rewardbtn" onclick="claimReward('${currentKid}','${r.id}')">${r.icon} ${r.label}</button>`).join('')}</div>
+      </div></div>`;
+    } else {
+      rewardHtml = `<div class="panel rewardcard"><div class="chestwrap">
+        <div class="chest" onclick="openChest()">🧰</div><div class="chesttitle">All quests complete!</div>
+        <div class="chestsub">Tap the chest to claim your reward</div></div></div>`;
+    }
+  }
+
+  const badges = badgeList(kstate);
+
+  const ws = weekStats(currentKid);
+  const isWeekend = (actualToday === 'Sat' || actualToday === 'Sun');
+  const ringColor = ws.pct > 100 ? 'var(--gold)' : (ws.pct >= 80 ? 'var(--green)' : (ws.pct >= 50 ? 'var(--gold)' : 'var(--red)'));
+  const ringFill = Math.min(100, ws.pct);
+  const msg = ws.pct > 100 ? '🌟 BONUS! Above and beyond!' : (ws.pct === 100 ? '💯 Perfect! Full iPad time!' : (ws.pct >= 80 ? '🔥 So close to 100%!' : (ws.pct >= 50 ? '💪 Keep going!' : '🚀 Finish your quests to climb!')));
+  const penHits = data[currentKid].penaltyHits[currentDay] || {};
+  const penTiles = data.penalties.map(pp=>{
+    const on = !!penHits[pp.id];
+    return `<div class="bigtile bad ${on?'on':''} ${justDone==='pen:'+pp.id?'shake':''}" onclick="togglePenalty('${currentKid}','${currentDay}','${pp.id}',event)">
+      ${on?'<div class="bmark">😬</div>':''}<div class="bi">${pp.icon}</div><div class="bl">${pp.label}</div></div>`;
+  }).join('');
+  const bonTiles = data.bonuses.map(b=>{
+    const hit = (b.frequency === 'daily') ? kstate.bonusHitsDaily[currentDay][b.id] : kstate.bonusHitsWeekly[b.id];
+    const on = !!hit;
+    return `<div class="bigtile good ${on?'on':''} ${justDone==='bon:'+b.id?'bounce':''}" onclick="toggleBonus('${currentKid}','${currentDay}','${b.id}',event)">
+      ${on?'<div class="bmark">🌟</div>':''}<div class="bi">${b.icon}</div><div class="bl">${b.label}</div></div>`;
+  }).join('');
+  const exOn = !!kstate.exerciseDone[currentDay];
+  const exTile = `<div class="bigtile good ${exOn?'on':''} ${justDone==='exercise'?'bounce':''}" onclick="toggleExercise('${currentKid}','${currentDay}',event)">
+      ${exOn?'<div class="bmark">🌟</div>':''}<div class="bi">🏃</div><div class="bl">Exercise<br>about 60 min</div></div>`;
+  const minTiles = isWeekend ? `<div class="mintiles">
+      <div class="mintile"><div class="md">Saturday</div><div class="mn">${weekendMinutes(currentKid,'sat')}<small> min</small></div></div>
+      <div class="mintile"><div class="md">Sunday</div><div class="mn">${weekendMinutes(currentKid,'sun')}<small> min</small></div></div></div>` : '';
+  const ipadHtml = `<div class="panel">
+      <h2 style="font-size:18px;">📱 Weekend iPad Time</h2>
+      <div class="ipadtop">
+        <div class="pctring" style="background:conic-gradient(${ringColor} ${ringFill*3.6}deg, var(--line) 0deg)"><div class="pctnum">${ws.pct}%</div></div>
+        <div class="pctside"><div class="pctmsg">${msg}</div>
+          <div class="pctsub">${isWeekend ? 'Your iPad time this weekend:' : 'Do all your quests Mon–Fri to reach 100%. Minutes unlock on the weekend 🎁'}</div></div>
+      </div>
+      ${minTiles}
+      <div class="biglabel">⚠️ Oops… <span style="color:var(--muted);font-weight:700;font-size:12px;">(a grown-up taps these)</span></div>
+      <div class="bigtiles">${penTiles}</div>
+      <div class="biglabel">🎯 Extra credit!</div>
+      <div class="bigtiles">${exTile}${bonTiles}</div>
+    </div>`;
+
+  const exDone = !!kstate.exerciseDone[currentDay];
+
+  let modalHtml = '';
+  if(pendingChoice && pendingChoice.kidKey === currentKid){
+    const isBonus = pendingChoice.kind === 'bonus';
+    const item = isBonus ? data.bonuses.find(x=>x.id===pendingChoice.id) : data.penalties.find(x=>x.id===pendingChoice.id);
+    if(item){
+      modalHtml = `<div class="modal-overlay">
+        <div class="modal-box">
+          <div class="modaltitle">${item.icon} ${item.label}</div>
+          <div class="modalsub">${isBonus?'Add':'Take'} ${item.amount} minutes ${isBonus?'to':'from'} which day's screen time?</div>
+          <div class="modalbtns">
+            <button class="modalbtn" style="${isBonus?'background:var(--green);':''}" onclick="confirmChoice('sat')">Saturday</button>
+            <button class="modalbtn" style="${isBonus?'background:var(--green);':''}" onclick="confirmChoice('sun')">Sunday</button>
+          </div>
+          <button class="modalcancel" onclick="cancelChoice()">Cancel</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  let remindHtml = '';
+  if(activeReminder && activeReminder.kidKey === currentKid){
+    const soon = activeReminder.off < 10;
+    remindHtml = `<div class="remind-overlay"><div class="remind-box">
+      <div class="rbig">${activeReminder.icon}</div>
+      <div class="rtitle">${soon?'Almost time!':'Heads up!'}</div>
+      <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px;">${activeReminder.label}</div>
+      <div class="rsub">starts in ${activeReminder.off} minutes · ${activeReminder.time}</div>
+      <button class="rbtn go" onclick="dismissReminder()">${soon?"I'm ready! 💪":'Got it! 👍'}</button>
+    </div></div>`;
+  }
+  const nowStr = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}) + ' · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+
+  root.innerHTML = `
+    <div class="datebar" style="text-align:center;color:var(--muted);font-weight:800;font-size:12px;margin-bottom:10px;">${nowStr}${reminders.on?' · 🔔 reminders on':''}</div>
+    <div class="topbar">
+      <div class="kidbar">
+        ${Object.keys(META).map(k=>`
+          <button class="kidtab ${k===currentKid?'active':''}" style="${k===currentKid?'--kidcolor:'+META[k].color:''}" onclick="selectKid('${k}')">${META[k].name}</button>`).join('')}
+      </div>
+      <button class="gearbtn" onclick="toggleReminders()" title="Reminders">${reminders.on?'🔔':'🔕'}</button>
+      <button class="gearbtn" onclick="openHistory()" title="History">📜</button>
+      <button class="gearbtn" onclick="openEdit('schedule')" title="Edit">⚙️</button>
+    </div>
+
+    ${petStageHtml(currentKid, allDoneToday, qList.some(e=>kstate.checks[currentDay][e.id]) || currentDay!==actualToday || nowMin < (qList[0]?timeToMinutes(qList[0].time):0), stageMsg)}
+
+    <div class="panel" style="padding-top:14px;padding-bottom:14px;">
+      <div class="panelhead">
+        <h2 style="font-size:15px;">⭐ 50-Star Taobao Reward</h2>
+        ${(kstate.lifetimeStars||0) >= 50 ? `<button class="rewardbtn" style="padding:8px 14px;" onclick="claimStarReward('${currentKid}')">🛍️ Redeem now</button>` : ''}
+      </div>
+      <div class="panelsub">${kstate.lifetimeStars||0}/50 stars saved${kstate.taobaoRedemptions ? ' · 🛍️ '+kstate.taobaoRedemptions+' redeemed so far' : ''}</div>
+      <div class="xpbar"><div style="width:${Math.min(100,Math.round(((kstate.lifetimeStars||0)/50)*100))}%;background:var(--gold);"></div></div>
+    </div>
+
+    <div class="journey">${stripHtml}</div>
+
+    ${rewardHtml}
+
+    <div class="panel">
+      <h2>${currentDay}'s Quests · ${dt.done}/${dt.total}</h2>
+      <div class="panelsub">Finish ALL of them to earn 1 ⭐</div>
+      ${progressHtml}
+      ${heroHtml}
+      ${cardsHtml || '<div class="panelsub">No quests today — enjoy! 🎈</div>'}
+      ${alldoneHtml}
+      <button class="linkbtn" onclick="showFull=!showFull;render()">${showFull?'▲ Hide':'📅 Show'} full day schedule</button>
+      ${showFull ? `<div class="timeline">${timelineHtml}</div>` : ''}
+    </div>
+
+    ${ipadHtml}
+
+    <button class="linkbtn" onclick="showMore=!showMore;render()">${showMore?'▲ Hide':'🏅 Show'} badges</button>
+    ${showMore ? `
+    <div class="panel">
+      <h2 style="font-size:16px;">🏅 Badges</h2>
+      <div class="badgerow">${badges.map(b=>`<div class="badge ${b.unlocked?'unlocked':''}">${b.icon} ${b.label}</div>`).join('')}</div>
+    </div>
+
+    ` : ''}
+
+    ${modalHtml}${remindHtml}${petOverlays(currentKid)}
+  `;
+}
+
+/* ---------------- Render: history view ---------------- */
+function openHistory(){ editMode = 'history'; editKid = currentKid; renderHistory(); }
+function closeHistory(){ editMode = null; render(); }
+function renderHistory(){
+  applyTheme(META[editKid].color);
+  const root = document.getElementById('app');
+  const log = (data[editKid].weekLog || []).slice().reverse();
+  let body = '';
+  if(log.length === 0){
+    body = `<div class="panel"><div class="panelsub" style="text-align:center;padding:10px 0;">No past weeks yet — this fills in once a week resets (every Monday).</div></div>`;
+  } else {
+    body = log.map(entry=>{
+      const days = DAYS.map(d=>{
+        const s = entry.days[d];
+        if(!s) return '';
+        const penTxt = s.penalties.length ? `<div style="color:var(--red);font-size:11px;">${s.penalties.join(', ')}</div>` : '';
+        return `<div class="penrow" style="background:transparent;padding:6px 4px;">
+          <div class="tlabel" style="flex:0 0 40px;font-weight:800;">${d}</div>
+          <div class="tlabel">${s.done}/${s.total} quests ${s.star?'⭐':''} ${s.exercise?'🏃':''}${penTxt}</div>
+        </div>`;
+      }).join('');
+      const bonusTxt = entry.bonuses && entry.bonuses.length ? `<div class="panelsub" style="color:var(--green);">${entry.bonuses.join(', ')}</div>` : '';
+      return `<div class="panel">
+        <h2 style="font-size:15px;">Week of ${entry.weekStart}</h2>
+        <div class="panelsub">${entry.rewardClaimed ? '🎉 Weekly reward claimed' : 'Reward not claimed'}</div>
+        ${bonusTxt}
+        ${days}
+      </div>`;
+    }).join('');
+  }
+  root.innerHTML = `
+    <button class="backbtn" onclick="closeHistory()">← Back</button>
+    <div class="kidbar" style="margin-bottom:14px;">
+      ${Object.keys(META).map(k=>`<button class="kidtab ${k===editKid?'active':''}" style="${k===editKid?'--kidcolor:'+META[k].color:''}" onclick="editKid='${k}';renderHistory()">${META[k].name}</button>`).join('')}
+    </div>
+    ${body}
+  `;
+}
+
+/* ---------------- Render: edit view ---------------- */
+function renderEdit(){
+  applyTheme(META[editKid].color);
+  const root = document.getElementById('app');
+  let body = '';
+  if(editMode === 'schedule'){
+    const entries = sortedEntries(editKid, editDay);
+    body = `
+      <div class="kidbar" style="margin-bottom:10px;">
+        ${Object.keys(META).map(k=>`<button class="kidtab ${k===editKid?'active':''}" style="${k===editKid?'--kidcolor:'+META[k].color:''}" onclick="editKid='${k}';renderEdit()">${META[k].name}</button>`).join('')}
+      </div>
+      <div class="daypicker">${DAYS.map(d=>`<button class="daypickbtn ${d===editDay?'active':''}" onclick="editDay='${d}';renderEdit()">${d}</button>`).join('')}</div>
+      <div class="panel">
+        <div class="panelsub">☰ drag to move · Start · End · Icon · Label · Quest?</div>
+        ${entries.map(e=>`
+          <div class="editrow" data-rowid="${e.id}">
+            <div class="draghandle" data-id="${e.id}" title="Drag to move">☰</div>
+            <input class="ein-time sched-field" type="text" data-id="${e.id}" data-field="time" value="${e.time.replace(/"/g,'&quot;')}">
+            <input class="ein-time sched-field" type="text" data-id="${e.id}" data-field="end" value="${(e.end||'').replace(/"/g,'&quot;')}" placeholder="end">
+            <input class="ein-icon sched-field" type="text" data-id="${e.id}" data-field="icon" value="${e.icon.replace(/"/g,'&quot;')}">
+            <input class="ein-label sched-field" type="text" data-id="${e.id}" data-field="label" value="${e.label.replace(/"/g,'&quot;')}">
+            <input type="checkbox" class="sched-field" data-id="${e.id}" data-field="quest" ${e.quest?'checked':''} title="Countable quest?">
+            <button class="delbtn" onclick="deleteScheduleItem('${e.id}')">✕</button>
+          </div>`).join('')}
+        <button class="addbtn" onclick="addScheduleItem()">+ Add item to ${editDay}</button>
+        <div>
+          <button class="smallbtn" onclick="resetDayToDefault()">↺ Reset ${editDay} to default</button>
+          <button class="smallbtn" onclick="resetKidScheduleToDefault()">↺ Reset ALL 7 days to default</button>
+        </div>
+      </div>`;
+  } else if(editMode === 'reminders'){
+    body = `
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:6px;">🔔 Reminders on this iPad</h2>
+        <div class="panelsub">15 minutes and again 3 minutes before each quest starts, the app pops up a big alert with a chime (and says it out loud). Works while the app is open on screen — it keeps the screen awake when reminders are on. Each iPad reminds for the kid tab it's showing.</div>
+        <div class="toggle"><span>Reminders</span><button class="smallbtn" style="margin:0" onclick="toggleReminders()">${reminders.on?'🔔 ON — tap to turn off':'🔕 OFF — tap to turn on'}</button></div>
+        <div class="toggle"><span>Speak out loud</span><button class="smallbtn" style="margin:0" onclick="toggleReminderVoice()">${reminders.voice?'🔊 ON':'🔇 OFF'}</button></div>
+        <button class="smallbtn" style="margin-left:0" onclick="unlockAudio();playChime();speak('Test reminder. Writing starts in 15 minutes.')">▶︎ Test sound</button>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:6px;">📆 Alarms even when the screen is off</h2>
+        <div class="panelsub">Download a calendar file with every quest (weekly, alerts 15 min and 3 min before). Open it on the iPad and tap Add All — put it in a new calendar like "Leyna Mission" so you can delete it all at once if the schedule changes. Re-export after editing the schedule.</div>
+        ${Object.keys(META).map(k=>`<button class="smallbtn" style="margin-left:0" onclick="exportICS('${k}')">⬇️ ${META[k].name}'s calendar (.ics)</button>`).join('')}
+      </div>`;
+  } else {
+    body = `
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:10px;">⚠️ Penalty items</h2>
+        <div class="panelsub">Icon · Label · Points (%) taken off the weekend iPad score</div>
+        ${data.penalties.map(p=>`
+          <div class="editrow">
+            <input class="ein-icon pen-field" type="text" data-id="${p.id}" data-field="icon" value="${p.icon.replace(/"/g,'&quot;')}">
+            <input class="ein-label pen-field" type="text" data-id="${p.id}" data-field="label" value="${p.label.replace(/"/g,'&quot;')}">
+            <input type="text" class="pen-field" data-id="${p.id}" data-field="amount" value="${p.amount}" style="width:44px;text-align:center;">
+            <button class="delbtn" onclick="deletePenalty('${p.id}')">✕</button>
+          </div>`).join('')}
+        <button class="addbtn" onclick="addPenalty()">+ Add penalty</button>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:10px;">🎯 Bonuses (screen-time add-ons)</h2>
+        <div class="panelsub">Icon · Label · Points (%) added (extras total max +20% per week) · Daily (resets every day) or Weekly (once per week)</div>
+        ${data.bonuses.map(b=>`
+          <div class="editrow">
+            <input class="ein-icon bonus-field" type="text" data-id="${b.id}" data-field="icon" value="${b.icon.replace(/"/g,'&quot;')}">
+            <input class="ein-label bonus-field" type="text" data-id="${b.id}" data-field="label" value="${b.label.replace(/"/g,'&quot;')}">
+            <input type="text" class="bonus-field" data-id="${b.id}" data-field="amount" value="${b.amount}" style="width:44px;text-align:center;">
+            <select class="bonus-freq" data-id="${b.id}" style="background:var(--panel);border:1.5px solid var(--line);color:var(--ink);border-radius:8px;padding:6px;font-weight:700;font-size:12px;">
+              <option value="daily" ${b.frequency==='daily'?'selected':''}>Daily</option>
+              <option value="weekly" ${b.frequency==='weekly'?'selected':''}>Weekly</option>
+            </select>
+            <button class="delbtn" onclick="deleteBonus('${b.id}')">✕</button>
+          </div>`).join('')}
+        <button class="addbtn" onclick="addBonus()">+ Add bonus</button>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:10px;">📱 Weekend iPad/TV allowance</h2>
+        ${Object.keys(META).map(k=>`
+          <div class="allowrow"><div>${META[k].name}</div><div>
+            <input type="number" class="allow-field" data-kid="${k}" data-bucket="sat" value="${data.allowance[k].sat}"> Sat &nbsp;
+            <input type="number" class="allow-field" data-kid="${k}" data-bucket="sun" value="${data.allowance[k].sun}"> Sun
+          </div></div>`).join('')}
+      </div>`;
+  }
+
+  root.innerHTML = `
+    <button class="backbtn" onclick="closeEdit()">← Back</button>
+    <div class="edittabs">
+      <button class="edittab ${editMode==='schedule'?'active':''}" onclick="editMode='schedule';renderEdit()">🗓 Schedule</button>
+      <button class="edittab ${editMode==='penalties'?'active':''}" onclick="editMode='penalties';renderEdit()">⚠️ Penalties & Time</button>
+      <button class="edittab ${editMode==='reminders'?'active':''}" onclick="editMode='reminders';renderEdit()">🔔 Reminders</button>
+    </div>
+    ${body}
+  `;
+  attachEditListeners();
+}
+
+function selectKid(k){ currentKid = k; chestOpen = false; render(); }
+function selectDay(d){ currentDay = d; render(); }
+function openChest(){ chestOpen = true; render(); }
+window.toggleTask = toggleTask;
+window.claimStarReward = claimStarReward;
+window.toggleExercise = toggleExercise;
+window.confirmChoice = confirmChoice;
+window.cancelChoice = cancelChoice;
+window.togglePenalty = togglePenalty;
+window.toggleBonus = toggleBonus;
+window.claimReward = claimReward;
+window.selectKid = selectKid;
+window.selectDay = selectDay;
+window.openChest = openChest;
+window.tapPet = tapPet; window.choosePetType = choosePetType; window.startPet = startPet; window.openShop = openShop; window.closeShop = closeShop; window.shopAction = shopAction;
+window.petDraft = petDraft;
+window.toggleReminders = toggleReminders; window.toggleReminderVoice = toggleReminderVoice;
+window.dismissReminder = dismissReminder;
+window.exportICS = exportICS; window.unlockAudio = unlockAudio; window.playChime = playChime; window.speak = speak;
+window.openEdit = openEdit;
+window.closeEdit = closeEdit;
+window.openHistory = openHistory;
+window.closeHistory = closeHistory;
+window.renderHistory = renderHistory;
+window.editKid = editKid; window.editDay = editDay; window.editMode = editMode;
+window.renderEdit = renderEdit;
+window.addScheduleItem = addScheduleItem;
+window.deleteScheduleItem = deleteScheduleItem;
+window.resetDayToDefault = resetDayToDefault;
+window.resetKidScheduleToDefault = resetKidScheduleToDefault;
+window.addPenalty = addPenalty;
+window.deletePenalty = deletePenalty;
+window.addBonus = addBonus;
+window.deleteBonus = deleteBonus;
+window.onAllowanceChange = onAllowanceChange;
+
+(async function init(){
+  document.getElementById('app').innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px 0;">Loading…</div>';
+  await loadData();
+  render();
+  setInterval(async ()=>{
+    const nowDateStr = new Date().toDateString();
+    if(nowDateStr !== lastKnownDate){
+      lastKnownDate = nowDateStr;
+      const wasOnToday = (currentDay === actualToday);
+      actualToday = todayKey();
+      if(wasOnToday) currentDay = actualToday;
+      await loadData(); // re-checks the Monday weekly rollover too, in case the app was left open across it
+    }
+    // only refresh the live "NOW" indicator on the main view; don't interrupt editing or an open modal
+    if(!editMode && !pendingChoice && !activeReminder) render();
+  }, 60000);
+  setInterval(checkReminders, 15000);
+  document.addEventListener('pointerdown', unlockAudio, {once:true});
+  requestWake(); checkReminders();
+})();
+</script>
+</body>
+</html>

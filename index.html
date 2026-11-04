@@ -697,13 +697,26 @@ function checkReminders(){
       activeReminder = {kidKey:currentKid, id:e.id, icon:e.icon, label:e.label, off, time:e.time};
       playChime();
       const nm = META[currentKid].name;
-      speak(off>=10 ? nm+', '+e.label+' starts in '+off+' minutes.' : nm+', almost time! '+e.label+' starts in '+off+' minutes. Get ready!');
+      const sayText = off>=10 ? nm+', '+e.label+' starts in '+off+' minutes.' : nm+', almost time! '+e.label+' starts in '+off+' minutes. Get ready!';
+      speak(sayText); startRemindLoop(sayText);
       render();
       return;
     }
   }
 }
-function dismissReminder(){ activeReminder = null; render(); }
+let remindLoop = null;
+function startRemindLoop(text){
+  stopRemindLoop();
+  remindLoop = setInterval(()=>{
+    if(!activeReminder){ stopRemindLoop(); return; }
+    playChime(); setTimeout(()=>speak(text), 1100);
+  }, 10000);
+}
+function stopRemindLoop(){
+  if(remindLoop){ clearInterval(remindLoop); remindLoop = null; }
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){}
+}
+function dismissReminder(){ stopRemindLoop(); activeReminder = null; render(); }
 
 /* ---------------- Calendar export (.ics) ---------------- */
 function icsEsc(t){ return String(t).replace(/\\/g,'\\\\').replace(/;/g,'\;').replace(/,/g,'\\,').replace(/\n/g,'\\n'); }

@@ -6,7 +6,9 @@ const KEYS = {
   bonuses: 'mission-week-bonuses',
   allowance: 'mission-week-allowance',
   leyna: 'mission-week-leyna',
-  lea: 'mission-week-lea'
+  lea: 'mission-week-lea',
+  petleyna: 'mission-week-pet-leyna',
+  petlea: 'mission-week-pet-lea'
 };
 
 export default async function handler(req, res) {
