@@ -949,7 +949,14 @@ function petOverlays(kidKey){
     const sect = (title, slot)=>`<div class="biglabel">${title}</div><div class="shopgrid">${PET_ITEMS.filter(x=>x.slot===slot).map(tile).join('')}</div>`;
     out += `<div class="remind-overlay" onclick="if(event.target===this)closeShop()"><div class="remind-box shopbox">
       <div class="rtitle" style="font-size:22px;">🛍️ ${pt.name}'s Shop</div>
-      <div class="rsub">You have 🪙 ${pt.coins} · earn coins by finishing quests</div>
+      <div class="rsub" style="margin-bottom:6px;">You have 🪙 ${pt.coins}</div>
+      <div style="font-size:11px;line-height:1.4;color:var(--muted);font-weight:700;background:var(--panel2);border-radius:12px;padding:8px 10px;margin-bottom:12px;text-align:left;">
+        <b>How to earn 🪙</b><br>
+        ✅ Finish a quest: +1<br>
+        🍀 Lucky quest of the day: +3<br>
+        🌟 Finish ALL quests in a day: +5 bonus<br>
+        Coins never expire — save up for something big!
+      </div>
       ${sect('🎩 Hats','hat')}${sect('🕶️ Style','face')}${sect('🎈 Fun stuff','item')}${sect('🌈 Places','bg')}
       <button class="rbtn snz" onclick="editPet()">✏️ Change buddy / name</button>
       <button class="rbtn go" onclick="closeShop()">Done</button>
