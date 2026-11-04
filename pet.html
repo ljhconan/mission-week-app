@@ -1323,15 +1323,6 @@ function render(){
 
     ${petStageHtml(currentKid, allDoneToday, qList.some(e=>kstate.checks[currentDay][e.id]) || currentDay!==actualToday || nowMin < (qList[0]?timeToMinutes(qList[0].time):0), stageMsg)}
 
-    <div class="panel" style="padding-top:14px;padding-bottom:14px;">
-      <div class="panelhead">
-        <h2 style="font-size:15px;">⭐ 50-Star Taobao Reward</h2>
-        ${(kstate.lifetimeStars||0) >= 50 ? `<button class="rewardbtn" style="padding:8px 14px;" onclick="claimStarReward('${currentKid}')">🛍️ Redeem now</button>` : ''}
-      </div>
-      <div class="panelsub">${kstate.lifetimeStars||0}/50 stars saved${kstate.taobaoRedemptions ? ' · 🛍️ '+kstate.taobaoRedemptions+' redeemed so far' : ''}</div>
-      <div class="xpbar"><div style="width:${Math.min(100,Math.round(((kstate.lifetimeStars||0)/50)*100))}%;background:var(--gold);"></div></div>
-    </div>
-
     <div class="journey">${stripHtml}</div>
 
     ${rewardHtml}
@@ -1357,6 +1348,15 @@ function render(){
     </div>
 
     ` : ''}
+
+    <div class="panel" style="padding-top:14px;padding-bottom:14px;">
+      <div class="panelhead">
+        <h2 style="font-size:15px;">⭐ 50-Star Taobao Reward</h2>
+        ${(kstate.lifetimeStars||0) >= 50 ? `<button class="rewardbtn" style="padding:8px 14px;" onclick="claimStarReward('${currentKid}')">🛍️ Redeem now</button>` : ''}
+      </div>
+      <div class="panelsub">${kstate.lifetimeStars||0}/50 stars saved${kstate.taobaoRedemptions ? ' · 🛍️ '+kstate.taobaoRedemptions+' redeemed so far' : ''}</div>
+      <div class="xpbar"><div style="width:${Math.min(100,Math.round(((kstate.lifetimeStars||0)/50)*100))}%;background:var(--gold);"></div></div>
+    </div>
 
     ${modalHtml}${remindHtml}${petOverlays(currentKid)}
   `;
