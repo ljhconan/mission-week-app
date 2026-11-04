@@ -259,6 +259,18 @@
   .clw{ flex:1; min-width:0; }
   .cla{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:15px; }
   .cla.plus{ color:var(--green); } .cla.minus{ color:var(--red); }
+
+  .elemrow{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 6px; }
+  .elempick{ border:3px solid var(--ec); background:color-mix(in srgb, var(--ec) 16%, white); border-radius:16px; padding:6px 0; cursor:pointer; }
+  .elempick.sel{ background:color-mix(in srgb, var(--ec) 45%, white); transform:scale(1.08); box-shadow:0 0 0 3px var(--ec); }
+  .elempick .ee{ font-size:34px; } .elempick .en{ font-size:11px; font-weight:800; color:#333; }
+  .elemglow{ position:absolute; left:50%; top:55%; width:150px; height:150px; margin:-75px 0 0 -75px; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb,var(--ec) 70%, white) 0%, transparent 68%); animation:zzz 2.6s ease-in-out infinite; z-index:-1; }
+  .fxflash{ position:absolute; inset:0; opacity:.55; pointer-events:none; z-index:4; animation:flashout .6s ease-out forwards; }
+  @keyframes flashout{ from{ opacity:.6; } to{ opacity:0; } }
+  .fxp{ position:absolute; left:50%; bottom:104px; z-index:5; pointer-events:none; animation:fxfly 1.1s ease-out forwards; margin-left:-12px; }
+  @keyframes fxfly{ 0%{ transform:translate(0,0) scale(.5) rotate(0); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(180deg); opacity:0; } }
+  .evolving .petbody{ animation:evolve 2.2s ease; }
+  @keyframes evolve{ 0%{ filter:none; transform:scale(1); } 15%,55%{ filter:brightness(9) saturate(0); transform:scale(1.25); } 35%{ filter:brightness(9) saturate(0); transform:scale(.75) rotate(-10deg); } 75%{ filter:brightness(9) saturate(0); transform:scale(1.35); } 100%{ filter:drop-shadow(0 6px 4px rgba(0,0,0,.15)); transform:scale(1); } }
   .petgrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:10px 0 12px; max-height:290px; overflow-y:auto; }
   .petpick{ font-size:36px; background:var(--panel2); border:3px solid transparent; border-radius:16px; padding:6px 0; cursor:pointer; }
   .petpick.sel{ border-color:var(--kidcolor); background:var(--panel); transform:scale(1.08); }
@@ -898,10 +910,11 @@ function logCoin(pt, amt, why){
 }
 function savePet(kidKey){ saveData('pet'+kidKey); }
 let changingPet = false;
+let petEvolveUntil = 0;
 let showCoinLog = false;
 function openCoinLog(){ showCoinLog = true; render(); }
 function closeCoinLog(){ showCoinLog = false; render(); }
-let petMsg = null, showShop = false, petDraft = {type:null, name:''};
+let petMsg = null, showShop = false, petDraft = {type:null, line:null, name:''};
 function petReact(text){
   petMsg = {text, until: Date.now()+4200};
   setTimeout(()=>{ if(!editMode && !activeReminder) render(); }, 4300);
@@ -912,7 +925,7 @@ function petReact(text){
 }
 function tapPet(){
   const pt = petOf(currentKid);
-  const word = animalSound(pt.type, Math.random() < 0.5);
+  const word = petSound(pt, Math.random() < 0.5);
   const extra = ['','',' 💕',' 🎶'];
   petReact(word + extra[Math.floor(Math.random()*extra.length)]); render();
 }
@@ -941,18 +954,18 @@ function awardCoins(kidKey, day, taskId, gotStar){
     if(!evolved) petReact(gotStar ? 'ALL DONE!! +'+gain+' 🪙 🎉' : lines[Math.floor(Math.random()*lines.length)]);
   } else { petReact('Done again! 👏'); }
 }
-function choosePetType(t){ petDraft.type = t; render(); }
+function choosePetType(t, line){ petDraft.type = t; petDraft.line = line || null; render(); }
 function editPet(){
   const pt = petOf(currentKid);
-  petDraft = {type: pt.type, name: pt.name}; changingPet = true; showShop = false; render();
+  petDraft = {type: pt.type, line: pt.line||null, name: pt.name}; changingPet = true; showShop = false; render();
 }
-function cancelChangePet(){ changingPet = false; petDraft = {type:null, name:''}; render(); }
+function cancelChangePet(){ changingPet = false; petDraft = {type:null, line:null, name:''}; render(); }
 function startPet(){
   if(!petDraft.type) return;
   const wasChange = changingPet; changingPet = false;
   const pt = petOf(currentKid);
-  pt.type = petDraft.type; pt.name = (petDraft.name||'').trim().slice(0,14) || 'Buddy';
-  petDraft = {type:null, name:''}; savePet(currentKid);
+  pt.type = petDraft.type; pt.line = petDraft.line || null; pt.name = (petDraft.name||'').trim().slice(0,14) || 'Buddy';
+  petDraft = {type:null, line:null, name:''}; savePet(currentKid);
   petReact(wasChange ? 'New look! I\'m '+pt.name+' now! 😄' : 'Hi! I\'m '+pt.name+'! Let\'s do this together! 🎉'); render();
 }
 function openShop(){ showShop = true; render(); }
@@ -977,16 +990,17 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
   const happy = petHappy(pt);
   const gp = pt.growth||0, sidx = stageIdx(gp), stage = STAGES[sidx], nextSt = STAGES[sidx+1];
   const growPct = nextSt ? Math.round((gp-stage.min)/(nextSt.min-stage.min)*100) : 100;
-  const text = reacting ? petMsg.text : (mood==='sleepy' && currentDay===actualToday ? 'Zzz… wake me up by finishing a quest! 💤' : (happy < 45 ? 'I\'m a little hungry… got a treat? '+treatFor(pt.type) : msgDefault));
+  const text = reacting ? petMsg.text : (mood==='sleepy' && currentDay===actualToday ? 'Zzz… wake me up by finishing a quest! 💤' : (happy < 45 ? 'I\'m a little hungry… got a treat? '+treatForPet(pt) : msgDefault));
   return `<div class="petstage" style="background:${bgItem?bgItem.css:DEFAULT_BG}">
     <div class="petchip left">🔥 ${currentStreak(kidKey)}</div>
     <div class="petmood" title="Happiness"><span>${happy>=70?'😄':(happy>=40?'🙂':'🥺')}</span><div class="mbar"><div style="width:${happy}%"></div></div></div>
     <div class="petchip right" style="cursor:pointer;" onclick="openCoinLog()">🪙 ${pt.coins} ›</div>
     <div class="petbubble ${reacting?'pulse':''}">${text}</div>
-    <div class="petwrap pet-${mood} ${reacting?'hop':''}" onclick="tapPet()"><div class="petscale" style="--ps:${stage.scale}">
+    <div class="petwrap pet-${mood} ${reacting?'hop':''} ${(petEvolveUntil>Date.now())?'evolving':''}" onclick="tapPet()"><div class="petscale" style="--ps:${stage.scale}">
+      ${(pt.line&&LINES[pt.line])?`<div class="elemglow" style="--ec:${LINES[pt.line].color}"></div>`:''}
       ${sidx===3?'<div class="petaura"></div>':''}
       ${item('hat')?`<div class="petacc hat">${item('hat').emoji}</div>`:''}
-      <div class="petbody">${pt.type}</div>
+      <div class="petbody">${faceOf(pt)}</div>
       ${item('face')?`<div class="petacc face">${item('face').emoji}</div>`:''}
       ${item('item')?`<div class="petacc held">${item('item').emoji}</div>`:''}
       ${mood==='sleepy'?'<div class="petzzz">💤</div>':''}
@@ -997,7 +1011,7 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
   </div>
   <div class="growline">🌱 ${nextSt ? 'Growing to '+nextSt.name+' · '+(gp-stage.min)+'/'+(nextSt.min-stage.min) : 'Fully grown! 🌟'}<div class="gbar"><div style="width:${growPct}%"></div></div></div>
   <div class="carerow">
-    <button class="carebtn" onclick="careAction('feed')"><span>${treatFor(pt.type)}</span>Feed <small>🪙2</small></button>
+    <button class="carebtn" onclick="careAction('feed')"><span>${treatForPet(pt)}</span>Feed <small>🪙2</small></button>
     <button class="carebtn" onclick="careAction('play')"><span>⚽</span>Play</button>
     <button class="carebtn" onclick="careAction('hug')"><span>🤗</span>Hug</button>
     <button class="carebtn" onclick="openGames()"><span>🎮</span>Games</button>
@@ -1009,7 +1023,9 @@ function petOverlays(kidKey){
     out += `<div class="remind-overlay"><div class="remind-box" style="max-width:360px;">
       <div class="rtitle" style="margin-bottom:4px;">${changingPet?'Change your buddy':'Choose your buddy!'}</div>
       <div class="rsub">${META[kidKey].name}, who will be on your team?</div>
-      <div class="petgrid">${PET_TYPES.map(t=>`<div class="petpick ${petDraft.type===t?'sel':''}" onclick="choosePetType('${t}')">${t}</div>`).join('')}</div>
+      <div class="elemrow">${Object.keys(LINES).map(k=>`<div class="elempick ${petDraft.line===k?'sel':''}" style="--ec:${LINES[k].color}" onclick="choosePetType('${LINES[k].forms[0]}','${k}')"><div class="ee">${LINES[k].forms[0]}</div><div class="en">${LINES[k].icon} ${LINES[k].name}</div></div>`).join('')}</div>
+      <div class="gsub" style="margin:2px 0 0;">Elemental pals evolve into new forms! ⬆️ · or pick a friend 👇</div>
+      <div class="petgrid">${PET_TYPES.map(t=>`<div class="petpick ${(!petDraft.line && petDraft.type===t)?'sel':''}" onclick="choosePetType('${t}')">${t}</div>`).join('')}</div>
       <input class="petnamein" type="text" maxlength="14" placeholder="Name your buddy" value="${(petDraft.name||'').replace(/"/g,'&quot;')}" oninput="petDraft.name=this.value">
       <button class="rbtn go" style="${petDraft.type?'':'opacity:.4;'}" onclick="startPet()">${changingPet?'Save ✅':"Let's go! 🎉"}</button>
       ${changingPet?'<button class="rbtn snz" onclick="cancelChangePet()">Cancel</button>':''}
@@ -1065,6 +1081,78 @@ function petOverlays(kidKey){
 
 
 
+
+/* ---------------- Elemental Pals (original creatures) ---------------- */
+const LINES = {
+  elec:  {name:'Spark', color:'#FFD93B', icon:'⚡', forms:['🐥','🐹','🐯','🦁'], treat:'🍌', word:['Zappy zap!',1.9], fx:'⚡', label:'Yellow · Lightning'},
+  water: {name:'Splash', color:'#4BA3FF', icon:'💧', forms:['🐟','🐠','🐬','🐳'], treat:'🦐', word:['Splashy splash!',1.3], fx:'💧', label:'Blue · Water'},
+  fire:  {name:'Blaze', color:'#FF5A4D', icon:'🔥', forms:['🦎','🐊','🦖','🐉'], treat:'🌶️', word:['Rawr! Blaze!',0.6], fx:'🔥', label:'Red · Fire'},
+  leaf:  {name:'Leafy', color:'#4CC46A', icon:'🌿', forms:['🐸','🐢','🦕','🐲'], treat:'🍓', word:['Leafy leaf!',1.5], fx:'🍃', label:'Green · Leaf'}
+};
+function faceOf(pt){
+  if(pt && pt.line && LINES[pt.line]) return LINES[pt.line].forms[stageIdx(pt.growth||0)];
+  return pt ? pt.type : '';
+}
+function treatForPet(pt){ return (pt.line && LINES[pt.line]) ? LINES[pt.line].treat : treatFor(pt.type); }
+function noiseBurst(dur, vol, f0, f1, type, delay){
+  try{
+    unlockAudio(); if(!audioCtx) return;
+    const t0 = audioCtx.currentTime + (delay||0), n = Math.floor(audioCtx.sampleRate*dur);
+    const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i] = Math.random()*2-1;
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    const f = audioCtx.createBiquadFilter(); f.type = type||'bandpass'; f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(f1, t0+dur);
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0+0.04); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    src.connect(f); f.connect(g); g.connect(audioCtx.destination); src.start(t0);
+  }catch(e){}
+}
+function elementCry(line){
+  switch(line){
+    case 'elec':
+      sweep('square',1200,1800,.08,.08); sweep('square',1800,1400,.08,.08,.1); sweep('square',900,2000,.18,.09,.22);
+      for(let i=0;i<8;i++) sweep('square',800+Math.random()*2400,1000+Math.random()*2000,.03,.05,.45+i*.04);
+      noiseBurst(.4,.08,3000,6000,'highpass',.4); break;
+    case 'water':
+      for(let i=0;i<4;i++) sweep('sine',350+i*60,800+i*80,.12,.1,i*.1);
+      noiseBurst(.7,.14,800,3500,'bandpass',.3); break;
+    case 'fire':
+      sweep('sawtooth',220,80,.6,.16); noiseBurst(.8,.22,500,1800,'bandpass',.05); break;
+    case 'leaf':
+      sweep('sine',700,1000,.12,.1); sweep('sine',1000,760,.18,.1,.14);
+      noiseBurst(.5,.06,3500,1500,'highpass',.2); break;
+  }
+}
+function elementFx(line){
+  const L = LINES[line]; if(!L) return;
+  setTimeout(()=>{
+    const st = document.querySelector('.petstage'); if(!st) return;
+    const flash = document.createElement('div'); flash.className = 'fxflash'; flash.style.background = L.color; st.appendChild(flash); setTimeout(()=>flash.remove(), 700);
+    const n = line==='elec' ? 12 : 16;
+    for(let i=0;i<n;i++){
+      const el = document.createElement('div'); el.className = 'fxp';
+      el.textContent = line==='elec' ? '⚡' : (line==='water' ? '💧' : (line==='fire' ? '🔥' : (i%4===0?'🌸':'🍃')));
+      let dx, dy;
+      if(line==='elec'){ const a = Math.random()*Math.PI*2, r = 50+Math.random()*90; dx = Math.cos(a)*r; dy = Math.sin(a)*r; }
+      else if(line==='water'){ dx = (Math.random()-.2)*160+30; dy = -(70+Math.random()*90); }
+      else if(line==='fire'){ dx = 40+Math.random()*130; dy = -(Math.random()*60)+10; }
+      else { dx = (Math.random()-.5)*220; dy = -(30+Math.random()*100); }
+      el.style.setProperty('--dx', dx+'px'); el.style.setProperty('--dy', dy+'px');
+      el.style.animationDelay = (Math.random()*.25)+'s';
+      el.style.fontSize = (22+Math.random()*18)+'px';
+      st.appendChild(el); setTimeout(()=>el.remove(), 1400);
+    }
+  }, 30);
+}
+function petSound(pt, withWord){
+  if(pt.line && LINES[pt.line]){
+    elementCry(pt.line); elementFx(pt.line);
+    const w = LINES[pt.line].word;
+    if(withWord){ try{ if(window.speechSynthesis){ const u = new SpeechSynthesisUtterance(w[0]); u.pitch = w[1]; u.lang='en-US'; setTimeout(()=>speechSynthesis.speak(u), 450); } }catch(e){} }
+    return w[0];
+  }
+  return animalSound(pt.type, withWord);
+}
+
 /* ---------------- Growing up ---------------- */
 const STAGES = [{name:'Baby',min:0,scale:.62},{name:'Kid',min:30,scale:.8},{name:'Teen',min:100,scale:1.0},{name:'Grown-up',min:250,scale:1.2}];
 function stageIdx(pts){ let i=0; STAGES.forEach((st,k)=>{ if(pts>=st.min) i=k; }); return i; }
@@ -1073,8 +1161,9 @@ function addGrowth(kidKey, n){
   pt.growth = (pt.growth||0) + n;
   const after = stageIdx(pt.growth);
   if(after > before){
+    petEvolveUntil = Date.now()+2500;
     setTimeout(()=>{ burstConfetti(); playFanfare(); }, 200);
-    petReact('✨ I grew up into a '+STAGES[after].name+'!! ✨');
+    petReact(pt.line ? '✨ I evolved into a '+STAGES[after].name+' form!! ✨' : '✨ I grew up into a '+STAGES[after].name+'!! ✨');
     return true;
   }
   return false;
@@ -1144,9 +1233,9 @@ function careAction(kind){
   const now = Date.now();
   if(kind==='feed'){
     if(pt.coins < 2){ petReact('Treats cost 🪙2 — finish a quest to get coins!'); render(); return; }
-    pt.coins -= 2; logCoin(pt, -2, treatFor(pt.type)+' Treat for '+pt.name); setHappy(pt, 25);
-    flyItem(treatFor(pt.type), 'toface'); tone([500,700,500,700],0.09,0.12);
-    if(!addGrowth(currentKid, 2)) petReact('Yum yum! Thank you! '+treatFor(pt.type)+' 😋');
+    pt.coins -= 2; logCoin(pt, -2, treatForPet(pt)+' Treat for '+pt.name); setHappy(pt, 25);
+    flyItem(treatForPet(pt), 'toface'); tone([500,700,500,700],0.09,0.12);
+    if(!addGrowth(currentKid, 2)) petReact('Yum yum! Thank you! '+treatForPet(pt)+' 😋');
   } else if(kind==='play'){
     if(careCooldown.play && now - careCooldown.play < 15000){ petReact('Whew, let me catch my breath! 😅'); render(); return; }
     careCooldown.play = now; setHappy(pt, 15);
@@ -1189,7 +1278,7 @@ function finishGame(score, kind){
   playFanfare();
   const ov = document.getElementById('gameov'); if(!ov) return;
   ov.innerHTML = `<div class="gbox"><div class="gtitle">${coins>0?'🎉 Great job!':'👏 Nice game!'}</div>
-    <div style="font-size:54px;margin:6px 0;">${pt.type}</div>
+    <div style="font-size:54px;margin:6px 0;">${faceOf(pt)}</div>
     <div class="gsub">Score: <b>${score}</b>${coins>0?' · You won 🪙 '+coins+'!':(left<=0?' · (coin limit reached today)':' · Try for more!')}</div>
     <div class="gsub">${pt.name} is happier now 💗${grew?' and grew up! ✨':''}</div>
     <button class="rbtn go" onclick="${kind==='catch'?'startCatch()':'startMemory()'}">Play again</button>
@@ -1197,10 +1286,10 @@ function finishGame(score, kind){
 }
 function startCatch(){
   const ov = document.getElementById('gameov'); if(!ov) return;
-  const pt = petOf(currentKid), treat = treatFor(pt.type);
+  const pt = petOf(currentKid), treat = treatForPet(pt);
   ov.innerHTML = `<div class="gbox"><div class="gtitle">🧺 Catch ${treat}!</div>
     <div class="gsub">Slide your finger to move ${pt.name}. Dodge the 🪨!</div>
-    <div class="garena" id="garena"><div class="gpet" id="gpet">${pt.type}</div></div>
+    <div class="garena" id="garena"><div class="gpet" id="gpet">${faceOf(pt)}</div></div>
     <div class="gsub"><span id="gtime">25</span>s · Score <b id="gsc">0</b></div></div>`;
   const arena = document.getElementById('garena'), pe = document.getElementById('gpet');
   const W = arena.clientWidth, H = arena.clientHeight;
@@ -1442,7 +1531,7 @@ function render(){
 
   const stripHtml = DAYS.map(d=>{
     const t = dayTotals(currentKid, d); const star = t.total>0 && t.done===t.total; const isT = d===actualToday;
-    const inner = star ? '⭐' : (isT ? (pet.type||'') : '');
+    const inner = star ? '⭐' : (isT ? (faceOf(pet)||'') : '');
     return `<button class="jnode ${d===currentDay?'sel':''} ${star?'star':''} ${isT?'today':''}" onclick="selectDay('${d}')"><span class="jc">${inner}</span><span class="jl">${d}</span></button>`;
   }).join('');
 
