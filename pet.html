@@ -252,6 +252,13 @@
   .mpads{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:10px 0; }
   .mpad{ height:110px; border-radius:22px; opacity:.55; cursor:pointer; transition:transform .1s, opacity .1s; }
   .mpad.lit{ opacity:1; transform:scale(1.07); box-shadow:0 0 22px rgba(255,255,255,.9) inset; }
+  .cllist{ text-align:left; margin-bottom:12px; }
+  .clday{ display:flex; justify-content:space-between; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:13px; color:var(--kidcolor); border-bottom:2px solid var(--line); padding:8px 2px 3px; margin-top:4px; }
+  .clrow{ display:flex; align-items:center; gap:8px; padding:6px 2px; border-bottom:1px solid var(--line); font-size:13px; font-weight:700; }
+  .clt{ width:62px; flex-shrink:0; color:var(--muted); font-size:11px; font-weight:800; }
+  .clw{ flex:1; min-width:0; }
+  .cla{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:15px; }
+  .cla.plus{ color:var(--green); } .cla.minus{ color:var(--red); }
   .petgrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:10px 0 12px; max-height:290px; overflow-y:auto; }
   .petpick{ font-size:36px; background:var(--panel2); border:3px solid transparent; border-radius:16px; padding:6px 0; cursor:pointer; }
   .petpick.sel{ border-color:var(--kidcolor); background:var(--panel); transform:scale(1.08); }
@@ -884,8 +891,16 @@ const DEFAULT_BG = 'linear-gradient(180deg,#CFF0FF 0%,#EAFBE0 60%,#B7E4A0 61%,#9
 const TAP_LINES = ['Hehe, that tickles! 🥰','Boop! 💕','I believe in you! 💪','Wanna play later? 🎮','You\'re my best friend! 💖','Hi hi hi! 👋'];
 function newPet(){ return {type:null, name:'', coins:0, owned:[], equipped:{}, awarded:{}}; }
 function petOf(kidKey){ return data['pet'+kidKey]; }
+function logCoin(pt, amt, why){
+  if(!pt.log) pt.log = [];
+  pt.log.unshift({t:Date.now(), a:amt, w:why});
+  if(pt.log.length > 150) pt.log.length = 150;
+}
 function savePet(kidKey){ saveData('pet'+kidKey); }
 let changingPet = false;
+let showCoinLog = false;
+function openCoinLog(){ showCoinLog = true; render(); }
+function closeCoinLog(){ showCoinLog = false; render(); }
 let petMsg = null, showShop = false, petDraft = {type:null, name:''};
 function petReact(text){
   petMsg = {text, until: Date.now()+4200};
@@ -912,9 +927,14 @@ function awardCoins(kidKey, day, taskId, gotStar){
   const ws = data[kidKey].weekStart; let gain = 0;
   const key = ws+'|'+day+'|'+taskId;
   let grow = 0;
-  if(!pt.awarded[key]){ pt.awarded[key] = 1; gain += (taskId === luckyId(kidKey, day)) ? 3 : 1; grow += 1; }
+  if(!pt.awarded[key]){
+    pt.awarded[key] = 1; const isLucky = taskId === luckyId(kidKey, day), q = isLucky ? 3 : 1;
+    const ent = (data.schedule[kidKey][day]||[]).find(e=>e.id===taskId);
+    logCoin(pt, q, (isLucky?'🍀 Lucky quest: ':'✅ ')+(ent?ent.label:'Quest'));
+    gain += q; grow += 1;
+  }
   const skey = ws+'|'+day+'|star';
-  if(gotStar && !pt.awarded[skey]){ pt.awarded[skey] = 1; gain += 5; grow += 3; }
+  if(gotStar && !pt.awarded[skey]){ pt.awarded[skey] = 1; logCoin(pt, 5, '🌟 Finished ALL quests on '+day); gain += 5; grow += 3; }
   if(gain){
     pt.coins += gain; const evolved = grow ? addGrowth(kidKey, grow) : false; savePet(kidKey);
     const lines = ['Yay! +'+gain+' 🪙','Nice one! +'+gain+' 🪙','Woohoo! +'+gain+' 🪙','You rock! +'+gain+' 🪙'];
@@ -941,7 +961,7 @@ function shopAction(itemId){
   const pt = petOf(currentKid); const it = PET_ITEMS.find(x=>x.id===itemId); if(!it) return;
   if(pt.owned.indexOf(itemId) === -1){
     if(pt.coins < it.cost) return;
-    pt.coins -= it.cost; pt.owned.push(itemId); pt.equipped[it.slot] = itemId;
+    pt.coins -= it.cost; logCoin(pt, -it.cost, '🛍️ Bought '+it.name); pt.owned.push(itemId); pt.equipped[it.slot] = itemId;
     unlockAudio(); playFanfare(); petReact('Ooh, new '+it.name+'! Thank you! 💖');
   } else {
     pt.equipped[it.slot] = (pt.equipped[it.slot] === itemId) ? null : itemId;
@@ -961,7 +981,7 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
   return `<div class="petstage" style="background:${bgItem?bgItem.css:DEFAULT_BG}">
     <div class="petchip left">🔥 ${currentStreak(kidKey)}</div>
     <div class="petmood" title="Happiness"><span>${happy>=70?'😄':(happy>=40?'🙂':'🥺')}</span><div class="mbar"><div style="width:${happy}%"></div></div></div>
-    <div class="petchip right">🪙 ${pt.coins}</div>
+    <div class="petchip right" style="cursor:pointer;" onclick="openCoinLog()">🪙 ${pt.coins} ›</div>
     <div class="petbubble ${reacting?'pulse':''}">${text}</div>
     <div class="petwrap pet-${mood} ${reacting?'hop':''}" onclick="tapPet()"><div class="petscale" style="--ps:${stage.scale}">
       ${sidx===3?'<div class="petaura"></div>':''}
@@ -993,6 +1013,27 @@ function petOverlays(kidKey){
       <input class="petnamein" type="text" maxlength="14" placeholder="Name your buddy" value="${(petDraft.name||'').replace(/"/g,'&quot;')}" oninput="petDraft.name=this.value">
       <button class="rbtn go" style="${petDraft.type?'':'opacity:.4;'}" onclick="startPet()">${changingPet?'Save ✅':"Let's go! 🎉"}</button>
       ${changingPet?'<button class="rbtn snz" onclick="cancelChangePet()">Cancel</button>':''}
+    </div></div>`;
+  }
+  if(showCoinLog){
+    const log = pt.log || [];
+    let html = '', lastDay = '', dayTotal = {};
+    log.forEach(en=>{ const d = new Date(en.t).toDateString(); dayTotal[d] = (dayTotal[d]||0) + en.a; });
+    log.forEach(en=>{
+      const dt = new Date(en.t), d = dt.toDateString();
+      if(d !== lastDay){
+        lastDay = d;
+        const tot = dayTotal[d];
+        html += `<div class="clday">${dt.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'})}<span>${tot>=0?'+':''}${tot} 🪙</span></div>`;
+      }
+      html += `<div class="clrow"><div class="clt">${dt.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}</div><div class="clw">${en.w}</div><div class="cla ${en.a>=0?'plus':'minus'}">${en.a>=0?'+':''}${en.a}</div></div>`;
+    });
+    if(!html) html = '<div class="rsub" style="margin:20px 0;">No coin activity yet — finish a quest to earn your first 🪙!</div>';
+    out += `<div class="remind-overlay" onclick="if(event.target===this)closeCoinLog()"><div class="remind-box shopbox">
+      <div class="rtitle" style="font-size:22px;">🪙 ${pt.name}'s Coin History</div>
+      <div class="rsub" style="margin-bottom:8px;">You have 🪙 ${pt.coins}</div>
+      <div class="cllist">${html}</div>
+      <button class="rbtn go" onclick="closeCoinLog()">Close</button>
     </div></div>`;
   }
   if(showShop){
@@ -1103,7 +1144,7 @@ function careAction(kind){
   const now = Date.now();
   if(kind==='feed'){
     if(pt.coins < 2){ petReact('Treats cost 🪙2 — finish a quest to get coins!'); render(); return; }
-    pt.coins -= 2; setHappy(pt, 25);
+    pt.coins -= 2; logCoin(pt, -2, treatFor(pt.type)+' Treat for '+pt.name); setHappy(pt, 25);
     flyItem(treatFor(pt.type), 'toface'); tone([500,700,500,700],0.09,0.12);
     if(!addGrowth(currentKid, 2)) petReact('Yum yum! Thank you! '+treatFor(pt.type)+' 😋');
   } else if(kind==='play'){
@@ -1144,7 +1185,7 @@ function finishGame(score, kind){
   const pt = petOf(currentKid); const left = gameCoinsLeft(pt);
   let coins = kind==='catch' ? Math.min(5, Math.floor(score/4)) : Math.min(5, score);
   if(left <= 0) coins = 0; else pt.gameLog.n++;
-  pt.coins += coins; setHappy(pt, 15); const grew = addGrowth(currentKid, 2); savePet(currentKid);
+  pt.coins += coins; if(coins>0) logCoin(pt, coins, (kind==='catch'?'🧺 Catch the Treats':'🧠 Copy Me')+' game (score '+score+')'); setHappy(pt, 15); const grew = addGrowth(currentKid, 2); savePet(currentKid);
   playFanfare();
   const ov = document.getElementById('gameov'); if(!ov) return;
   ov.innerHTML = `<div class="gbox"><div class="gtitle">${coins>0?'🎉 Great job!':'👏 Nice game!'}</div>
@@ -1778,7 +1819,7 @@ window.claimReward = claimReward;
 window.selectKid = selectKid;
 window.selectDay = selectDay;
 window.openChest = openChest;
-window.tapPet = tapPet; window.choosePetType = choosePetType; window.startPet = startPet; window.openShop = openShop; window.closeShop = closeShop; window.shopAction = shopAction; window.careAction = careAction; window.openGames = openGames; window.closeGames = closeGames; window.startCatch = startCatch; window.startMemory = startMemory; window.memPress = memPress; window.editPet = editPet; window.cancelChangePet = cancelChangePet;
+window.tapPet = tapPet; window.choosePetType = choosePetType; window.startPet = startPet; window.openShop = openShop; window.closeShop = closeShop; window.shopAction = shopAction; window.openCoinLog = openCoinLog; window.closeCoinLog = closeCoinLog; window.careAction = careAction; window.openGames = openGames; window.closeGames = closeGames; window.startCatch = startCatch; window.startMemory = startMemory; window.memPress = memPress; window.editPet = editPet; window.cancelChangePet = cancelChangePet;
 window.petDraft = petDraft;
 window.toggleReminders = toggleReminders; window.toggleReminderVoice = toggleReminderVoice;
 window.dismissReminder = dismissReminder;
