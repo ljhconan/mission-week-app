@@ -588,12 +588,40 @@ function burstConfetti(){
 /* ---------------- Fun: sounds, sparkles, cheers ---------------- */
 let showFull = false, showMore = false, justDone = null;
 let audioCtx = null;
-function unlockAudio(){
+let soundUnlocked = false, chimeEl = null;
+function makeChimeUrl(){
+  try{
+    const sr = 22050, notes = [784,988,1175,1568,1175,1568], step = 0.16;
+    const total = Math.floor(sr*(notes.length*step+0.6));
+    const buf = new Float32Array(total);
+    notes.forEach((f,i)=>{
+      const st = Math.floor(i*step*sr), len = Math.floor(step*2*sr);
+      for(let n=0;n<len && st+n<total;n++){ const t = n/sr; buf[st+n] += Math.sin(2*Math.PI*f*t)*Math.exp(-t*6)*Math.min(1,n/150); }
+    });
+    const out = new ArrayBuffer(44+total*2), v = new DataView(out);
+    const w = (o,str)=>{ for(let i=0;i<str.length;i++) v.setUint8(o+i, str.charCodeAt(i)); };
+    w(0,'RIFF'); v.setUint32(4,36+total*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,total*2,true);
+    for(let i=0;i<total;i++) v.setInt16(44+i*2, Math.max(-1,Math.min(1,buf[i]*0.6))*32767, true);
+    return URL.createObjectURL(new Blob([out],{type:'audio/wav'}));
+  }catch(e){ return null; }
+}
+function unlockAudio(ev){
   try{
     if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state === 'suspended') audioCtx.resume();
+    if(audioCtx.state !== 'running') audioCtx.resume();
   }catch(e){}
+  if(!(ev && ev.isTrusted)) return;   // only a real tap/click counts as unlocking sound
+  if(soundUnlocked) return;
+  soundUnlocked = true;
+  try{
+    if(!chimeEl){ const u = makeChimeUrl(); if(u){ chimeEl = new Audio(u); chimeEl.preload = 'auto'; } }
+    if(chimeEl){ chimeEl.muted = true; const pr = chimeEl.play(); if(pr && pr.then) pr.then(()=>{ chimeEl.pause(); chimeEl.currentTime = 0; chimeEl.muted = false; }).catch(()=>{ chimeEl.muted = false; }); }
+  }catch(e){}
+  try{ if(window.speechSynthesis){ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } }catch(e){}
 }
+// iOS suspends sound while the app is in the background / screen is off: require one tap again on wake-up
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') soundUnlocked = false; });
 function tone(freqs, step, vol){
   try{
     unlockAudio(); if(!audioCtx) return;
@@ -610,7 +638,13 @@ function tone(freqs, step, vol){
   }catch(e){}
 }
 function playPop(){ tone([660,990], 0.08, 0.15); }
-function playChime(){ tone([784,988,1175,1568,1175,1568], 0.16, 0.28); }
+function playChime(){
+  try{
+    if(chimeEl){ chimeEl.muted = false; chimeEl.currentTime = 0; const pr = chimeEl.play(); if(pr && pr.catch) pr.catch(()=>tone([784,988,1175,1568,1175,1568], 0.16, 0.28)); return; }
+  }catch(e){}
+  tone([784,988,1175,1568,1175,1568], 0.16, 0.28);
+}
+function hearIt(ev){ unlockAudio(ev); if(activeReminder){ playChime(); setTimeout(()=>speak(activeReminder.say||''), 1100); } render(); }
 function playFanfare(){ tone([523,659,784,1047,784,1047,1319], 0.11, 0.22); }
 const CHEERS = ['Nice! 🎉','Awesome! ⭐','You did it! 💪','Super! 🌟','Yay! 🥳','Great job! 👏','Boom! 💥','Way to go! 🚀'];
 function sparkle(x, y){
@@ -705,11 +739,11 @@ function checkReminders(){
       const winEnd = (i+1 < REMIND_OFFSETS.length) ? start - REMIND_OFFSETS[i+1] : start;  // don't replay an old stage once the next one is due
       if(fired.keys[key] || nowMin < winStart || nowMin >= winEnd) continue;
       fired.keys[key] = 1; setFired(fired);
-      activeReminder = {kidKey:currentKid, id:e.id, icon:e.icon, label:e.label, off, time:e.time};
+      activeReminder = {kidKey:currentKid, id:e.id, icon:e.icon, label:e.label, off, time:e.time, say:''};
       playChime();
       const nm = META[currentKid].name;
       const sayText = off>=10 ? nm+', '+e.label+' starts in '+off+' minutes.' : nm+', almost time! '+e.label+' starts in '+off+' minutes. Get ready!';
-      speak(sayText); startRemindLoop(sayText);
+      activeReminder.say = sayText; speak(sayText); startRemindLoop(sayText);
       render();
       return;
     }
@@ -1081,6 +1115,7 @@ function render(){
       <div class="rtitle">Bedtime soon!</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;margin-bottom:2px;">Time to get ready for bed</div>
       <div class="rsub">🪥 Brush teeth · 👕 Pajamas · 🛏️ Into bed</div>
+      ${soundUnlocked?'':'<button class="rbtn snz" style="background:#FFE9A8;font-size:18px;" onclick="hearIt(event)">🔊 Tap here to hear it!</button>'}
       <button class="rbtn go" onclick="dismissReminder()">OK, going! 😴</button>
     </div></div>`;
     } else {
@@ -1090,6 +1125,7 @@ function render(){
       <div class="rtitle">${soon?'Almost time!':'Heads up!'}</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px;">${activeReminder.label}</div>
       <div class="rsub">starts in ${activeReminder.off} minutes · ${activeReminder.time}</div>
+      ${soundUnlocked?'':'<button class="rbtn snz" style="background:#FFE9A8;font-size:18px;" onclick="hearIt(event)">🔊 Tap here to hear it!</button>'}
       <button class="rbtn go" onclick="dismissReminder()">${soon?"I'm ready! 💪":'Got it! 👍'}</button>
     </div></div>`;
     }
@@ -1305,7 +1341,7 @@ window.selectKid = selectKid;
 window.selectDay = selectDay;
 window.openChest = openChest;
 window.toggleReminders = toggleReminders; window.toggleReminderVoice = toggleReminderVoice;
-window.dismissReminder = dismissReminder;
+window.dismissReminder = dismissReminder; window.hearIt = hearIt;
 window.exportICS = exportICS; window.unlockAudio = unlockAudio; window.playChime = playChime; window.speak = speak;
 window.openEdit = openEdit;
 window.closeEdit = closeEdit;
@@ -1341,7 +1377,7 @@ window.onAllowanceChange = onAllowanceChange;
     if(!editMode && !pendingChoice && !activeReminder) render();
   }, 60000);
   setInterval(checkReminders, 15000);
-  document.addEventListener('pointerdown', unlockAudio, {once:true});
+  ['click','touchend','pointerdown'].forEach(ev=>document.addEventListener(ev, unlockAudio, {passive:true}));
   requestWake(); checkReminders();
 })();
 </script>
