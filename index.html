@@ -120,9 +120,55 @@
   .editrow.dragging{ position:relative; z-index:50; box-shadow:0 8px 22px rgba(0,0,0,.22); opacity:.95; transition:none; }
   .editrow.shifting{ transition:transform .15s; }
   .editrow .delbtn{ background:none; border:none; color:var(--red); font-size:16px; cursor:pointer; flex-shrink:0; }
+
+  /* ---- Quest cards (simplified view) ---- */
+  .progwrap{ position:relative; height:16px; background:var(--line); border-radius:10px; margin:22px 4px 18px; }
+  .progfill{ height:100%; background:linear-gradient(90deg,var(--kidcolor),#FFC857); border-radius:10px; transition:width .6s cubic-bezier(.3,1.4,.5,1); }
+  .progrunner{ position:absolute; top:-16px; font-size:26px; transform:translateX(-50%); transition:left .6s cubic-bezier(.3,1.4,.5,1); animation:hop 1s ease-in-out infinite; }
+  @keyframes hop{ 0%,100%{ margin-top:0; } 50%{ margin-top:-5px; } }
+  .qcard{ display:flex; align-items:center; gap:14px; background:var(--panel); border:2.5px solid var(--line); border-radius:22px; padding:14px 16px; margin-bottom:12px; cursor:pointer; box-shadow:0 4px 0 var(--line); transition:transform .1s, box-shadow .1s; user-select:none; -webkit-user-select:none; }
+  .qcard:active{ transform:translateY(4px) scale(.98); box-shadow:0 0 0 var(--line); }
+  .qcard.focus{ border-color:var(--kidcolor); background:var(--panel2); box-shadow:0 5px 0 var(--kidcolor); }
+  .qcard.focus .qicon{ animation:bob 1.4s ease-in-out infinite; }
+  .qcard.done{ opacity:.6; background:var(--panel2); box-shadow:none; }
+  .qcard.done .qlabel{ text-decoration:line-through; color:var(--muted); }
+  .qcard.celebrate{ animation:celebrate .7s ease; }
+  .qcard.green.focus{ border-color:var(--green); box-shadow:0 5px 0 var(--green); }
+  @keyframes celebrate{ 0%{transform:scale(1);} 25%{transform:scale(1.06) rotate(-1.5deg);} 50%{transform:scale(.97) rotate(1.5deg);} 100%{transform:scale(1);} }
+  @keyframes bob{ 0%,100%{transform:translateY(0) rotate(-6deg);} 50%{transform:translateY(-5px) rotate(6deg);} }
+  .qicon{ font-size:36px; width:48px; text-align:center; flex-shrink:0; }
+  .qmid{ flex:1; min-width:0; }
+  .qlabel{ font-family:'Baloo 2',sans-serif; font-weight:700; font-size:19px; line-height:1.15; }
+  .qtime{ font-size:12px; font-weight:800; color:var(--muted); margin-top:2px; }
+  .qtag{ display:inline-block; font-size:10px; font-weight:800; color:#fff; background:var(--kidcolor); border-radius:8px; padding:2px 7px; margin-right:6px; letter-spacing:.3px; }
+  .qcheck{ width:46px; height:46px; border-radius:50%; border:3px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; background:var(--panel); }
+  .qcard.focus .qcheck{ border-color:var(--kidcolor); }
+  .qcard.done .qcheck{ background:var(--kidcolor); border-color:var(--kidcolor); }
+  .qcard.green.done .qcheck{ background:var(--green); border-color:var(--green); }
+  .qcard.celebrate .qcheck{ animation:pop2 .55s ease; }
+  @keyframes pop2{ 0%{transform:scale(.3) rotate(-90deg);} 60%{transform:scale(1.35) rotate(15deg);} 100%{transform:scale(1) rotate(0);} }
+  .spark{ position:fixed; pointer-events:none; z-index:2000; font-size:22px; margin:-11px 0 0 -11px; animation:sparkfly .85s ease-out forwards; }
+  @keyframes sparkfly{ from{transform:translate(0,0) scale(.6); opacity:1;} to{transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(var(--rot)); opacity:0;} }
+  .cheer{ position:fixed; left:50%; top:20%; z-index:2001; pointer-events:none; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:30px; color:var(--kidcolor); text-shadow:0 2px 0 #fff, 0 0 12px #fff; white-space:nowrap; animation:cheer 1.2s ease forwards; }
+  @keyframes cheer{ 0%{transform:translate(-50%,20px) scale(.5); opacity:0;} 25%{transform:translate(-50%,0) scale(1.15); opacity:1;} 70%{transform:translate(-50%,-6px) scale(1); opacity:1;} 100%{transform:translate(-50%,-40px) scale(1); opacity:0;} }
+  .alldone{ text-align:center; padding:12px 6px 4px; }
+  .alldone .big{ font-size:46px; display:inline-block; animation:wiggle 1.2s ease-in-out infinite; }
+  .alldone .tt{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:20px; color:var(--kidcolor); }
+  .linkbtn{ width:100%; background:none; border:2px dashed var(--line); color:var(--muted); border-radius:14px; padding:10px; font-weight:800; font-size:13px; cursor:pointer; margin:2px 0 14px; }
+  .remind-overlay{ position:fixed; inset:0; background:rgba(20,20,35,.55); display:flex; align-items:center; justify-content:center; z-index:3000; padding:20px; }
+  .remind-box{ background:var(--panel); border:3px solid var(--kidcolor); border-radius:28px; padding:26px 20px 20px; max-width:340px; width:100%; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.3); animation:rpop .5s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes rpop{ from{transform:scale(.4); opacity:0;} to{transform:scale(1); opacity:1;} }
+  .remind-box .rbig{ font-size:72px; display:inline-block; animation:ring 1s ease-in-out infinite; }
+  @keyframes ring{ 0%,100%{transform:rotate(0);} 20%{transform:rotate(-14deg);} 40%{transform:rotate(14deg);} 60%{transform:rotate(-8deg);} 80%{transform:rotate(8deg);} }
+  .remind-box .rtitle{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:26px; line-height:1.1; margin:8px 0 2px; color:var(--kidcolor); }
+  .remind-box .rsub{ color:var(--muted); font-weight:800; font-size:13px; margin-bottom:16px; }
+  .rbtn{ width:100%; border:none; border-radius:16px; padding:14px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:19px; cursor:pointer; margin-bottom:8px; }
+  .rbtn.go{ background:var(--kidcolor); color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.18); }
+  .rbtn.snz{ background:var(--panel2); color:var(--ink); font-size:15px; }
+  .toggle{ display:flex; align-items:center; justify-content:space-between; background:var(--panel2); border-radius:12px; padding:12px; margin-bottom:8px; font-weight:800; font-size:14px; }
   .edittabs{ display:flex; gap:8px; margin-bottom:14px; }
   .edittab{ flex:1; border:2px solid var(--line); background:var(--panel); color:var(--muted); border-radius:14px; padding:9px; font-weight:800; font-size:13px; cursor:pointer; }
-  .edittab.active{ background:var(--panel2); color:#fff; border-color:var(--gold); }
+  .edittab.active{ background:var(--panel2); color:var(--ink); border-color:var(--gold); }
   .daypicker{ display:flex; gap:5px; margin-bottom:12px; flex-wrap:wrap; }
   .daypickbtn{ border:2px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:10px; padding:6px 10px; font-weight:800; font-size:12px; cursor:pointer; }
   .daypickbtn.active{ color:#fff; border-color:var(--gold); }
@@ -413,7 +459,7 @@ function awardOrRevokeDayStar(kidKey, day){
   }
   return false;
 }
-function toggleExercise(kidKey, day){
+function toggleExercise(kidKey, day, ev){
   const kstate = data[kidKey];
   kstate.exerciseDone[day] = !kstate.exerciseDone[day];
   const isDone = !!kstate.exerciseDone[day];
@@ -428,8 +474,9 @@ function toggleExercise(kidKey, day){
     kstate.daySportAwarded[day] = false;
     kstate.sportBadges = Math.max(0, (kstate.sportBadges||0) - 1);
   }
-  saveData(kidKey); render();
-  if(earned) burstConfetti();
+  if(isDone){ celebrateTap(ev); justDone = 'exercise'; }
+  saveData(kidKey); render(); justDone = null;
+  if(earned){ burstConfetti(); playFanfare(); }
 }
 function claimSportReward(kidKey){
   const kstate = data[kidKey];
@@ -438,7 +485,7 @@ function claimSportReward(kidKey){
   kstate.sportRedemptions = (kstate.sportRedemptions||0) + 1;
   saveData(kidKey); render(); burstConfetti();
 }
-function toggleTask(kidKey, day, taskId){
+function toggleTask(kidKey, day, taskId, ev){
   const kstate = data[kidKey];
   const wasChecked = !!kstate.checks[day][taskId];
   const wasWeekDone = weekComplete(kidKey);
@@ -447,8 +494,9 @@ function toggleTask(kidKey, day, taskId){
   const earnedDayStar = awardOrRevokeDayStar(kidKey, day);
   kstate.maxStreakEver = Math.max(kstate.maxStreakEver||0, currentStreak(kidKey));
   const nowWeekDone = weekComplete(kidKey);
-  saveData(kidKey); render();
-  if(earnedDayStar || (nowWeekDone && !wasWeekDone)) burstConfetti();
+  if(!wasChecked){ celebrateTap(ev); justDone = taskId; }
+  saveData(kidKey); render(); justDone = null;
+  if(earnedDayStar || (nowWeekDone && !wasWeekDone)){ burstConfetti(); playFanfare(); }
 }
 function claimStarReward(kidKey){
   const kstate = data[kidKey];
@@ -503,6 +551,164 @@ function burstConfetti(){
     el.style.animationDuration = (2 + Math.random()*1.5) + 's';
     document.body.appendChild(el); setTimeout(()=>el.remove(), 3600);
   }
+}
+
+
+/* ---------------- Fun: sounds, sparkles, cheers ---------------- */
+let showFull = false, showMore = false, justDone = null;
+let audioCtx = null;
+function unlockAudio(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }catch(e){}
+}
+function tone(freqs, step, vol){
+  try{
+    unlockAudio(); if(!audioCtx) return;
+    freqs.forEach((f,i)=>{
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      const t0 = audioCtx.currentTime + i*step;
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol, t0+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+step*1.6);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t0); o.stop(t0+step*1.7);
+    });
+  }catch(e){}
+}
+function playPop(){ tone([660,990], 0.08, 0.15); }
+function playChime(){ tone([784,988,1175,1568,1175,1568], 0.16, 0.28); }
+function playFanfare(){ tone([523,659,784,1047,784,1047,1319], 0.11, 0.22); }
+const CHEERS = ['Nice! 🎉','Awesome! ⭐','You did it! 💪','Super! 🌟','Yay! 🥳','Great job! 👏','Boom! 💥','Way to go! 🚀'];
+function sparkle(x, y){
+  const em = ['⭐','✨','💖','🌟','🎈'];
+  for(let i=0;i<10;i++){
+    const el = document.createElement('div'); el.className = 'spark';
+    el.textContent = em[Math.floor(Math.random()*em.length)];
+    const a = Math.random()*Math.PI*2, r = 50 + Math.random()*60;
+    el.style.left = x+'px'; el.style.top = y+'px';
+    el.style.setProperty('--dx', Math.cos(a)*r+'px');
+    el.style.setProperty('--dy', Math.sin(a)*r-20+'px');
+    el.style.setProperty('--rot', (Math.random()*240-120)+'deg');
+    document.body.appendChild(el); setTimeout(()=>el.remove(), 900);
+  }
+}
+function cheer(msg){
+  const el = document.createElement('div'); el.className = 'cheer'; el.textContent = msg;
+  document.body.appendChild(el); setTimeout(()=>el.remove(), 1250);
+}
+function celebrateTap(ev){
+  unlockAudio(); playPop();
+  const x = ev && ev.clientX ? ev.clientX : window.innerWidth/2;
+  const y = ev && ev.clientY ? ev.clientY : window.innerHeight/2;
+  sparkle(x, y);
+  cheer(CHEERS[Math.floor(Math.random()*CHEERS.length)]);
+}
+
+/* ---------------- Reminders (while the app is open) ---------------- */
+const REM_KEY = 'mw_reminders', FIRED_KEY = 'mw_fired';
+let reminders = {on:false, voice:true};
+let activeReminder = null;      // {kidKey, id, icon, label}
+let snoozeUntil = {};           // key -> minute-of-day
+let wakeLock = null;
+try{ Object.assign(reminders, JSON.parse(localStorage.getItem(REM_KEY)||'{}')); }catch(e){}
+function saveReminders(){ try{ localStorage.setItem(REM_KEY, JSON.stringify(reminders)); }catch(e){} }
+function getFired(){
+  try{
+    const o = JSON.parse(localStorage.getItem(FIRED_KEY)||'{}');
+    if(o.date !== new Date().toDateString()) return {date:new Date().toDateString(), keys:{}};
+    return o;
+  }catch(e){ return {date:new Date().toDateString(), keys:{}}; }
+}
+function setFired(o){ try{ localStorage.setItem(FIRED_KEY, JSON.stringify(o)); }catch(e){} }
+async function requestWake(){
+  try{
+    if(reminders.on && 'wakeLock' in navigator && document.visibilityState === 'visible'){
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible'){ requestWake(); checkReminders(); } });
+function speak(text){
+  try{
+    if(!reminders.voice || !window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.95; u.pitch = 1.1;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(e){}
+}
+function toggleReminders(){
+  unlockAudio();
+  reminders.on = !reminders.on; saveReminders();
+  if(reminders.on){ playChime(); speak('Reminders are on!'); requestWake(); }
+  else { try{ if(wakeLock) wakeLock.release(); }catch(e){} }
+  if(editMode) renderEdit(); else render();
+}
+function toggleReminderVoice(){ reminders.voice = !reminders.voice; saveReminders(); renderEdit(); }
+function checkReminders(){
+  if(!reminders.on || editMode || activeReminder || !data) return;
+  const now = new Date(), nowMin = now.getHours()*60+now.getMinutes();
+  const fired = getFired();
+  const list = (data.schedule[currentKid] && data.schedule[currentKid][actualToday]) || [];
+  const checks = (data[currentKid].checks[actualToday]) || {};
+  for(const e of list){
+    if(!e.quest || checks[e.id]) continue;
+    const start = timeToMinutes(e.time);
+    const key = currentKid+'|'+e.id;
+    const snz = snoozeUntil[key];
+    const due = (snz!=null) ? (nowMin >= snz) : (!fired.keys[key] && nowMin >= start && nowMin < start+10);
+    if(!due) continue;
+    fired.keys[key] = 1; setFired(fired); delete snoozeUntil[key];
+    activeReminder = {kidKey:currentKid, id:e.id, icon:e.icon, label:e.label};
+    playChime(); speak(META[currentKid].name+', time for '+e.label+'!');
+    render();
+    return;
+  }
+}
+function dismissReminder(){ activeReminder = null; render(); }
+function snoozeReminder(){
+  if(activeReminder){
+    const now = new Date();
+    snoozeUntil[activeReminder.kidKey+'|'+activeReminder.id] = now.getHours()*60+now.getMinutes()+3;
+  }
+  activeReminder = null; render();
+}
+
+/* ---------------- Calendar export (.ics) ---------------- */
+function icsEsc(t){ return String(t).replace(/\\/g,'\\\\').replace(/;/g,'\;').replace(/,/g,'\\,').replace(/\n/g,'\\n'); }
+function exportICS(kidKey){
+  const pad = n=>String(n).padStart(2,'0');
+  const fmtD = d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+  const fmtT = m=>pad(Math.floor(m/60))+pad(m%60)+'00';
+  const stamp = new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const dow = {Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:0};
+  const byday = {Mon:'MO',Tue:'TU',Wed:'WE',Thu:'TH',Fri:'FR',Sat:'SA',Sun:'SU'};
+  const name = META[kidKey].name;
+  const L = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Mission Week//EN','CALSCALE:GREGORIAN','X-WR-CALNAME:'+name+' Mission Week'];
+  let count = 0;
+  DAYS.forEach(day=>{
+    const d = new Date(); d.setHours(0,0,0,0);
+    while(d.getDay() !== dow[day]) d.setDate(d.getDate()+1);
+    data.schedule[kidKey][day].filter(e=>e.quest).forEach(e=>{
+      const s = timeToMinutes(e.time);
+      let en = e.end ? timeToMinutes(e.end) : s+30; if(en <= s) en = s+30;
+      const ds = fmtD(d);
+      L.push('BEGIN:VEVENT','UID:mw-'+kidKey+'-'+day+'-'+e.id+'@missionweek','DTSTAMP:'+stamp,
+        'DTSTART:'+ds+'T'+fmtT(s),'DTEND:'+ds+'T'+fmtT(en),'RRULE:FREQ=WEEKLY;BYDAY='+byday[day],
+        'SUMMARY:'+icsEsc(e.icon+' '+e.label),
+        'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(name+': time for '+e.label+'!'),'TRIGGER:PT0S','END:VALARM',
+        'END:VEVENT');
+      count++;
+    });
+  });
+  L.push('END:VCALENDAR');
+  const blob = new Blob([L.join('\r\n')], {type:'text/calendar'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'mission-week-'+kidKey+'.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 10000);
+  return count;
 }
 
 /* ---------------- Edit-mode actions ---------------- */
@@ -715,6 +921,37 @@ function render(){
     }
   });
 
+  // ---- simplified quest cards ----
+  const qList = entries.filter(e=>e.quest);
+  const dt = dayTotals(currentKid, currentDay);
+  const exDone0 = !!kstate.exerciseDone[currentDay];
+  let focusId = null;
+  if(currentDay === actualToday){
+    const un = qList.filter(e=>!kstate.checks[currentDay][e.id]);
+    const cur = un.find(e=>{ const st = timeToMinutes(e.time); const en = e.end ? timeToMinutes(e.end) : st+30; return en > nowMin; });
+    focusId = (cur || un[0] || {}).id || null;
+  }
+  const fmtRange = e => e.time + (e.end ? ' – '+e.end : '');
+  const cardsHtml = qList.map(e=>{
+    const checked = !!kstate.checks[currentDay][e.id];
+    const isFocus = e.id === focusId;
+    const started = currentDay===actualToday && timeToMinutes(e.time) <= nowMin;
+    const tag = isFocus ? `<span class="qtag">${started?'NOW':'NEXT'}</span>` : '';
+    return `<div class="qcard ${checked?'done':''} ${isFocus?'focus':''} ${justDone===e.id?'celebrate':''}" onclick="toggleTask('${currentKid}','${currentDay}','${e.id}',event)">
+      <div class="qicon">${e.icon}</div>
+      <div class="qmid"><div class="qlabel">${e.label}</div><div class="qtime">${tag}${fmtRange(e)}</div></div>
+      <div class="qcheck">${checked?'⭐':''}</div></div>`;
+  }).join('');
+  const exCard = `<div class="qcard green ${exDone0?'done':''} ${justDone==='exercise'?'celebrate':''}" onclick="toggleExercise('${currentKid}','${currentDay}',event)">
+      <div class="qicon">🏃</div>
+      <div class="qmid"><div class="qlabel">Exercise</div><div class="qtime">About 60 min today · earns a 🏅</div></div>
+      <div class="qcheck">${exDone0?'🏅':''}</div></div>`;
+  const progPct = dt.total ? Math.round(dt.done/dt.total*100) : 0;
+  const allDoneToday = dt.total>0 && dt.done===dt.total;
+  const runner = allDoneToday ? '🎉' : (progPct>=50 ? '🏃' : '🚶');
+  const progressHtml = `<div class="progwrap"><div class="progfill" style="width:${progPct}%"></div><div class="progrunner" style="left:${Math.max(4,Math.min(96,progPct))}%">${runner}</div></div>`;
+  const alldoneHtml = allDoneToday ? `<div class="alldone"><div class="big">🌟</div><div class="tt">All done today! You earned a star!</div></div>` : '';
+
   let rewardHtml = '';
   const isWeekDone = weekComplete(currentKid);
   if(isWeekDone){
@@ -779,15 +1016,26 @@ function render(){
     }
   }
 
+  let remindHtml = '';
+  if(activeReminder && activeReminder.kidKey === currentKid){
+    remindHtml = `<div class="remind-overlay"><div class="remind-box">
+      <div class="rbig">${activeReminder.icon}</div>
+      <div class="rtitle">Time for ${activeReminder.label}!</div>
+      <div class="rsub">${META[currentKid].name}, your quest is starting now</div>
+      <button class="rbtn go" onclick="dismissReminder()">Let's go! 💪</button>
+      <button class="rbtn snz" onclick="snoozeReminder()">Give me 3 minutes ⏳</button>
+    </div></div>`;
+  }
   const nowStr = new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'}) + ' · ' + new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
 
   root.innerHTML = `
-    <div class="datebar" style="text-align:center;color:var(--muted);font-weight:800;font-size:12px;margin-bottom:10px;">${nowStr}</div>
+    <div class="datebar" style="text-align:center;color:var(--muted);font-weight:800;font-size:12px;margin-bottom:10px;">${nowStr}${reminders.on?' · 🔔 reminders on':''}</div>
     <div class="topbar">
       <div class="kidbar">
         ${Object.keys(META).map(k=>`
           <button class="kidtab ${k===currentKid?'active':''}" style="${k===currentKid?'--kidcolor:'+META[k].color:''}" onclick="selectKid('${k}')">${META[k].name}</button>`).join('')}
       </div>
+      <button class="gearbtn" onclick="toggleReminders()" title="Reminders">${reminders.on?'🔔':'🔕'}</button>
       <button class="gearbtn" onclick="openHistory()" title="History">📜</button>
       <button class="gearbtn" onclick="openEdit('schedule')" title="Edit">⚙️</button>
     </div>
@@ -815,22 +1063,18 @@ function render(){
     ${rewardHtml}
 
     <div class="panel">
-      <h2>${currentDay}'s Full Day</h2>
-      <div class="panelsub">Quests to check off: ${dayTotals(currentKid,currentDay).done}/${dayTotals(currentKid,currentDay).total} — finish them ALL today to earn 1 ⭐. Resets every Monday.</div>
-      <div class="timeline">${timelineHtml}</div>
+      <h2>${currentDay}'s Quests · ${dt.done}/${dt.total}</h2>
+      <div class="panelsub">Finish ALL of them to earn 1 ⭐</div>
+      ${progressHtml}
+      ${cardsHtml || '<div class="panelsub">No quests today — enjoy! 🎈</div>'}
+      ${exCard}
+      ${alldoneHtml}
+      <button class="linkbtn" onclick="showFull=!showFull;render()">${showFull?'▲ Hide':'📅 Show'} full day schedule</button>
+      ${showFull ? `<div class="timeline">${timelineHtml}</div>` : ''}
     </div>
 
-    <div class="panel" style="border-color:var(--green);">
-      <div class="panelhead">
-        <h2 style="font-size:16px;color:var(--green);">🏃 ${currentDay}'s Exercise</h2>
-      </div>
-      <div class="task ${exDone?'checked':''}" style="background:var(--panel2);border-radius:12px;">
-        <div class="icon" style="width:36px;">🏃</div>
-        <div class="label">About 60 min of exercise today?</div>
-        <div class="checkbox ${exDone?'on':''}" style="${exDone?'background:var(--green);border-color:var(--green);':''}" onclick="toggleExercise('${currentKid}','${currentDay}')">${exDone?'✓':''}</div>
-      </div>
-    </div>
-
+    <button class="linkbtn" onclick="showMore=!showMore;render()">${showMore?'▲ Hide':'📱 Show'} iPad balance · medals · badges</button>
+    ${showMore ? `
     <div class="panel penaltypanel">
       <h2 style="font-size:16px;margin-bottom:10px;">📱 iPad/TV Balance (this week)</h2>
       <div class="balrow2">
@@ -857,7 +1101,9 @@ function render(){
       <div class="badgerow">${badges.map(b=>`<div class="badge ${b.unlocked?'unlocked':''}">${b.icon} ${b.label}</div>`).join('')}</div>
     </div>
 
-    ${modalHtml}
+    ` : ''}
+
+    ${modalHtml}${remindHtml}
   `;
 }
 
@@ -930,6 +1176,20 @@ function renderEdit(){
           <button class="smallbtn" onclick="resetKidScheduleToDefault()">↺ Reset ALL 7 days to default</button>
         </div>
       </div>`;
+  } else if(editMode === 'reminders'){
+    body = `
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:6px;">🔔 Reminders on this iPad</h2>
+        <div class="panelsub">When it's time for a quest, the app pops up a big alert with a chime (and says it out loud). Works while the app is open on screen — it keeps the screen awake when reminders are on. Each iPad reminds for the kid tab it's showing.</div>
+        <div class="toggle"><span>Reminders</span><button class="smallbtn" style="margin:0" onclick="toggleReminders()">${reminders.on?'🔔 ON — tap to turn off':'🔕 OFF — tap to turn on'}</button></div>
+        <div class="toggle"><span>Speak out loud</span><button class="smallbtn" style="margin:0" onclick="toggleReminderVoice()">${reminders.voice?'🔊 ON':'🔇 OFF'}</button></div>
+        <button class="smallbtn" style="margin-left:0" onclick="unlockAudio();playChime();speak('Test reminder. Time for a quest!')">▶︎ Test sound</button>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:16px;margin-bottom:6px;">📆 Alarms even when the screen is off</h2>
+        <div class="panelsub">Download a calendar file with every quest (weekly, alert at start time). Open it on the iPad and tap Add All — put it in a new calendar like "Leyna Mission" so you can delete it all at once if the schedule changes. Re-export after editing the schedule.</div>
+        ${Object.keys(META).map(k=>`<button class="smallbtn" style="margin-left:0" onclick="exportICS('${k}')">⬇️ ${META[k].name}'s calendar (.ics)</button>`).join('')}
+      </div>`;
   } else {
     body = `
       <div class="panel">
@@ -974,7 +1234,8 @@ function renderEdit(){
     <button class="backbtn" onclick="closeEdit()">← Back</button>
     <div class="edittabs">
       <button class="edittab ${editMode==='schedule'?'active':''}" onclick="editMode='schedule';renderEdit()">🗓 Schedule</button>
-      <button class="edittab ${editMode==='penalties'?'active':''}" onclick="editMode='penalties';renderEdit()">⚠️ Penalties & Screen Time</button>
+      <button class="edittab ${editMode==='penalties'?'active':''}" onclick="editMode='penalties';renderEdit()">⚠️ Penalties & Time</button>
+      <button class="edittab ${editMode==='reminders'?'active':''}" onclick="editMode='reminders';renderEdit()">🔔 Reminders</button>
     </div>
     ${body}
   `;
@@ -996,6 +1257,9 @@ window.claimReward = claimReward;
 window.selectKid = selectKid;
 window.selectDay = selectDay;
 window.openChest = openChest;
+window.toggleReminders = toggleReminders; window.toggleReminderVoice = toggleReminderVoice;
+window.dismissReminder = dismissReminder; window.snoozeReminder = snoozeReminder;
+window.exportICS = exportICS; window.unlockAudio = unlockAudio; window.playChime = playChime; window.speak = speak;
 window.openEdit = openEdit;
 window.closeEdit = closeEdit;
 window.openHistory = openHistory;
@@ -1027,8 +1291,11 @@ window.onAllowanceChange = onAllowanceChange;
       await loadData(); // re-checks the Monday weekly rollover too, in case the app was left open across it
     }
     // only refresh the live "NOW" indicator on the main view; don't interrupt editing or an open modal
-    if(!editMode && !pendingChoice) render();
+    if(!editMode && !pendingChoice && !activeReminder) render();
   }, 60000);
+  setInterval(checkReminders, 15000);
+  document.addEventListener('pointerdown', unlockAudio, {once:true});
+  requestWake(); checkReminders();
 })();
 </script>
 </body>
