@@ -194,6 +194,9 @@
   .rbtn.go{ background:var(--kidcolor); color:#fff; box-shadow:0 4px 0 rgba(0,0,0,.18); }
   .rbtn.snz{ background:var(--panel2); color:var(--ink); font-size:15px; }
   .toggle{ display:flex; align-items:center; justify-content:space-between; background:var(--panel2); border-radius:12px; padding:12px; margin-bottom:8px; font-weight:800; font-size:14px; }
+  .wins{ background:var(--panel2); border:2px solid var(--gold); border-radius:16px; padding:10px 12px; margin:0 0 14px; text-align:left; font-weight:800; font-size:14px; line-height:1.55; }
+  .wins .winstitle{ font-family:'Baloo 2',sans-serif; font-size:16px; color:var(--kidcolor); }
+  .wins .winsmsg{ margin-top:4px; color:var(--muted); font-size:13px; }
   .edittabs{ display:flex; gap:8px; margin-bottom:14px; }
   .edittab{ flex:1; border:2px solid var(--line); background:var(--panel); color:var(--muted); border-radius:14px; padding:9px; font-weight:800; font-size:13px; cursor:pointer; }
   .edittab.active{ background:var(--panel2); color:var(--ink); border-color:var(--gold); }
@@ -711,6 +714,20 @@ function toggleReminders(){
   if(editMode) renderEdit(); else render();
 }
 function toggleReminderVoice(){ reminders.voice = !reminders.voice; saveReminders(); renderEdit(); }
+function todayWinsHtml(kidKey){
+  const t = dayTotals(kidKey, actualToday), kst = data[kidKey];
+  const star = !!kst.dayStarAwarded[actualToday], ex = !!kst.exerciseDone[actualToday];
+  let coins = 0;
+  if(typeof petOf === 'function' && petOf(kidKey)){
+    const today = new Date().toDateString();
+    (petOf(kidKey).log||[]).forEach(en=>{ if(new Date(en.t).toDateString()===today && en.a>0) coins += en.a; });
+  }
+  const all = t.total>0 && t.done===t.total;
+  return `<div class="wins"><div class="winstitle">🏆 Today's wins</div>
+    <div>✅ ${t.done}/${t.total} quests${all?' — all done!':''}</div>
+    ${star?'<div>⭐ You earned today\'s star!</div>':''}${ex?'<div>🏃 Exercise done</div>':''}${coins?'<div>🪙 +'+coins+' coins</div>':''}
+    <div class="winsmsg">${all?'What an amazing day! 🌟':(t.done>0?'Nice work today! Tomorrow we do even better 💪':'Tomorrow is a fresh start! 🌈')}</div></div>`;
+}
 const REMIND_OFFSETS = [15, 3];   // minutes before a quest starts
 const BED_REMINDER = {h:20, m:50};  // daily bedtime reminder, independent of quests
 function checkReminders(){
@@ -723,7 +740,7 @@ function checkReminders(){
   const bedStart = BED_REMINDER.h*60+BED_REMINDER.m, bedKey = currentKid+'|bedtime';
   if(!fired.keys[bedKey] && nowMin >= bedStart && nowMin < bedStart+40){
     fired.keys[bedKey] = 1; setFired(fired);
-    const nm = META[currentKid].name, sayBed = nm+', time to get ready for bed! Brush your teeth and put on your pajamas.';
+    const nm = META[currentKid].name, sayBed = nm+', time to get ready for bed! You finished '+dayTotals(currentKid, actualToday).done+' of '+dayTotals(currentKid, actualToday).total+' quests today. Brush your teeth and put on your pajamas.';
     activeReminder = {kidKey:currentKid, id:'bedtime', kind:'bed', icon:'🛏️', label:'Get ready for bed', off:0, time:'', say:sayBed};
     playChime(); speak(sayBed); startRemindLoop(sayBed);
     render();
@@ -1126,6 +1143,7 @@ function render(){
       <div class="rtitle">Bedtime soon!</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;margin-bottom:2px;">Time to get ready for bed</div>
       <div class="rsub">🪥 Brush teeth · 👕 Pajamas · 🛏️ Into bed</div>
+      ${todayWinsHtml(activeReminder.kidKey)}
       <button class="rbtn go" onclick="dismissReminder()">OK, going! 😴</button>
     </div></div>`;
     } else {

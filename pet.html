@@ -271,6 +271,14 @@
   @keyframes fxfly{ 0%{ transform:translate(0,0) scale(.5) rotate(0); opacity:0; } 15%{ opacity:1; } 100%{ transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(180deg); opacity:0; } }
   .evolving .petbody{ animation:evolve 2.2s ease; }
   @keyframes evolve{ 0%{ filter:none; transform:scale(1); } 15%,55%{ filter:brightness(9) saturate(0); transform:scale(1.25); } 35%{ filter:brightness(9) saturate(0); transform:scale(.75) rotate(-10deg); } 75%{ filter:brightness(9) saturate(0); transform:scale(1.35); } 100%{ filter:drop-shadow(0 6px 4px rgba(0,0,0,.15)); transform:scale(1); } }
+
+  .creature{ display:block; margin:0 auto; overflow:visible; }
+  .petbody .creature{ margin-top:-6px; }
+  .cblink{ animation:cblink 4.5s infinite; transform-origin:100px 100px; transform-box:view-box; }
+  @keyframes cblink{ 0%,94%,100%{ transform:scaleY(1); } 97%{ transform:scaleY(.1); } }
+  .cflame{ animation:cflame .5s ease-in-out infinite alternate; transform-box:fill-box; }
+  @keyframes cflame{ from{ opacity:.85; } to{ opacity:1; } }
+  .elempick .ee{ line-height:0; }
   .petgrid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:10px 0 12px; max-height:290px; overflow-y:auto; }
   .petpick{ font-size:36px; background:var(--panel2); border:3px solid transparent; border-radius:16px; padding:6px 0; cursor:pointer; }
   .petpick.sel{ border-color:var(--kidcolor); background:var(--panel); transform:scale(1.08); }
@@ -300,6 +308,9 @@
   .herobar > div{ height:100%; background:var(--kidcolor); border-radius:6px; transition:width .6s; }
   .herobtn{ width:100%; border:none; background:var(--kidcolor); color:#fff; border-radius:18px; padding:15px; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:21px; cursor:pointer; box-shadow:0 5px 0 rgba(0,0,0,.2); }
   .herobtn:active{ transform:translateY(5px); box-shadow:0 0 0 rgba(0,0,0,.2); }
+  .wins{ background:var(--panel2); border:2px solid var(--gold); border-radius:16px; padding:10px 12px; margin:0 0 14px; text-align:left; font-weight:800; font-size:14px; line-height:1.55; }
+  .wins .winstitle{ font-family:'Baloo 2',sans-serif; font-size:16px; color:var(--kidcolor); }
+  .wins .winsmsg{ margin-top:4px; color:var(--muted); font-size:13px; }
   .edittabs{ display:flex; gap:8px; margin-bottom:14px; }
   .edittab{ flex:1; border:2px solid var(--line); background:var(--panel); color:var(--muted); border-radius:14px; padding:9px; font-weight:800; font-size:13px; cursor:pointer; }
   .edittab.active{ background:var(--panel2); color:var(--ink); border-color:var(--gold); }
@@ -825,6 +836,20 @@ function toggleReminders(){
   if(editMode) renderEdit(); else render();
 }
 function toggleReminderVoice(){ reminders.voice = !reminders.voice; saveReminders(); renderEdit(); }
+function todayWinsHtml(kidKey){
+  const t = dayTotals(kidKey, actualToday), kst = data[kidKey];
+  const star = !!kst.dayStarAwarded[actualToday], ex = !!kst.exerciseDone[actualToday];
+  let coins = 0;
+  if(typeof petOf === 'function' && petOf(kidKey)){
+    const today = new Date().toDateString();
+    (petOf(kidKey).log||[]).forEach(en=>{ if(new Date(en.t).toDateString()===today && en.a>0) coins += en.a; });
+  }
+  const all = t.total>0 && t.done===t.total;
+  return `<div class="wins"><div class="winstitle">🏆 Today's wins</div>
+    <div>✅ ${t.done}/${t.total} quests${all?' — all done!':''}</div>
+    ${star?'<div>⭐ You earned today\'s star!</div>':''}${ex?'<div>🏃 Exercise done</div>':''}${coins?'<div>🪙 +'+coins+' coins</div>':''}
+    <div class="winsmsg">${all?'What an amazing day! 🌟':(t.done>0?'Nice work today! Tomorrow we do even better 💪':'Tomorrow is a fresh start! 🌈')}</div></div>`;
+}
 const REMIND_OFFSETS = [15, 3];   // minutes before a quest starts
 const BED_REMINDER = {h:20, m:50};  // daily bedtime reminder, independent of quests
 function checkReminders(){
@@ -837,7 +862,7 @@ function checkReminders(){
   const bedStart = BED_REMINDER.h*60+BED_REMINDER.m, bedKey = currentKid+'|bedtime';
   if(!fired.keys[bedKey] && nowMin >= bedStart && nowMin < bedStart+40){
     fired.keys[bedKey] = 1; setFired(fired);
-    const nm = META[currentKid].name, sayBed = nm+', time to get ready for bed! Brush your teeth and put on your pajamas.';
+    const nm = META[currentKid].name, sayBed = nm+', time to get ready for bed! You finished '+dayTotals(currentKid, actualToday).done+' of '+dayTotals(currentKid, actualToday).total+' quests today. Brush your teeth and put on your pajamas.';
     activeReminder = {kidKey:currentKid, id:'bedtime', kind:'bed', icon:'🛏️', label:'Get ready for bed', off:0, time:'', say:sayBed};
     playChime(); speak(sayBed); startRemindLoop(sayBed);
     render();
@@ -1045,7 +1070,7 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
       ${(pt.line&&LINES[pt.line])?`<div class="elemglow" style="--ec:${LINES[pt.line].color}"></div>`:''}
       ${sidx===3?'<div class="petaura"></div>':''}
       ${item('hat')?`<div class="petacc hat">${item('hat').emoji}</div>`:''}
-      <div class="petbody">${faceOf(pt)}</div>
+      <div class="petbody">${petFaceHtml(pt, 120, mood)}</div>
       ${item('face')?`<div class="petacc face">${item('face').emoji}</div>`:''}
       ${item('item')?`<div class="petacc held">${item('item').emoji}</div>`:''}
       ${mood==='sleepy'?'<div class="petzzz">💤</div>':''}
@@ -1068,7 +1093,7 @@ function petOverlays(kidKey){
     out += `<div class="remind-overlay"><div class="remind-box" style="max-width:360px;">
       <div class="rtitle" style="margin-bottom:4px;">${changingPet?'Change your buddy':'Choose your buddy!'}</div>
       <div class="rsub">${META[kidKey].name}, who will be on your team?</div>
-      <div class="elemrow">${Object.keys(LINES).map(k=>`<div class="elempick ${petDraft.line===k?'sel':''}" style="--ec:${LINES[k].color}" onclick="choosePetType('${LINES[k].forms[0]}','${k}')"><div class="ee">${LINES[k].forms[0]}</div><div class="en">${LINES[k].icon} ${LINES[k].name}</div></div>`).join('')}</div>
+      <div class="elemrow">${Object.keys(LINES).map(k=>`<div class="elempick ${petDraft.line===k?'sel':''}" style="--ec:${LINES[k].color}" onclick="choosePetType('${LINES[k].forms[0]}','${k}')"><div class="ee">${creatureSVG(k,1,'idle',48)}</div><div class="en">${LINES[k].icon} ${LINES[k].name}</div></div>`).join('')}</div>
       <div class="gsub" style="margin:2px 0 0;">Elemental pals evolve into new forms! ⬆️ · or pick a friend 👇</div>
       <div class="petgrid">${PET_TYPES.map(t=>`<div class="petpick ${(!petDraft.line && petDraft.type===t)?'sel':''}" onclick="choosePetType('${t}')">${t}</div>`).join('')}</div>
       <input class="petnamein" type="text" maxlength="14" placeholder="Name your buddy" value="${(petDraft.name||'').replace(/"/g,'&quot;')}" oninput="petDraft.name=this.value">
@@ -1198,6 +1223,87 @@ function petSound(pt, withWord){
   return animalSound(pt.type, withWord);
 }
 
+
+/* ---------------- Original SVG creatures for the elemental pals ---------------- */
+const CPAL = {
+  elec:  {m:'#FFD93B', d:'#D9A100', b:'#FFF5BF', a:'#FF7A7A'},
+  water: {m:'#4BA3FF', d:'#2467C9', b:'#D6ECFF', a:'#9FE0FF'},
+  fire:  {m:'#FF6B4D', d:'#C93A2B', b:'#FFE6B8', a:'#FFC94D'},
+  leaf:  {m:'#5ACD74', d:'#2A9448', b:'#EAF8CF', a:'#FF9EC4'}
+};
+function creatureSVG(line, st, mood, px){
+  const c = CPAL[line]; if(!c) return '';
+  const rx = [60,58,56,58][st], ry = [54,58,64,70][st], cy = [130,124,116,110][st];
+  const ex = rx*0.40, ey = cy - ry*0.18, er = [12,11,10,10][st];
+  const my = ey + er + 12;
+  const dark = '#2B2B3A';
+  const topY = cy - ry;
+  let back = '', front = '', cheek = c.a, cheekOp = .55;
+  const tx = 100+rx-8, ty = cy+14, ts = 1+0.12*st;
+  const flame = (x,y,sc)=>`<g class="cflame" transform="translate(${x} ${y}) scale(${sc})"><path d="M0,-34 Q18,-12 10,6 Q0,14 -10,6 Q-18,-12 0,-34 Z" fill="#FF9A2E"/><path d="M0,-18 Q8,-6 5,3 Q0,8 -5,3 Q-8,-6 0,-18 Z" fill="#FFE066"/></g>`;
+  const star = (x,y,r,col)=>{ let pts=''; for(let i=0;i<10;i++){ const rr=i%2?r*0.45:r, ang=-Math.PI/2+i*Math.PI/5; pts+=(x+Math.cos(ang)*rr).toFixed(1)+','+(y+Math.sin(ang)*rr).toFixed(1)+' '; } return `<polygon points="${pts}" fill="${col}" stroke="${c.d}" stroke-width="2" stroke-linejoin="round"/>`; };
+
+  if(line==='elec'){
+    // coiled spring tail with a star spark, round side ears, zigzag static antennae
+    back += `<path d="M${tx},${ty} q${24*ts},-6 ${14*ts},-26 q-12,-16 ${14*ts},-30" fill="none" stroke="${c.d}" stroke-width="13" stroke-linecap="round"/><path d="M${tx},${ty} q${24*ts},-6 ${14*ts},-26 q-12,-16 ${14*ts},-30" fill="none" stroke="${c.m}" stroke-width="8" stroke-linecap="round"/>${star(tx+14*ts+14*ts, ty-56, 11+st*2, '#FFF1A0')}`;
+    [-1,1].forEach(sd=>{ const x=100+sd*rx*0.78, y=topY+26;
+      front += `<circle cx="${x}" cy="${y}" r="${14+st*2}" fill="${c.m}" stroke="${c.d}" stroke-width="3"/><circle cx="${x}" cy="${y}" r="${7+st}" fill="#FFB84D"/>`; });
+    [-1,1].forEach(sd=>{ const x=100+sd*14, h=26+st*6;
+      front += `<path d="M${x},${topY+8} l${sd*8},-${h*0.4} l${-sd*10},-${h*0.25} l${sd*10},-${h*0.35}" fill="none" stroke="${c.d}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${x+sd*8}" cy="${topY-h*0.95}" r="${5+st}" fill="#FFF1A0" stroke="${c.d}" stroke-width="2"/>`; });
+    if(st>=3) for(let i=0;i<7;i++){ const a=(-170+i*28)*Math.PI/180, r=Math.max(rx,ry)+26; back += star(100+Math.cos(a)*r, cy-10+Math.sin(a)*r, 7, '#FFF1A0'); }
+    cheek = '#FFB84D'; cheekOp = .9;
+  } else if(line==='water'){
+    // seal-like: flippers, droplet crest, little wave tail
+    back += `<g transform="translate(${tx} ${ty+4}) scale(${ts})"><path d="M0,0 Q18,-18 34,-6 Q24,-2 34,12 Q16,16 0,8 Z" fill="${c.a}" stroke="${c.d}" stroke-width="3" stroke-linejoin="round"/></g>`;
+    if(st>=3) back += `<circle cx="100" cy="${cy}" r="${Math.max(rx,ry)+22}" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="1 13" stroke-linecap="round" opacity=".9"/>`;
+    const drop=(x,y,sc)=>`<path d="M${x},${y-30*sc} Q${x+16*sc},${y-6*sc} ${x+12*sc},${y+4*sc} Q${x},${y+14*sc} ${x-12*sc},${y+4*sc} Q${x-16*sc},${y-6*sc} ${x},${y-30*sc} Z" fill="${c.a}" stroke="${c.d}" stroke-width="3" stroke-linejoin="round"/><ellipse cx="${x-4*sc}" cy="${y-2*sc}" rx="${2.5*sc}" ry="${4*sc}" fill="#fff" opacity=".8"/>`;
+    front += drop(100, topY+10, 0.8+st*0.12);
+    if(st>=1) front += drop(100-rx*0.5, topY+26, 0.45+st*0.08) + drop(100+rx*0.5, topY+26, 0.45+st*0.08);
+    if(st>=3) front += `<path d="M70,${topY+4} Q100,${topY-46} 130,${topY+4}" fill="none" stroke="${c.a}" stroke-width="7" stroke-linecap="round"/>`;
+    [-1,1].forEach(sd=>{ const x=100+sd*(rx-2), y=cy+ry*0.2;
+      front += `<ellipse cx="${x}" cy="${y}" rx="${10+st}" ry="${19+st*2}" fill="${c.a}" stroke="${c.d}" stroke-width="3" transform="rotate(${sd*-32} ${x} ${y})"/>`; });
+  } else if(line==='fire'){
+    // round ember cub: flame crest on head, ember tail, ring of embers when grown
+    back += `<path d="M${tx-2},${ty+4} Q${tx+26},${ty+10} ${tx+30},${ty-10}" fill="none" stroke="${c.d}" stroke-width="12" stroke-linecap="round"/><path d="M${tx-2},${ty+4} Q${tx+26},${ty+10} ${tx+30},${ty-10}" fill="none" stroke="${c.m}" stroke-width="7" stroke-linecap="round"/><circle cx="${tx+31}" cy="${ty-12}" r="${6+st*2}" fill="#FFB84D" stroke="${c.d}" stroke-width="2.5"/>`;
+    if(st>=3) for(let i=0;i<7;i++){ const a=(-175+i*29)*Math.PI/180, r=Math.max(rx,ry)+24; back += flame(100+Math.cos(a)*r, cy-6+Math.sin(a)*r+12, 0.38); }
+    [-1,1].forEach(sd=>{ const x=100+sd*rx*0.62, y=topY+22;
+      front += `<circle cx="${x}" cy="${y}" r="${13+st*2}" fill="${c.m}" stroke="${c.d}" stroke-width="3"/><circle cx="${x}" cy="${y}" r="${6+st}" fill="${c.b}"/>`; });
+    const nF = [1,3,3,5][st], sc = [0.55,0.5,0.62,0.7][st];
+    for(let i=0;i<nF;i++){ const off=(i-(nF-1)/2); front += flame(100+off*(nF>3?20:22), topY+12-Math.abs(off)*(nF>3?5:4)-(i===(nF-1)/2?6:0), sc*(1-Math.abs(off)*0.1)); }
+  } else {
+    // leaf sprout cub
+    back += `<g transform="translate(${tx} ${ty+6}) rotate(-20) scale(${ts})"><path d="M0,0 Q22,-26 48,-12 Q30,14 0,0 Z" fill="${c.m}" stroke="${c.d}" stroke-width="3" stroke-linejoin="round"/><path d="M4,-2 Q24,-12 42,-12" fill="none" stroke="${c.d}" stroke-width="2.5"/></g>`;
+    if(st>=3) back += `<ellipse cx="${100-rx+4}" cy="${cy-ry*0.5}" rx="20" ry="30" fill="${c.d}" transform="rotate(30 ${100-rx+4} ${cy-ry*0.5})"/><ellipse cx="${100+rx-4}" cy="${cy-ry*0.5}" rx="20" ry="30" fill="${c.d}" transform="rotate(-30 ${100+rx-4} ${cy-ry*0.5})"/>`;
+    const n = [2,2,3,3][st];
+    for(let i=0;i<n;i++){ const ang = (i-(n-1)/2)*28; const L = 30+st*5;
+      front += `<g transform="translate(100 ${topY+6}) rotate(${ang})"><path d="M0,0 L0,-${L-6}" stroke="${c.d}" stroke-width="4" stroke-linecap="round"/><path d="M0,-${L-8} Q14,-${L+6} 0,-${L+22} Q-14,-${L+6} 0,-${L-8} Z" fill="${c.m}" stroke="${c.d}" stroke-width="3" stroke-linejoin="round"/></g>`; }
+    if(st>=3) front += `<g transform="translate(100 ${topY-6})"><circle cx="0" cy="-8" r="9" fill="#FFD93B"/>${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-22" rx="8" ry="11" fill="${c.a}" stroke="#E0709F" stroke-width="2" transform="rotate(${a} 0 -8)"/>`).join('')}<circle cx="0" cy="-8" r="8" fill="#FFD93B"/></g>`;
+  }
+  // ---- body ----
+  let body = `<ellipse cx="100" cy="${cy}" rx="${rx}" ry="${ry}" fill="${c.m}" stroke="${c.d}" stroke-width="4"/>
+    <ellipse cx="100" cy="${cy+ry*0.36}" rx="${rx*0.62}" ry="${ry*0.52}" fill="${c.b}"/>`;
+  if(st>=1) body = `<ellipse cx="${100-rx*0.5}" cy="${cy+ry-3}" rx="17" ry="10" fill="${c.m}" stroke="${c.d}" stroke-width="3"/><ellipse cx="${100+rx*0.5}" cy="${cy+ry-3}" rx="17" ry="10" fill="${c.m}" stroke="${c.d}" stroke-width="3"/>` + body;
+  if(st>=1 && line!=='water') body += `<ellipse cx="${100-rx+2}" cy="${cy+ry*0.15}" rx="11" ry="16" fill="${c.m}" stroke="${c.d}" stroke-width="3" transform="rotate(20 ${100-rx+2} ${cy+ry*0.15})"/><ellipse cx="${100+rx-2}" cy="${cy+ry*0.15}" rx="11" ry="16" fill="${c.m}" stroke="${c.d}" stroke-width="3" transform="rotate(-20 ${100+rx-2} ${cy+ry*0.15})"/>`;
+  if(line==='elec' && st>=2) body += `<path d="M100,${cy-ry*0.72} l-6,9 l8,0 l-5,9" fill="none" stroke="${c.d}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // ---- face ----
+  let face = `<circle cx="${100-ex-12}" cy="${ey+er+8}" r="9" fill="${cheek}" opacity="${cheekOp}"/><circle cx="${100+ex+12}" cy="${ey+er+8}" r="9" fill="${cheek}" opacity="${cheekOp}"/>`;
+  if(mood==='sleepy'){
+    face += `<path d="M${100-ex-9},${ey} Q${100-ex},${ey+8} ${100-ex+9},${ey}" fill="none" stroke="${dark}" stroke-width="4" stroke-linecap="round"/><path d="M${100+ex-9},${ey} Q${100+ex},${ey+8} ${100+ex+9},${ey}" fill="none" stroke="${dark}" stroke-width="4" stroke-linecap="round"/><ellipse cx="100" cy="${my+2}" rx="4" ry="5" fill="${dark}"/>`;
+  } else {
+    face += `<g class="cblink"><circle cx="${100-ex}" cy="${ey}" r="${er}" fill="${dark}"/><circle cx="${100+ex}" cy="${ey}" r="${er}" fill="${dark}"/><circle cx="${100-ex+4}" cy="${ey-4}" r="${er*0.38}" fill="#fff"/><circle cx="${100+ex+4}" cy="${ey-4}" r="${er*0.38}" fill="#fff"/><circle cx="${100-ex-4}" cy="${ey+4}" r="${er*0.18}" fill="#fff"/><circle cx="${100+ex-4}" cy="${ey+4}" r="${er*0.18}" fill="#fff"/></g>`;
+    face += mood==='party'
+      ? `<path d="M${100-12},${my-3} Q100,${my+22} ${100+12},${my-3} Z" fill="${dark}"/><path d="M${100-6},${my+8} Q100,${my+3} ${100+6},${my+8} Q100,${my+14} ${100-6},${my+8} Z" fill="#FF7A9A"/>`
+      : `<path d="M${100-9},${my-2} Q100,${my+10} ${100+9},${my-2}" fill="none" stroke="${dark}" stroke-width="3.5" stroke-linecap="round"/>`;
+  }
+  const size = px || 110;
+  return `<svg class="creature" viewBox="0 0 200 200" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="100" cy="190" rx="${rx*0.85}" ry="7" fill="rgba(0,0,0,.14)"/>${back}${body}${front}${face}</svg>`;
+}
+function petFaceHtml(pt, px, mood){
+  if(pt && pt.line && CPAL[pt.line]) return creatureSVG(pt.line, stageIdx(pt.growth||0), mood||'idle', px);
+  return faceOf(pt);
+}
+
 /* ---------------- Growing up ---------------- */
 const STAGES = [{name:'Baby',min:0,scale:.62},{name:'Kid',min:30,scale:.8},{name:'Teen',min:100,scale:1.0},{name:'Grown-up',min:250,scale:1.2}];
 function stageIdx(pts){ let i=0; STAGES.forEach((st,k)=>{ if(pts>=st.min) i=k; }); return i; }
@@ -1323,7 +1429,7 @@ function finishGame(score, kind){
   playFanfare();
   const ov = document.getElementById('gameov'); if(!ov) return;
   ov.innerHTML = `<div class="gbox"><div class="gtitle">${coins>0?'🎉 Great job!':'👏 Nice game!'}</div>
-    <div style="font-size:54px;margin:6px 0;">${faceOf(pt)}</div>
+    <div style="font-size:54px;margin:6px 0;line-height:0;">${petFaceHtml(pt, 80, 'party')}</div>
     <div class="gsub">Score: <b>${score}</b>${coins>0?' · You won 🪙 '+coins+'!':(left<=0?' · (coin limit reached today)':' · Try for more!')}</div>
     <div class="gsub">${pt.name} is happier now 💗${grew?' and grew up! ✨':''}</div>
     <button class="rbtn go" onclick="${kind==='catch'?'startCatch()':'startMemory()'}">Play again</button>
@@ -1334,7 +1440,7 @@ function startCatch(){
   const pt = petOf(currentKid), treat = treatForPet(pt);
   ov.innerHTML = `<div class="gbox"><div class="gtitle">🧺 Catch ${treat}!</div>
     <div class="gsub">Slide your finger to move ${pt.name}. Dodge the 🪨!</div>
-    <div class="garena" id="garena"><div class="gpet" id="gpet">${faceOf(pt)}</div></div>
+    <div class="garena" id="garena"><div class="gpet" id="gpet">${petFaceHtml(pt, 56, 'idle')}</div></div>
     <div class="gsub"><span id="gtime">25</span>s · Score <b id="gsc">0</b></div></div>`;
   const arena = document.getElementById('garena'), pe = document.getElementById('gpet');
   const W = arena.clientWidth, H = arena.clientHeight;
@@ -1576,7 +1682,7 @@ function render(){
 
   const stripHtml = DAYS.map(d=>{
     const t = dayTotals(currentKid, d); const star = t.total>0 && t.done===t.total; const isT = d===actualToday;
-    const inner = star ? '⭐' : (isT ? (faceOf(pet)||'') : '');
+    const inner = star ? '⭐' : (isT ? petFaceHtml(pet, 34, 'idle') : '');
     return `<button class="jnode ${d===currentDay?'sel':''} ${star?'star':''} ${isT?'today':''}" onclick="selectDay('${d}')"><span class="jc">${inner}</span><span class="jl">${d}</span></button>`;
   }).join('');
 
@@ -1736,6 +1842,7 @@ function render(){
       <div class="rtitle">Bedtime soon!</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;margin-bottom:2px;">Time to get ready for bed</div>
       <div class="rsub">🪥 Brush teeth · 👕 Pajamas · 🛏️ Into bed</div>
+      ${todayWinsHtml(activeReminder.kidKey)}
       <button class="rbtn go" onclick="dismissReminder()">OK, going! 😴</button>
     </div></div>`;
     } else {
