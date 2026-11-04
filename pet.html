@@ -905,6 +905,17 @@ function exportICS(kidKey){
       count++;
     });
   });
+  // daily bedtime reminder (not tied to any quest)
+  {
+    const d0 = new Date(); d0.setHours(0,0,0,0);
+    const bs = BED_REMINDER.h*60+BED_REMINDER.m;
+    L.push('BEGIN:VEVENT','UID:mw-'+kidKey+'-bedtime@missionweek','DTSTAMP:'+stamp,
+      'DTSTART:'+fmtD(d0)+'T'+fmtT(bs),'DTEND:'+fmtD(d0)+'T'+fmtT(bs+10),'RRULE:FREQ=DAILY',
+      'SUMMARY:'+icsEsc('🌙 Get ready for bed'),
+      'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(name+': time to get ready for bed! Brush teeth, pajamas, into bed.'),'TRIGGER:PT0S','END:VALARM',
+      'END:VEVENT');
+    count++;
+  }
   L.push('END:VCALENDAR');
   const blob = new Blob([L.join('\r\n')], {type:'text/calendar'});
   const url = URL.createObjectURL(blob);
@@ -1725,7 +1736,6 @@ function render(){
       <div class="rtitle">Bedtime soon!</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:19px;margin-bottom:2px;">Time to get ready for bed</div>
       <div class="rsub">🪥 Brush teeth · 👕 Pajamas · 🛏️ Into bed</div>
-      ${soundUnlocked?'':'<button class="rbtn snz" style="background:#FFE9A8;font-size:18px;" onclick="hearIt(event)">🔊 Tap here to hear it!</button>'}
       <button class="rbtn go" onclick="dismissReminder()">OK, going! 😴</button>
     </div></div>`;
     } else {
@@ -1735,7 +1745,6 @@ function render(){
       <div class="rtitle">${soon?'Almost time!':'Heads up!'}</div>
       <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;margin-bottom:2px;">${activeReminder.label}</div>
       <div class="rsub">starts in ${activeReminder.off} minutes · ${activeReminder.time}</div>
-      ${soundUnlocked?'':'<button class="rbtn snz" style="background:#FFE9A8;font-size:18px;" onclick="hearIt(event)">🔊 Tap here to hear it!</button>'}
       <button class="rbtn go" onclick="dismissReminder()">${soon?"I'm ready! 💪":'Got it! 👍'}</button>
     </div></div>`;
     }
@@ -1875,7 +1884,7 @@ function renderEdit(){
       </div>
       <div class="panel">
         <h2 style="font-size:16px;margin-bottom:6px;">📆 Alarms even when the screen is off</h2>
-        <div class="panelsub">Download a calendar file with every quest (weekly, alerts 15 min and 3 min before). Open it on the iPad and tap Add All — put it in a new calendar like "Leyna Mission" so you can delete it all at once if the schedule changes. Re-export after editing the schedule.</div>
+        <div class="panelsub">Download a calendar file with every quest (weekly, alerts 15 min and 3 min before; plus a daily 8:50 PM bedtime reminder). Open it on the iPad and tap Add All — put it in a new calendar like "Leyna Mission" so you can delete it all at once if the schedule changes. Re-export after editing the schedule.</div>
         ${Object.keys(META).map(k=>`<button class="smallbtn" style="margin-left:0" onclick="exportICS('${k}')">⬇️ ${META[k].name}'s calendar (.ics)</button>`).join('')}
       </div>`;
   } else {
