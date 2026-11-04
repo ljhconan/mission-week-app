@@ -843,6 +843,7 @@ const TAP_LINES = ['Hehe, that tickles! 🥰','Boop! 💕','I believe in you! �
 function newPet(){ return {type:null, name:'', coins:0, owned:[], equipped:{}, awarded:{}}; }
 function petOf(kidKey){ return data['pet'+kidKey]; }
 function savePet(kidKey){ saveData('pet'+kidKey); }
+let changingPet = false;
 let petMsg = null, showShop = false, petDraft = {type:null, name:''};
 function petReact(text){
   petMsg = {text, until: Date.now()+4200};
@@ -876,12 +877,18 @@ function awardCoins(kidKey, day, taskId, gotStar){
   } else { petReact('Done again! 👏'); }
 }
 function choosePetType(t){ petDraft.type = t; render(); }
+function editPet(){
+  const pt = petOf(currentKid);
+  petDraft = {type: pt.type, name: pt.name}; changingPet = true; showShop = false; render();
+}
+function cancelChangePet(){ changingPet = false; petDraft = {type:null, name:''}; render(); }
 function startPet(){
   if(!petDraft.type) return;
+  const wasChange = changingPet; changingPet = false;
   const pt = petOf(currentKid);
   pt.type = petDraft.type; pt.name = (petDraft.name||'').trim().slice(0,14) || 'Buddy';
   petDraft = {type:null, name:''}; savePet(currentKid);
-  petReact('Hi! I\'m '+pt.name+'! Let\'s do this together! 🎉'); render();
+  petReact(wasChange ? 'New look! I\'m '+pt.name+' now! 😄' : 'Hi! I\'m '+pt.name+'! Let\'s do this together! 🎉'); render();
 }
 function openShop(){ showShop = true; render(); }
 function closeShop(){ showShop = false; render(); }
@@ -921,13 +928,14 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
 }
 function petOverlays(kidKey){
   const pt = petOf(kidKey); let out = '';
-  if(!pt.type){
+  if(!pt.type || changingPet){
     out += `<div class="remind-overlay"><div class="remind-box" style="max-width:360px;">
-      <div class="rtitle" style="margin-bottom:4px;">Choose your buddy!</div>
+      <div class="rtitle" style="margin-bottom:4px;">${changingPet?'Change your buddy':'Choose your buddy!'}</div>
       <div class="rsub">${META[kidKey].name}, who will be on your team?</div>
       <div class="petgrid">${PET_TYPES.map(t=>`<div class="petpick ${petDraft.type===t?'sel':''}" onclick="choosePetType('${t}')">${t}</div>`).join('')}</div>
       <input class="petnamein" type="text" maxlength="14" placeholder="Name your buddy" value="${(petDraft.name||'').replace(/"/g,'&quot;')}" oninput="petDraft.name=this.value">
-      <button class="rbtn go" style="${petDraft.type?'':'opacity:.4;'}" onclick="startPet()">Let's go! 🎉</button>
+      <button class="rbtn go" style="${petDraft.type?'':'opacity:.4;'}" onclick="startPet()">${changingPet?'Save ✅':"Let's go! 🎉"}</button>
+      ${changingPet?'<button class="rbtn snz" onclick="cancelChangePet()">Cancel</button>':''}
     </div></div>`;
   }
   if(showShop){
@@ -943,6 +951,7 @@ function petOverlays(kidKey){
       <div class="rtitle" style="font-size:22px;">🛍️ ${pt.name}'s Shop</div>
       <div class="rsub">You have 🪙 ${pt.coins} · earn coins by finishing quests</div>
       ${sect('🎩 Hats','hat')}${sect('🕶️ Style','face')}${sect('🎈 Fun stuff','item')}${sect('🌈 Places','bg')}
+      <button class="rbtn snz" onclick="editPet()">✏️ Change buddy / name</button>
       <button class="rbtn go" onclick="closeShop()">Done</button>
     </div></div>`;
   }
@@ -1495,7 +1504,7 @@ window.claimReward = claimReward;
 window.selectKid = selectKid;
 window.selectDay = selectDay;
 window.openChest = openChest;
-window.tapPet = tapPet; window.choosePetType = choosePetType; window.startPet = startPet; window.openShop = openShop; window.closeShop = closeShop; window.shopAction = shopAction;
+window.tapPet = tapPet; window.choosePetType = choosePetType; window.startPet = startPet; window.openShop = openShop; window.closeShop = closeShop; window.shopAction = shopAction; window.editPet = editPet; window.cancelChangePet = cancelChangePet;
 window.petDraft = petDraft;
 window.toggleReminders = toggleReminders; window.toggleReminderVoice = toggleReminderVoice;
 window.dismissReminder = dismissReminder;
