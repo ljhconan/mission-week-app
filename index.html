@@ -40,6 +40,10 @@
   .xpbar > div{ height:100%; background:var(--kidcolor); transition:width .3s ease; }
   .streak{ display:flex; align-items:center; gap:4px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:15px; color:var(--gold); flex-shrink:0; }
 
+  .daytabs{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:16px; }
+  .daytab{ border:2px solid var(--line); background:var(--panel); color:var(--muted); border-radius:14px; padding:11px 0; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:14px; cursor:pointer; box-shadow:var(--shadow); position:relative; }
+  .daytab.selected{ background:var(--kidcolor); border-color:var(--kidcolor); color:#fff; }
+  .daytab.istoday::after{ content:''; position:absolute; bottom:4px; left:50%; width:5px; height:5px; margin-left:-2.5px; border-radius:50%; background:var(--gold); }
   .weekstrip{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:16px; }
   .daycell{ background:var(--panel); border-radius:14px; border:2px solid var(--line); padding:8px 4px 10px; text-align:center; cursor:pointer; box-shadow:var(--shadow); }
   .daycell.selected{ border-color:var(--kidcolor); }
@@ -436,7 +440,6 @@ function badgeList(kstate){
     {icon:'🔥', label:'3-Day Streak', unlocked: streak>=3},
     {icon:'🚀', label:'First Perfect Week', unlocked:(kstate.perfectWeeks||0)>=1},
     {icon:'💯', label:'50 Stars', unlocked: !!kstate.ever50},
-    {icon:'🏃', label:'Sport Star', unlocked: !!kstate.everSport50},
     {icon:'👑', label:'5 Perfect Weeks', unlocked:(kstate.perfectWeeks||0)>=5}
   ];
 }
@@ -486,28 +489,8 @@ function awardOrRevokeDayStar(kidKey, day){
 function toggleExercise(kidKey, day, ev){
   const kstate = data[kidKey];
   kstate.exerciseDone[day] = !kstate.exerciseDone[day];
-  const isDone = !!kstate.exerciseDone[day];
-  const wasAwarded = !!kstate.daySportAwarded[day];
-  let earned = false;
-  if(isDone && !wasAwarded){
-    kstate.daySportAwarded[day] = true;
-    kstate.sportBadges = (kstate.sportBadges||0) + 1;
-    if(kstate.sportBadges >= 50) kstate.everSport50 = true;
-    earned = true;
-  } else if(!isDone && wasAwarded){
-    kstate.daySportAwarded[day] = false;
-    kstate.sportBadges = Math.max(0, (kstate.sportBadges||0) - 1);
-  }
-  if(isDone){ celebrateTap(ev); justDone = 'exercise'; }
+  if(kstate.exerciseDone[day]){ celebrateTap(ev); justDone = 'exercise'; }
   saveData(kidKey); render(); justDone = null;
-  if(earned){ burstConfetti(); playFanfare(); }
-}
-function claimSportReward(kidKey){
-  const kstate = data[kidKey];
-  if((kstate.sportBadges||0) < 50) return;
-  kstate.sportBadges = 0;
-  kstate.sportRedemptions = (kstate.sportRedemptions||0) + 1;
-  saveData(kidKey); render(); burstConfetti();
 }
 function toggleTask(kidKey, day, taskId, ev){
   const kstate = data[kidKey];
@@ -529,6 +512,7 @@ function claimStarReward(kidKey){
   kstate.taobaoRedemptions = (kstate.taobaoRedemptions||0) + 1;
   saveData(kidKey); render(); burstConfetti();
 }
+const EXERCISE_POINTS = 4;  // each exercise day adds this many % toward the weekly extra-credit cap
 const MAX_EXTRA = 20;   // extra credit never adds more than +20% in a week
 const WEEKDAYS_FOR_TIME = ['Mon','Tue','Wed','Thu','Fri'];
 function weekStats(kidKey){
@@ -542,6 +526,7 @@ function weekStats(kidKey){
     Object.keys((k.bonusHitsDaily||{})[d]||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) bon += (b.amount||0); });
   });
   Object.keys(k.bonusHitsWeekly||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) bon += (b.amount||0); });
+  DAYS.forEach(d=>{ if((k.exerciseDone||{})[d]) bon += EXERCISE_POINTS; });
   // extra credit can only ever add up to MAX_EXTRA points total, and can't be used to cover missed quests/penalties above 100
   const base = Math.max(0, Math.min(100, completion - pen));
   const extra = Math.min(MAX_EXTRA, bon);
@@ -933,17 +918,7 @@ function render(){
   const {level, xp, pct} = levelInfo(kstate.lifetimeStars||0);
   const streak = currentStreak(currentKid);
 
-  let stripHtml = '';
-  DAYS.forEach(d=>{
-    const {done,total} = dayTotals(currentKid, d);
-    const donePct = total ? Math.round(done/total*100) : 0;
-    const isDone = total>0 && done===total;
-    const ringBg = total ? `conic-gradient(${kid.color} ${donePct*3.6}deg, var(--line) 0deg)` : 'var(--line)';
-    stripHtml += `<div class="daycell ${d===currentDay?'selected':''}" onclick="selectDay('${d}')">
-      <span class="dlabel">${d}</span>
-      <div class="ring" style="background:${ringBg}">${isDone ? '✅' : (total? done+'/'+total : '–')}</div>
-    </div>`;
-  });
+  const stripHtml = DAYS.map(d=>`<button class="daytab ${d===currentDay?'selected':''} ${d===actualToday?'istoday':''}" onclick="selectDay('${d}')">${d}</button>`).join('');
 
   const entries = sortedEntries(currentKid, currentDay);
   const nowMin = (currentDay === actualToday) ? (new Date().getHours()*60+new Date().getMinutes()) : -1;
@@ -988,10 +963,6 @@ function render(){
       <div class="qmid"><div class="qlabel">${e.label}</div><div class="qtime">${tag}${fmtRange(e)}</div></div>
       <div class="qcheck">${checked?'⭐':''}</div></div>`;
   }).join('');
-  const exCard = `<div class="qcard green ${exDone0?'done':''} ${justDone==='exercise'?'celebrate':''}" onclick="toggleExercise('${currentKid}','${currentDay}',event)">
-      <div class="qicon">🏃</div>
-      <div class="qmid"><div class="qlabel">Exercise</div><div class="qtime">About 60 min today · earns a 🏅</div></div>
-      <div class="qcheck">${exDone0?'🏅':''}</div></div>`;
   const progPct = dt.total ? Math.round(dt.done/dt.total*100) : 0;
   const allDoneToday = dt.total>0 && dt.done===dt.total;
   const runner = allDoneToday ? '🎉' : (progPct>=50 ? '🏃' : '🚶');
@@ -1037,6 +1008,9 @@ function render(){
     return `<div class="bigtile good ${on?'on':''} ${justDone==='bon:'+b.id?'bounce':''}" onclick="toggleBonus('${currentKid}','${currentDay}','${b.id}',event)">
       ${on?'<div class="bmark">🌟</div>':''}<div class="bi">${b.icon}</div><div class="bl">${b.label}</div></div>`;
   }).join('');
+  const exOn = !!kstate.exerciseDone[currentDay];
+  const exTile = `<div class="bigtile good ${exOn?'on':''} ${justDone==='exercise'?'bounce':''}" onclick="toggleExercise('${currentKid}','${currentDay}',event)">
+      ${exOn?'<div class="bmark">🌟</div>':''}<div class="bi">🏃</div><div class="bl">Exercise<br>about 60 min</div></div>`;
   const minTiles = isWeekend ? `<div class="mintiles">
       <div class="mintile"><div class="md">Saturday</div><div class="mn">${weekendMinutes(currentKid,'sat')}<small> min</small></div></div>
       <div class="mintile"><div class="md">Sunday</div><div class="mn">${weekendMinutes(currentKid,'sun')}<small> min</small></div></div></div>` : '';
@@ -1051,7 +1025,7 @@ function render(){
       <div class="biglabel">⚠️ Oops… <span style="color:var(--muted);font-weight:700;font-size:12px;">(a grown-up taps these)</span></div>
       <div class="bigtiles">${penTiles}</div>
       <div class="biglabel">🎯 Extra credit!</div>
-      <div class="bigtiles">${bonTiles}</div>
+      <div class="bigtiles">${exTile}${bonTiles}</div>
     </div>`;
 
   const exDone = !!kstate.exerciseDone[currentDay];
@@ -1118,7 +1092,7 @@ function render(){
       <div class="xpbar"><div style="width:${Math.min(100,Math.round(((kstate.lifetimeStars||0)/50)*100))}%;background:var(--gold);"></div></div>
     </div>
 
-    <div class="weekstrip">${stripHtml}</div>
+    <div class="daytabs">${stripHtml}</div>
 
     ${rewardHtml}
 
@@ -1127,7 +1101,6 @@ function render(){
       <div class="panelsub">Finish ALL of them to earn 1 ⭐</div>
       ${progressHtml}
       ${cardsHtml || '<div class="panelsub">No quests today — enjoy! 🎈</div>'}
-      ${exCard}
       ${alldoneHtml}
       <button class="linkbtn" onclick="showFull=!showFull;render()">${showFull?'▲ Hide':'📅 Show'} full day schedule</button>
       ${showFull ? `<div class="timeline">${timelineHtml}</div>` : ''}
@@ -1135,17 +1108,8 @@ function render(){
 
     ${ipadHtml}
 
-    <button class="linkbtn" onclick="showMore=!showMore;render()">${showMore?'▲ Hide':'🏅 Show'} medals · badges</button>
+    <button class="linkbtn" onclick="showMore=!showMore;render()">${showMore?'▲ Hide':'🏅 Show'} badges</button>
     ${showMore ? `
-    <div class="panel">
-      <div class="panelhead">
-        <h2 style="font-size:15px;">🏃 50-Medal Taobao Reward</h2>
-        ${(kstate.sportBadges||0) >= 50 ? `<button class="rewardbtn" style="padding:8px 14px;" onclick="claimSportReward('${currentKid}')">🛍️ Redeem now</button>` : ''}
-      </div>
-      <div class="panelsub">${kstate.sportBadges||0}/50 medals saved${kstate.sportRedemptions ? ' · 🛍️ '+kstate.sportRedemptions+' redeemed so far' : ''}</div>
-      <div class="xpbar"><div style="width:${Math.min(100,Math.round(((kstate.sportBadges||0)/50)*100))}%;background:var(--green);"></div></div>
-    </div>
-
     <div class="panel">
       <h2 style="font-size:16px;">🏅 Badges</h2>
       <div class="badgerow">${badges.map(b=>`<div class="badge ${b.unlocked?'unlocked':''}">${b.icon} ${b.label}</div>`).join('')}</div>
@@ -1298,7 +1262,6 @@ function openChest(){ chestOpen = true; render(); }
 window.toggleTask = toggleTask;
 window.claimStarReward = claimStarReward;
 window.toggleExercise = toggleExercise;
-window.claimSportReward = claimSportReward;
 window.confirmChoice = confirmChoice;
 window.cancelChoice = cancelChoice;
 window.togglePenalty = togglePenalty;
