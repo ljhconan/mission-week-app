@@ -335,10 +335,10 @@ async function loadData(){
   data.penalties = cloud.penalties || (cached && cached.penalties) || clone(DEFAULT_PENALTIES);
   data.bonuses = cloud.bonuses || (cached && cached.bonuses) || clone(DEFAULT_BONUSES);
   data.bonuses.forEach(b=>{ if(!b.frequency) b.frequency = 'daily'; });
-  // one-time rebalance: daily items were too heavy in the % model (10% each) -> lighter values
+  // weights: penalties stay 10% (undo earlier rebalance); daily bonuses 5% each
   let rebalanced = false;
-  data.penalties.forEach(x=>{ if(!x.v2){ x.v2 = true; if((x.amount||0) >= 5){ x.amount = 3; } rebalanced = true; } });
-  data.bonuses.forEach(x=>{ if(!x.v2){ x.v2 = true; if(x.frequency==='daily' && (x.amount||0) >= 5){ x.amount = 2; } rebalanced = true; } });
+  data.penalties.forEach(x=>{ if(x.v2){ delete x.v2; if(x.amount===3) x.amount = 10; rebalanced = true; } });
+  data.bonuses.forEach(x=>{ if(!x.v3){ x.v3 = true; if(x.frequency==='daily' && (x.amount===2 || x.amount===10)) x.amount = 5; rebalanced = true; } });
   if(rebalanced) setTimeout(()=>{ try{ saveData('penalties'); saveData('bonuses'); }catch(e){} }, 1500);
   data.allowance = cloud.allowance || (cached && cached.allowance) || clone(DEFAULT_ALLOWANCE);
   data.leyna = cloud.leyna || (cached && cached.leyna) || freshKidState();
@@ -862,7 +862,7 @@ function onSchedFieldChange(ev){
   saveData('schedule');
 }
 function addPenalty(){
-  data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:3, v2:true});
+  data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:10});
   saveData('penalties'); renderEdit();
 }
 function deletePenalty(id){
@@ -878,7 +878,7 @@ function onPenFieldChange(ev){
   saveData('penalties');
 }
 function addBonus(){
-  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:2, frequency:'daily', v2:true});
+  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:5, frequency:'daily', v3:true});
   saveData('bonuses'); renderEdit();
 }
 function deleteBonus(id){

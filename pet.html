@@ -242,6 +242,22 @@
   @keyframes heartup{ 0%{ transform:translateY(0) scale(.4); opacity:0; } 30%{ transform:translateY(-30px) scale(1.2); opacity:1; } 100%{ transform:translateY(-100px) scale(1.5); opacity:0; } }
 
   .petscale{ position:relative; width:110px; height:110px; transform:scale(var(--ps,1)); transform-origin:50% 100%; transition:transform .8s cubic-bezier(.3,1.5,.5,1); }
+  .roomitem{ position:absolute; font-size:44px; line-height:1; pointer-events:none; filter:drop-shadow(0 3px 2px rgba(0,0,0,.18)); }
+  .roomitem.bl{ left:14px; bottom:34px; } .roomitem.br{ right:14px; bottom:34px; }
+  .roomitem.tl{ left:12px; top:46px; font-size:38px; } .roomitem.tr{ right:12px; top:46px; font-size:38px; }
+  .petstage.night{ border-color:#3B2F8F; }
+  .nightov{ position:absolute; inset:0; background:linear-gradient(180deg,rgba(14,12,56,.78),rgba(40,30,110,.62)); pointer-events:none; }
+  .nightdeco{ position:absolute; right:60px; top:44px; font-size:30px; pointer-events:none; animation:zzz 3s ease-in-out infinite; }
+  .nightdeco span{ position:absolute; font-size:14px; } .nightdeco span:nth-child(1){ left:-150px; top:6px; } .nightdeco span:nth-child(2){ left:-60px; top:-8px; } .nightdeco span:nth-child(3){ left:-210px; top:42px; }
+  .wishcard{ display:flex; align-items:center; gap:10px; background:linear-gradient(90deg,#FFF6D6,#FFE7F1); border:2px dashed #F2B94B; border-radius:18px; padding:9px 12px; margin:-4px 0 14px; font-weight:800; font-size:14px; }
+  .wishcard .wi{ font-size:26px; } .wishcard .wt{ flex:1; line-height:1.25; } .wishcard .wr{ font-family:'Baloo 2',sans-serif; color:#C77A00; white-space:nowrap; }
+  .wishcard.done{ background:#E3F8E8; border-color:#6BCB88; } .wishcard.done .wr{ color:#2A9448; }
+  .branchrow{ display:flex; gap:10px; } .branchpick{ flex:1; border-radius:20px; padding:12px 6px; cursor:pointer; border:3px solid transparent; }
+  .branchpick.brave{ background:#FFE9E4; border-color:#FF8A75; } .branchpick.gentle{ background:#EAF2FF; border-color:#8FB8FF; }
+  .branchpick .bn{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:16px; margin-top:4px; } .branchpick .bd{ font-size:11px; font-weight:700; color:var(--muted); line-height:1.3; margin-top:3px; }
+  .branchglow{ position:absolute; left:50%; top:52%; width:170px; height:170px; margin:-85px 0 0 -85px; border-radius:50%; z-index:-1; animation:zzz 2.4s ease-in-out infinite; }
+  .branchglow.brave{ background:radial-gradient(circle,rgba(255,110,80,.55),transparent 68%); } .branchglow.gentle{ background:radial-gradient(circle,rgba(140,190,255,.7),transparent 68%); }
+  .branchbadge{ position:absolute; right:-14px; top:-4px; font-size:30px; pointer-events:none; }
   .petaura{ position:absolute; left:50%; top:50%; width:150px; height:150px; margin:-75px 0 0 -75px; border-radius:50%; background:radial-gradient(circle,rgba(255,226,120,.75),rgba(255,226,120,0) 70%); animation:zzz 2.4s ease-in-out infinite; z-index:-1; }
   .growline{ font-size:12px; font-weight:800; color:var(--muted); margin:-4px 4px 8px; }
   .growline .gbar{ height:8px; border-radius:5px; background:var(--line); overflow:hidden; margin-top:3px; }
@@ -453,10 +469,10 @@ async function loadData(){
   data.penalties = cloud.penalties || (cached && cached.penalties) || clone(DEFAULT_PENALTIES);
   data.bonuses = cloud.bonuses || (cached && cached.bonuses) || clone(DEFAULT_BONUSES);
   data.bonuses.forEach(b=>{ if(!b.frequency) b.frequency = 'daily'; });
-  // one-time rebalance: daily items were too heavy in the % model (10% each) -> lighter values
+  // weights: penalties stay 10% (undo earlier rebalance); daily bonuses 5% each
   let rebalanced = false;
-  data.penalties.forEach(x=>{ if(!x.v2){ x.v2 = true; if((x.amount||0) >= 5){ x.amount = 3; } rebalanced = true; } });
-  data.bonuses.forEach(x=>{ if(!x.v2){ x.v2 = true; if(x.frequency==='daily' && (x.amount||0) >= 5){ x.amount = 2; } rebalanced = true; } });
+  data.penalties.forEach(x=>{ if(x.v2){ delete x.v2; if(x.amount===3) x.amount = 10; rebalanced = true; } });
+  data.bonuses.forEach(x=>{ if(!x.v3){ x.v3 = true; if(x.frequency==='daily' && (x.amount===2 || x.amount===10)) x.amount = 5; rebalanced = true; } });
   if(rebalanced) setTimeout(()=>{ try{ saveData('penalties'); saveData('bonuses'); }catch(e){} }, 1500);
   data.allowance = cloud.allowance || (cached && cached.allowance) || clone(DEFAULT_ALLOWANCE);
   data.leyna = cloud.leyna || (cached && cached.leyna) || freshKidState();
@@ -987,6 +1003,22 @@ const PET_ITEMS = [
   {id:'bg-space',slot:'bg',emoji:'🌌',name:'Space',cost:25,css:'linear-gradient(180deg,#14143A 0%,#3B2F8F 100%)'},
   {id:'bg-candy',slot:'bg',emoji:'🍭',name:'Candy Land',cost:30,css:'linear-gradient(180deg,#FFD1EC 0%,#E0C3FF 100%)'}
 ];
+PET_ITEMS.push(
+  {id:'r-plant',slot:'room',spot:'bl',emoji:'🪴',name:'Plant',cost:6},
+  {id:'r-tree',slot:'room',spot:'bl',emoji:'🌳',name:'Tree',cost:10},
+  {id:'r-tent',slot:'room',spot:'bl',emoji:'⛺',name:'Tent',cost:18},
+  {id:'r-fountain',slot:'room',spot:'bl',emoji:'⛲',name:'Fountain',cost:22},
+  {id:'r-teddy',slot:'room',spot:'br',emoji:'🧸',name:'Teddy',cost:8},
+  {id:'r-sofa',slot:'room',spot:'br',emoji:'🛋️',name:'Sofa',cost:15},
+  {id:'r-bed',slot:'room',spot:'br',emoji:'🛏️',name:'Cozy Bed',cost:20},
+  {id:'r-pic',slot:'room',spot:'tl',emoji:'🖼️',name:'Picture',cost:8},
+  {id:'r-clock',slot:'room',spot:'tl',emoji:'🕰️',name:'Clock',cost:10},
+  {id:'r-castle',slot:'room',spot:'tl',emoji:'🏰',name:'Castle',cost:30},
+  {id:'r-lantern',slot:'room',spot:'tr',emoji:'🏮',name:'Lantern',cost:8},
+  {id:'r-rainbow',slot:'room',spot:'tr',emoji:'🌈',name:'Rainbow',cost:12},
+  {id:'r-balloons',slot:'room',spot:'tr',emoji:'🎈',name:'Balloons',cost:10}
+);
+const slotKey = it => it.slot==='room' ? 'room-'+it.spot : it.slot;
 const DEFAULT_BG = 'linear-gradient(180deg,#CFF0FF 0%,#EAFBE0 60%,#B7E4A0 61%,#9ED585 100%)';
 const TAP_LINES = ['Hehe, that tickles! 🥰','Boop! 💕','I believe in you! 💪','Wanna play later? 🎮','You\'re my best friend! 💖','Hi hi hi! 👋'];
 function newPet(){ return {type:null, name:'', coins:0, owned:[], equipped:{}, awarded:{}}; }
@@ -1011,8 +1043,10 @@ function petReact(text){
     const r = el.getBoundingClientRect(); sparkle(r.left+r.width/2, r.top+r.height/3);
   }, 60);
 }
+function isNight(){ const d = new Date(), m = d.getHours()*60+d.getMinutes(); return m >= BED_REMINDER.h*60+BED_REMINDER.m || m < 6*60+30; }
 function tapPet(){
   const pt = petOf(currentKid);
+  if(isNight()){ petReact('Shh… I\'m sleeping 🤫 Goodnight! 🌙'); render(); return; }
   const word = petSound(pt, Math.random() < 0.5);
   const extra = ['','',' 💕',' 🎶'];
   petReact(word + extra[Math.floor(Math.random()*extra.length)]); render();
@@ -1041,6 +1075,7 @@ function awardCoins(kidKey, day, taskId, gotStar){
     const lines = ['Yay! +'+gain+' 🪙','Nice one! +'+gain+' 🪙','Woohoo! +'+gain+' 🪙','You rock! +'+gain+' 🪙'];
     if(!evolved) petReact(gotStar ? 'ALL DONE!! +'+gain+' 🪙 🎉' : lines[Math.floor(Math.random()*lines.length)]);
   } else { petReact('Done again! 👏'); }
+  if(day===actualToday && Object.values((data[kidKey].checks||{})[day]||{}).filter(Boolean).length >= 2) completeWish(kidKey,'quests');
 }
 function choosePetType(t, line){ petDraft.type = t; petDraft.line = line || null; render(); }
 function editPet(){
@@ -1048,13 +1083,43 @@ function editPet(){
   petDraft = {type: pt.type, line: pt.line||null, name: pt.name}; changingPet = true; showShop = false; render();
 }
 function cancelChangePet(){ changingPet = false; petDraft = {type:null, line:null, name:''}; render(); }
+const BRANCHES = {
+  brave:  {icon:'⚔️', name:'Brave Path',  t2:'Brave Teen',  t3:'Champion', desc:'Strong & fearless — horns and a bold look!'},
+  gentle: {icon:'✨', name:'Gentle Path', t2:'Gentle Teen', t3:'Sage',     desc:'Kind & magical — wings and a glowing halo!'}
+};
+function stageLabel(pt){
+  const i = stageIdx(pt.growth||0);
+  if(pt.branch && BRANCHES[pt.branch] && i>=2) return BRANCHES[pt.branch][i===2?'t2':'t3'];
+  return STAGES[i].name;
+}
+function chooseBranch(b){
+  const pt = petOf(currentKid); pt.branch = b; petEvolveUntil = Date.now()+2500; savePet(currentKid);
+  setTimeout(()=>{ burstConfetti(); playFanfare(); petSound(pt,false); }, 200);
+  petReact('✨ I took the '+BRANCHES[b].name+'! Look at me! '+BRANCHES[b].icon);
+  render();
+}
 function startPet(){
   if(!petDraft.type) return;
   const wasChange = changingPet; changingPet = false;
   const pt = petOf(currentKid);
-  pt.type = petDraft.type; pt.line = petDraft.line || null; pt.name = (petDraft.name||'').trim().slice(0,14) || 'Buddy';
+  pt.type = petDraft.type; pt.line = petDraft.line || null; pt.branch = null; pt.name = (petDraft.name||'').trim().slice(0,14) || 'Buddy';
   petDraft = {type:null, line:null, name:''}; savePet(currentKid);
   petReact(wasChange ? 'New look! I\'m '+pt.name+' now! 😄' : 'Hi! I\'m '+pt.name+'! Let\'s do this together! 🎉'); render();
+}
+const WISHES = {feed:'wants a yummy treat 🍽️', play:'wants to play ball ⚽', hug:'wants a big hug 🤗', game:'wants to play a game 🎮', quests:'wants you to finish 2 quests 📚'};
+function wishDateKey(){ return new Date().toLocaleDateString('en-CA'); }
+function wishOf(kidKey){
+  const pt = petOf(kidKey), key = wishDateKey();
+  if(!pt.wish || pt.wish.d !== key){ const kinds = Object.keys(WISHES); pt.wish = {d:key, k:kinds[hashStr(kidKey+key)%kinds.length], done:false}; }
+  return pt.wish;
+}
+function completeWish(kidKey, kind){
+  const pt = petOf(kidKey); if(!pt || !pt.type) return;
+  const w = wishOf(kidKey); if(w.done || w.k !== kind) return;
+  w.done = true; pt.coins += 3; logCoin(pt, 3, '💭 Granted '+pt.name+"'s wish");
+  addGrowth(kidKey, 2); savePet(kidKey);
+  setTimeout(()=>{ playFanfare(); burstConfetti(); }, 150);
+  petReact('My wish came true!! +3 🪙 💖');
 }
 function openShop(){ showShop = true; render(); }
 function closeShop(){ showShop = false; render(); }
@@ -1062,10 +1127,10 @@ function shopAction(itemId){
   const pt = petOf(currentKid); const it = PET_ITEMS.find(x=>x.id===itemId); if(!it) return;
   if(pt.owned.indexOf(itemId) === -1){
     if(pt.coins < it.cost) return;
-    pt.coins -= it.cost; logCoin(pt, -it.cost, '🛍️ Bought '+it.name); pt.owned.push(itemId); pt.equipped[it.slot] = itemId;
+    pt.coins -= it.cost; logCoin(pt, -it.cost, '🛍️ Bought '+it.name); pt.owned.push(itemId); pt.equipped[slotKey(it)] = itemId;
     unlockAudio(); playFanfare(); petReact('Ooh, new '+it.name+'! Thank you! 💖');
   } else {
-    pt.equipped[it.slot] = (pt.equipped[it.slot] === itemId) ? null : itemId;
+    pt.equipped[slotKey(it)] = (pt.equipped[slotKey(it)] === itemId) ? null : itemId;
   }
   savePet(currentKid); render();
 }
@@ -1073,13 +1138,18 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
   const pt = petOf(kidKey); const eq = pt.equipped || {};
   const item = slot => PET_ITEMS.find(x=>x.id===eq[slot]);
   const bgItem = item('bg');
-  const mood = allDone ? 'party' : (anyStarted ? 'idle' : 'sleepy');
+  const night = isNight();
+  const mood = night ? 'sleepy' : (allDone ? 'party' : (anyStarted ? 'idle' : 'sleepy'));
   const reacting = petMsg && petMsg.until > Date.now();
   const happy = petHappy(pt);
   const gp = pt.growth||0, sidx = stageIdx(gp), stage = STAGES[sidx], nextSt = STAGES[sidx+1];
   const growPct = nextSt ? Math.round((gp-stage.min)/(nextSt.min-stage.min)*100) : 100;
-  const text = reacting ? petMsg.text : (mood==='sleepy' && currentDay===actualToday ? 'Zzz… wake me up by finishing a quest! 💤' : (happy < 45 ? 'I\'m a little hungry… got a treat? '+treatForPet(pt) : msgDefault));
-  return `<div class="petstage" style="background:${bgItem?bgItem.css:DEFAULT_BG}">
+  const text = reacting ? petMsg.text : (night ? 'Zzz… goodnight, '+META[kidKey].name+'! 🌙💤' : mood==='sleepy' && currentDay===actualToday ? 'Zzz… wake me up by finishing a quest! 💤' : (happy < 45 ? 'I\'m a little hungry… got a treat? '+treatForPet(pt) : msgDefault));
+  const room = pt.equipped || {};
+  const roomHtml = ['tl','tr','bl','br'].map(sp=>{ const it = PET_ITEMS.find(x=>x.id===room['room-'+sp]); return it?`<div class="roomitem ${sp}">${it.emoji}</div>`:''; }).join('');
+  return `<div class="petstage ${night?'night':''}" style="background:${bgItem?bgItem.css:DEFAULT_BG}">
+    ${night?'<div class="nightov"></div><div class="nightdeco">🌙<span>✨</span><span>⭐</span><span>✨</span></div>':''}
+    ${roomHtml}
     <div class="petchip left">🔥 ${currentStreak(kidKey)}</div>
     <div class="petmood" title="Happiness"><span>${happy>=70?'😄':(happy>=40?'🙂':'🥺')}</span><div class="mbar"><div style="width:${happy}%"></div></div></div>
     <div class="petchip right" style="cursor:pointer;" onclick="openCoinLog()">🪙 ${pt.coins} ›</div>
@@ -1087,14 +1157,16 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
     <div class="petwrap pet-${mood} ${reacting?'hop':''} ${(petEvolveUntil>Date.now())?'evolving':''}" onclick="tapPet()"><div class="petscale" style="--ps:${stage.scale}">
       ${(pt.line&&LINES[pt.line])?`<div class="elemglow" style="--ec:${LINES[pt.line].color}"></div>`:''}
       ${sidx===3?'<div class="petaura"></div>':''}
+      ${(pt.branch&&sidx>=2)?`<div class="branchglow ${pt.branch}"></div>`:''}
+      ${(pt.branch&&sidx>=2&&!(pt.line&&CPAL[pt.line]))?`<div class="branchbadge">${BRANCHES[pt.branch].icon}</div>`:''}
       ${item('hat')?`<div class="petacc hat">${item('hat').emoji}</div>`:''}
       <div class="petbody">${petFaceHtml(pt, 120, mood)}</div>
       ${item('face')?`<div class="petacc face">${item('face').emoji}</div>`:''}
       ${item('item')?`<div class="petacc held">${item('item').emoji}</div>`:''}
-      ${mood==='sleepy'?'<div class="petzzz">💤</div>':''}
+      ${(mood==='sleepy' || night)?'<div class="petzzz">💤</div>':''}
       ${mood==='party'?'<div class="petparty">🎉</div>':''}
     </div></div>
-    <div class="petname">${pt.name} · ${stage.name}</div>
+    <div class="petname">${pt.name} · ${stageLabel(pt)}</div>
     <button class="shopbtn" onclick="openShop()">🛍️ Shop</button>
   </div>
   <div class="growline">🌱 ${nextSt ? 'Growing to '+nextSt.name+' · '+(gp-stage.min)+'/'+(nextSt.min-stage.min) : 'Fully grown! 🌟'}<div class="gbar"><div style="width:${growPct}%"></div></div></div>
@@ -1103,7 +1175,8 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
     <button class="carebtn" onclick="careAction('play')"><span>⚽</span>Play</button>
     <button class="carebtn" onclick="careAction('hug')"><span>🤗</span>Hug</button>
     <button class="carebtn" onclick="openGames()"><span>🎮</span>Games</button>
-  </div>`;
+  </div>
+  ${(()=>{ const w = wishOf(kidKey); return `<div class="wishcard ${w.done?'done':''}"><span class="wi">💭</span><div class="wt"><b>${pt.name}</b> ${WISHES[w.k]}</div><div class="wr">${w.done?'✅ Done!':'🎁 +3 🪙'}</div></div>`; })()}`;
 }
 function petOverlays(kidKey){
   const pt = petOf(kidKey); let out = '';
@@ -1117,6 +1190,14 @@ function petOverlays(kidKey){
       <input class="petnamein" type="text" maxlength="14" placeholder="Name your buddy" value="${(petDraft.name||'').replace(/"/g,'&quot;')}" oninput="petDraft.name=this.value">
       <button class="rbtn go" style="${petDraft.type?'':'opacity:.4;'}" onclick="startPet()">${changingPet?'Save ✅':"Let's go! 🎉"}</button>
       ${changingPet?'<button class="rbtn snz" onclick="cancelChangePet()">Cancel</button>':''}
+    </div></div>`;
+  }
+  if(pt.type && !changingPet && (pt.growth||0) >= 100 && !pt.branch){
+    const prev = b => (pt.line && CPAL[pt.line]) ? creatureSVG(pt.line, 2, 'party', 96, b) : `<div style="font-size:64px;line-height:1.1;position:relative;display:inline-block;">${pt.type}<span style="position:absolute;right:-14px;top:-6px;font-size:28px;">${BRANCHES[b].icon}</span></div>`;
+    out += `<div class="remind-overlay"><div class="remind-box" style="max-width:370px;">
+      <div class="rtitle" style="margin-bottom:2px;">✨ ${pt.name} is evolving!</div>
+      <div class="rsub" style="margin-bottom:10px;">Pick ${pt.name}'s path. This choice is forever!</div>
+      <div class="branchrow">${['brave','gentle'].map(b=>`<div class="branchpick ${b}" onclick="chooseBranch('${b}')">${prev(b)}<div class="bn">${BRANCHES[b].icon} ${BRANCHES[b].name}</div><div class="bd">${BRANCHES[b].desc}</div></div>`).join('')}</div>
     </div></div>`;
   }
   if(showCoinLog){
@@ -1142,7 +1223,7 @@ function petOverlays(kidKey){
   }
   if(showShop){
     const tile = it=>{
-      const owned = pt.owned.indexOf(it.id) !== -1, worn = pt.equipped[it.slot] === it.id;
+      const owned = pt.owned.indexOf(it.id) !== -1, worn = pt.equipped[slotKey(it)] === it.id;
       const afford = pt.coins >= it.cost;
       return `<div class="shoptile ${worn?'worn':''}" onclick="shopAction('${it.id}')">
         <div class="si">${it.emoji}</div><div class="sn">${it.name}</div>
@@ -1157,9 +1238,11 @@ function petOverlays(kidKey){
         ✅ Finish a quest: +1<br>
         🍀 Lucky quest of the day: +3<br>
         🌟 Finish ALL quests in a day: +5 bonus<br>
+        💭 Grant your buddy's daily wish: +3<br>
+        🎮 Games cost 🪙2 to enter and pay back up to 🪙3<br>
         Coins never expire — save up for something big!
       </div>
-      ${sect('🎩 Hats','hat')}${sect('🕶️ Style','face')}${sect('🎈 Fun stuff','item')}${sect('🌈 Places','bg')}
+      ${sect('🎩 Hats','hat')}${sect('🕶️ Style','face')}${sect('🎈 Fun stuff','item')}${sect('🌈 Places','bg')}${sect('🏠 Decorate the room','room')}
       <button class="rbtn snz" onclick="editPet()">✏️ Change buddy / name</button>
       <button class="rbtn go" onclick="closeShop()">Done</button>
     </div></div>`;
@@ -1249,7 +1332,7 @@ const CPAL = {
   fire:  {m:'#FF6B4D', d:'#C93A2B', b:'#FFE6B8', a:'#FFC94D'},
   leaf:  {m:'#5ACD74', d:'#2A9448', b:'#EAF8CF', a:'#FF9EC4'}
 };
-function creatureSVG(line, st, mood, px){
+function creatureSVG(line, st, mood, px, branch){
   const c = CPAL[line]; if(!c) return '';
   const rx = [60,58,56,58][st], ry = [54,58,64,70][st], cy = [130,124,116,110][st];
   const ex = rx*0.40, ey = cy - ry*0.18, er = [12,11,10,10][st];
@@ -1303,12 +1386,22 @@ function creatureSVG(line, st, mood, px){
   if(st>=1) body = `<ellipse cx="${100-rx*0.5}" cy="${cy+ry-3}" rx="17" ry="10" fill="${c.m}" stroke="${c.d}" stroke-width="3"/><ellipse cx="${100+rx*0.5}" cy="${cy+ry-3}" rx="17" ry="10" fill="${c.m}" stroke="${c.d}" stroke-width="3"/>` + body;
   if(st>=1 && line!=='water') body += `<ellipse cx="${100-rx+2}" cy="${cy+ry*0.15}" rx="11" ry="16" fill="${c.m}" stroke="${c.d}" stroke-width="3" transform="rotate(20 ${100-rx+2} ${cy+ry*0.15})"/><ellipse cx="${100+rx-2}" cy="${cy+ry*0.15}" rx="11" ry="16" fill="${c.m}" stroke="${c.d}" stroke-width="3" transform="rotate(-20 ${100+rx-2} ${cy+ry*0.15})"/>`;
   if(line==='elec' && st>=2) body += `<path d="M100,${cy-ry*0.72} l-6,9 l8,0 l-5,9" fill="none" stroke="${c.d}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if(branch && st>=2){
+    if(branch==='brave'){
+      [-1,1].forEach(sd=>{ const x=100+sd*rx*0.5, y=topY+14; front += `<path d="M${x-sd*9},${y} Q${x+sd*6},${y-22-st*4} ${x+sd*20},${y-30-st*6} Q${x+sd*16},${y-10} ${x+sd*9},${y+4} Z" fill="#F3EADB" stroke="${c.d}" stroke-width="3" stroke-linejoin="round"/>`; });
+      if(st>=3) back += [-1,1].map(sd=>`<path d="M${100+sd*(rx-4)},${cy-ry*0.2} l${sd*26},-30 l${-sd*4},34 l${sd*22},-8 l${-sd*20},30 z" fill="${c.d}" opacity=".85"/>`).join('');
+    } else {
+      [-1,1].forEach(sd=>{ const x=100+sd*(rx+2), y=cy-ry*0.15; back += `<g transform="translate(${x} ${y}) scale(${sd},1)"><path d="M0,0 Q30,-34 52,-18 Q40,-6 50,6 Q30,6 22,16 Q10,12 0,16 Z" fill="#FFFFFF" stroke="${c.d}" stroke-width="3" stroke-linejoin="round"/><path d="M12,2 Q28,-12 42,-10" fill="none" stroke="${c.b}" stroke-width="3" stroke-linecap="round"/></g>`; });
+      front += `<ellipse cx="100" cy="${topY-12-st*2}" rx="24" ry="7" fill="none" stroke="#FFD93B" stroke-width="5"/><ellipse cx="100" cy="${topY-12-st*2}" rx="24" ry="7" fill="none" stroke="#FFF3A8" stroke-width="2"/>`;
+    }
+  }
   // ---- face ----
   let face = `<circle cx="${100-ex-12}" cy="${ey+er+8}" r="9" fill="${cheek}" opacity="${cheekOp}"/><circle cx="${100+ex+12}" cy="${ey+er+8}" r="9" fill="${cheek}" opacity="${cheekOp}"/>`;
   if(mood==='sleepy'){
     face += `<path d="M${100-ex-9},${ey} Q${100-ex},${ey+8} ${100-ex+9},${ey}" fill="none" stroke="${dark}" stroke-width="4" stroke-linecap="round"/><path d="M${100+ex-9},${ey} Q${100+ex},${ey+8} ${100+ex+9},${ey}" fill="none" stroke="${dark}" stroke-width="4" stroke-linecap="round"/><ellipse cx="100" cy="${my+2}" rx="4" ry="5" fill="${dark}"/>`;
   } else {
     face += `<g class="cblink"><circle cx="${100-ex}" cy="${ey}" r="${er}" fill="${dark}"/><circle cx="${100+ex}" cy="${ey}" r="${er}" fill="${dark}"/><circle cx="${100-ex+4}" cy="${ey-4}" r="${er*0.38}" fill="#fff"/><circle cx="${100+ex+4}" cy="${ey-4}" r="${er*0.38}" fill="#fff"/><circle cx="${100-ex-4}" cy="${ey+4}" r="${er*0.18}" fill="#fff"/><circle cx="${100+ex-4}" cy="${ey+4}" r="${er*0.18}" fill="#fff"/></g>`;
+    if(branch==='brave' && st>=2) face += `<path d="M${100-ex-12},${ey-er-6} l20,6" stroke="${dark}" stroke-width="4" stroke-linecap="round"/><path d="M${100+ex+12},${ey-er-6} l-20,6" stroke="${dark}" stroke-width="4" stroke-linecap="round"/>`;
     face += mood==='party'
       ? `<path d="M${100-12},${my-3} Q100,${my+22} ${100+12},${my-3} Z" fill="${dark}"/><path d="M${100-6},${my+8} Q100,${my+3} ${100+6},${my+8} Q100,${my+14} ${100-6},${my+8} Z" fill="#FF7A9A"/>`
       : `<path d="M${100-9},${my-2} Q100,${my+10} ${100+9},${my-2}" fill="none" stroke="${dark}" stroke-width="3.5" stroke-linecap="round"/>`;
@@ -1318,7 +1411,7 @@ function creatureSVG(line, st, mood, px){
     <ellipse cx="100" cy="190" rx="${rx*0.85}" ry="7" fill="rgba(0,0,0,.14)"/>${back}${body}${front}${face}</svg>`;
 }
 function petFaceHtml(pt, px, mood){
-  if(pt && pt.line && CPAL[pt.line]) return creatureSVG(pt.line, stageIdx(pt.growth||0), mood||'idle', px);
+  if(pt && pt.line && CPAL[pt.line]) return creatureSVG(pt.line, stageIdx(pt.growth||0), mood||'idle', px, pt.branch);
   return faceOf(pt);
 }
 
@@ -1329,6 +1422,7 @@ function addGrowth(kidKey, n){
   const pt = petOf(kidKey); const before = stageIdx(pt.growth||0);
   pt.growth = (pt.growth||0) + n;
   const after = stageIdx(pt.growth);
+  if(after >= 2 && before < 2 && !pt.branch){ petEvolveUntil = Date.now()+2500; setTimeout(()=>{ burstConfetti(); playFanfare(); }, 200); return true; }
   if(after > before){
     petEvolveUntil = Date.now()+2500;
     setTimeout(()=>{ burstConfetti(); playFanfare(); }, 200);
@@ -1398,6 +1492,7 @@ function flyItem(emoji, cls){
 let careCooldown = {};
 function careAction(kind){
   const pt = petOf(currentKid); if(!pt.type) return;
+  if(isNight()){ petReact('Zzz… let\'s play tomorrow! 🌙'); render(); return; }
   unlockAudio();
   const now = Date.now();
   if(kind==='feed'){
@@ -1405,16 +1500,19 @@ function careAction(kind){
     pt.coins -= 2; logCoin(pt, -2, treatForPet(pt)+' Treat for '+pt.name); setHappy(pt, 25);
     flyItem(treatForPet(pt), 'toface'); tone([500,700,500,700],0.09,0.12);
     if(!addGrowth(currentKid, 2)) petReact('Yum yum! Thank you! '+treatForPet(pt)+' 😋');
+    completeWish(currentKid,'feed');
   } else if(kind==='play'){
     if(careCooldown.play && now - careCooldown.play < 15000){ petReact('Whew, let me catch my breath! 😅'); render(); return; }
     careCooldown.play = now; setHappy(pt, 15);
     flyItem(['⚽','🎾','🏀'][Math.floor(Math.random()*3)], 'ball'); tone([392,523,659],0.1,0.1);
     if(!addGrowth(currentKid, 1)) petReact('Wheee! Catch! 🎉');
+    completeWish(currentKid,'play');
   } else {
     if(careCooldown.hug && now - careCooldown.hug < 10000){ petReact('Still feeling the love! 💗'); render(); return; }
     careCooldown.hug = now; setHappy(pt, 10);
     flyItem('💗', 'hearts'); sweep('sine',600,900,.2,.08);
     petReact('Awww, I love hugs! 🥰');
+    completeWish(currentKid,'hug');
   }
   savePet(currentKid); render();
 }
@@ -1427,13 +1525,20 @@ function gameCoinsLeft(pt){
   return Math.max(0, 3 - pt.gameLog.n);
 }
 function closeGames(){ const o = document.getElementById('gameov'); if(o) o.remove(); gameRun = false; render(); }
-let gameRun = false;
+let gameRun = false, gamePaid = false;
+const GAME_FEE = 2;
+function payGame(){
+  const pt = petOf(currentKid);
+  if(gameCoinsLeft(pt) > 0 && pt.coins >= GAME_FEE){ pt.coins -= GAME_FEE; logCoin(pt, -GAME_FEE, '🎮 Game entry'); gamePaid = true; savePet(currentKid); }
+  else gamePaid = false;
+}
 function openGames(){
   const old = document.getElementById('gameov'); if(old) old.remove();
   const ov = document.createElement('div'); ov.id = 'gameov'; ov.className = 'gameov'; document.body.appendChild(ov);
   const pt = petOf(currentKid), left = gameCoinsLeft(pt);
   ov.innerHTML = `<div class="gbox"><div class="gtitle">🎮 Play with ${pt.name}!</div>
-    <div class="gsub">${left>0?'Win coins in '+left+' more game'+(left>1?'s':'')+' today!':'Coin limit reached today — still fun to play!'}</div>
+    <div class="gsub">${left>0?'Each game costs 🪙'+GAME_FEE+' to enter — win up to 🪙3 back! ('+left+' coin game'+(left>1?'s':'')+' left today)':'Coin games are done for today — practice play is free!'}</div>
+    <div class="gsub" style="font-size:12px;">${pt.coins<GAME_FEE?'Not enough 🪙 for a coin game — you can still play for fun.':'You have 🪙 '+pt.coins}</div>
     <button class="rbtn go" onclick="startCatch()">🧺 Catch the Treats</button>
     <button class="rbtn go" style="background:var(--green);" onclick="startMemory()">🧠 Copy Me!</button>
     <button class="rbtn snz" onclick="closeGames()">Close</button></div>`;
@@ -1441,20 +1546,22 @@ function openGames(){
 function finishGame(score, kind){
   gameRun = false;
   const pt = petOf(currentKid); const left = gameCoinsLeft(pt);
-  let coins = kind==='catch' ? Math.min(5, Math.floor(score/4)) : Math.min(5, score);
-  if(left <= 0) coins = 0; else pt.gameLog.n++;
-  pt.coins += coins; if(coins>0) logCoin(pt, coins, (kind==='catch'?'🧺 Catch the Treats':'🧠 Copy Me')+' game (score '+score+')'); setHappy(pt, 15); const grew = addGrowth(currentKid, 2); savePet(currentKid);
+  let coins = kind==='catch' ? Math.min(3, Math.floor(score/5)) : Math.min(3, Math.floor(score/2));
+  if(!gamePaid || left <= 0) coins = 0; else pt.gameLog.n++;
+  gamePaid = false;
+  pt.coins += coins; if(coins>0) logCoin(pt, coins, (kind==='catch'?'🧺 Catch the Treats':'🧠 Copy Me')+' prize (score '+score+')'); setHappy(pt, 15); const grew = addGrowth(currentKid, 1); completeWish(currentKid,'game'); savePet(currentKid);
   playFanfare();
   const ov = document.getElementById('gameov'); if(!ov) return;
   ov.innerHTML = `<div class="gbox"><div class="gtitle">${coins>0?'🎉 Great job!':'👏 Nice game!'}</div>
     <div style="font-size:54px;margin:6px 0;line-height:0;">${petFaceHtml(pt, 80, 'party')}</div>
-    <div class="gsub">Score: <b>${score}</b>${coins>0?' · You won 🪙 '+coins+'!':(left<=0?' · (coin limit reached today)':' · Try for more!')}</div>
+    <div class="gsub">Score: <b>${score}</b>${coins>0?' · You won 🪙 '+coins+'!':(left<=0?' · (coin games done for today)':(coins===0&&score>=0?' · Practice round — no coins':' · Try for more!'))}</div>
     <div class="gsub">${pt.name} is happier now 💗${grew?' and grew up! ✨':''}</div>
     <button class="rbtn go" onclick="${kind==='catch'?'startCatch()':'startMemory()'}">Play again</button>
     <button class="rbtn snz" onclick="openGames()">Back</button></div>`;
 }
 function startCatch(){
   const ov = document.getElementById('gameov'); if(!ov) return;
+  payGame();
   const pt = petOf(currentKid), treat = treatForPet(pt);
   ov.innerHTML = `<div class="gbox"><div class="gtitle">🧺 Catch ${treat}!</div>
     <div class="gsub">Slide your finger to move ${pt.name}. Dodge the 🪨!</div>
@@ -1493,6 +1600,7 @@ function startCatch(){
 }
 function startMemory(){
   const ov = document.getElementById('gameov'); if(!ov) return;
+  payGame();
   const cols = ['#FF6B6B','#4CD07A','#5B9DFF','#FFC857'], freqs = [330,415,523,659];
   ov.innerHTML = `<div class="gbox"><div class="gtitle">🧠 Copy Me!</div>
     <div class="gsub" id="mmsg">Watch carefully…</div>
@@ -1550,7 +1658,7 @@ function onSchedFieldChange(ev){
   saveData('schedule');
 }
 function addPenalty(){
-  data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:3, v2:true});
+  data.penalties.push({id:'pen-'+Date.now(), icon:'⚠️', label:'New penalty', amount:10});
   saveData('penalties'); renderEdit();
 }
 function deletePenalty(id){
@@ -1566,7 +1674,7 @@ function onPenFieldChange(ev){
   saveData('penalties');
 }
 function addBonus(){
-  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:2, frequency:'daily', v2:true});
+  data.bonuses.push({id:'bonus-'+Date.now(), icon:'🎯', label:'New bonus', amount:5, frequency:'daily', v3:true});
   saveData('bonuses'); renderEdit();
 }
 function deleteBonus(id){
