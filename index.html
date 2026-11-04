@@ -151,6 +151,30 @@
   @keyframes sparkfly{ from{transform:translate(0,0) scale(.6); opacity:1;} to{transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(var(--rot)); opacity:0;} }
   .cheer{ position:fixed; left:50%; top:20%; z-index:2001; pointer-events:none; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:30px; color:var(--kidcolor); text-shadow:0 2px 0 #fff, 0 0 12px #fff; white-space:nowrap; animation:cheer 1.2s ease forwards; }
   @keyframes cheer{ 0%{transform:translate(-50%,20px) scale(.5); opacity:0;} 25%{transform:translate(-50%,0) scale(1.15); opacity:1;} 70%{transform:translate(-50%,-6px) scale(1); opacity:1;} 100%{transform:translate(-50%,-40px) scale(1); opacity:0;} }
+  .ipadtop{ display:flex; align-items:center; gap:16px; margin:6px 0 16px; }
+  .pctring{ width:120px; height:120px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; position:relative; transition:background .5s; }
+  .pctring::after{ content:''; position:absolute; inset:11px; border-radius:50%; background:var(--panel); }
+  .pctring .pctnum{ position:relative; z-index:1; text-align:center; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:32px; line-height:1; }
+  .pctside{ flex:1; min-width:0; }
+  .pctside .pctmsg{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:18px; line-height:1.2; }
+  .pctside .pctsub{ color:var(--muted); font-weight:700; font-size:12px; margin-top:4px; }
+  .mintiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .mintile{ background:var(--panel2); border:2.5px solid var(--gold); border-radius:20px; padding:12px 6px; text-align:center; }
+  .mintile .md{ font-size:12px; font-weight:800; color:var(--muted); text-transform:uppercase; }
+  .mintile .mn{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:30px; line-height:1.1; }
+  .mintile .mn small{ font-size:14px; }
+  .biglabel{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:15px; margin:4px 0 8px; }
+  .bigtiles{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px; }
+  .bigtile{ position:relative; background:var(--panel); border:2.5px solid var(--line); border-radius:20px; padding:14px 8px 12px; text-align:center; cursor:pointer; box-shadow:0 4px 0 var(--line); user-select:none; -webkit-user-select:none; transition:transform .1s, box-shadow .1s; }
+  .bigtile:active{ transform:translateY(4px) scale(.97); box-shadow:0 0 0 var(--line); }
+  .bigtile .bi{ font-size:40px; line-height:1.1; }
+  .bigtile .bl{ font-weight:800; font-size:12.5px; line-height:1.2; margin-top:4px; }
+  .bigtile .bmark{ position:absolute; top:6px; right:8px; font-size:18px; }
+  .bigtile.on.bad{ background:rgba(255,92,92,.1); border-color:var(--red); box-shadow:0 4px 0 var(--red); }
+  .bigtile.on.good{ background:rgba(47,174,114,.12); border-color:var(--green); box-shadow:0 4px 0 var(--green); }
+  .bigtile.shake{ animation:shake .5s ease; }
+  .bigtile.bounce{ animation:celebrate .7s ease; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 20%{transform:translateX(-7px) rotate(-3deg);} 40%{transform:translateX(7px) rotate(3deg);} 60%{transform:translateX(-5px);} 80%{transform:translateX(5px);} }
   .alldone{ text-align:center; padding:12px 6px 4px; }
   .alldone .big{ font-size:46px; display:inline-block; animation:wiggle 1.2s ease-in-out infinite; }
   .alldone .tt{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:20px; color:var(--kidcolor); }
@@ -341,17 +365,17 @@ async function loadData(){
         const done = qs.filter(q=>checks[q.id]).length;
         const penLabels = Object.keys(outgoing.penaltyHits[d]||{}).map(pid=>{
           const hit = outgoing.penaltyHits[d][pid]; const p = data.penalties.find(x=>x.id===pid);
-          return p ? `${p.label} (-${p.amount}m ${hit.bucket==='sat'?'Sat':'Sun'})` : null;
+          return p ? `${p.label} (-${p.amount}%)` : null;
         }).filter(Boolean);
         const dailyBonusLabels = Object.keys(outgoing.bonusHitsDaily[d]||{}).map(bid=>{
           const hit = outgoing.bonusHitsDaily[d][bid]; const b = data.bonuses.find(x=>x.id===bid);
-          return (hit && b) ? `${b.label} (+${b.amount}m ${hit.bucket==='sat'?'Sat':'Sun'})` : null;
+          return (hit && b) ? `${b.label} (+${b.amount}%)` : null;
         }).filter(Boolean);
         daysSummary[d] = { done, total: qs.length, star: !!outgoing.dayStarAwarded[d], exercise: !!outgoing.exerciseDone[d], medal: !!outgoing.daySportAwarded[d], penalties: penLabels, dailyBonuses: dailyBonusLabels };
       });
       const weeklyBonusLabels = Object.keys(outgoing.bonusHitsWeekly||{}).map(bid=>{
         const hit = outgoing.bonusHitsWeekly[bid]; const b = data.bonuses.find(x=>x.id===bid);
-        return (hit && b) ? `${b.label} (+${b.amount}m ${hit.bucket==='sat'?'Sat':'Sun'})` : null;
+        return (hit && b) ? `${b.label} (+${b.amount}%)` : null;
       }).filter(Boolean);
       const logEntry = { weekStart: outgoing.weekStart, days: daysSummary, bonuses: weeklyBonusLabels, rewardClaimed: !!outgoing.rewardClaimed, rewardChoice: outgoing.rewardChoice||null };
       const weekLog = (outgoing.weekLog||[]).concat([logEntry]).slice(-12);
@@ -505,23 +529,41 @@ function claimStarReward(kidKey){
   kstate.taobaoRedemptions = (kstate.taobaoRedemptions||0) + 1;
   saveData(kidKey); render(); burstConfetti();
 }
-let pendingChoice = null; // {kind:'penalty'|'bonus', kidKey, day, id}
-function togglePenalty(kidKey, day, penId){
-  const hits = data[kidKey].penaltyHits[day];
-  if(hits[penId]){ delete hits[penId]; saveData(kidKey); render(); }
-  else { pendingChoice = {kind:'penalty', kidKey, day, id:penId}; render(); }
+const WEEKDAYS_FOR_TIME = ['Mon','Tue','Wed','Thu','Fri'];
+function weekStats(kidKey){
+  let done = 0, total = 0;
+  WEEKDAYS_FOR_TIME.forEach(d=>{ const t = dayTotals(kidKey, d); done += t.done; total += t.total; });
+  const completion = total ? done/total*100 : 0;
+  const k = data[kidKey];
+  let pen = 0, bon = 0;
+  DAYS.forEach(d=>{
+    Object.keys((k.penaltyHits||{})[d]||{}).forEach(pid=>{ const p = data.penalties.find(x=>x.id===pid); if(p) pen += (p.amount||0); });
+    Object.keys((k.bonusHitsDaily||{})[d]||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) bon += (b.amount||0); });
+  });
+  Object.keys(k.bonusHitsWeekly||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) bon += (b.amount||0); });
+  const pct = Math.max(0, Math.min(120, Math.round(completion - pen + bon)));
+  return {pct, completion:Math.round(completion), pen, bon};
 }
-function toggleBonus(kidKey, day, bonusId){
+function weekendMinutes(kidKey, bucket){
+  const allow = data.allowance[kidKey] || {sat:30,sun:30};
+  const base = allow[bucket] != null ? allow[bucket] : 30;
+  return Math.round(base * weekStats(kidKey).pct / 100);
+}
+let pendingChoice = null; // {kind:'penalty'|'bonus', kidKey, day, id}
+function togglePenalty(kidKey, day, penId, ev){
+  const hits = data[kidKey].penaltyHits[day];
+  if(hits[penId]){ delete hits[penId]; }
+  else { hits[penId] = {bucket:'sat'}; justDone = 'pen:'+penId; unlockAudio(); tone([330,220],0.12,0.2); }
+  saveData(kidKey); render(); justDone = null;
+}
+function toggleBonus(kidKey, day, bonusId, ev){
   const kstate = data[kidKey];
   const b = data.bonuses.find(x=>x.id===bonusId);
   if(!b) return;
-  if(b.frequency === 'daily'){
-    if(kstate.bonusHitsDaily[day][bonusId]){ delete kstate.bonusHitsDaily[day][bonusId]; saveData(kidKey); render(); }
-    else { pendingChoice = {kind:'bonus', kidKey, day, id:bonusId}; render(); }
-  } else {
-    if(kstate.bonusHitsWeekly[bonusId]){ delete kstate.bonusHitsWeekly[bonusId]; saveData(kidKey); render(); }
-    else { pendingChoice = {kind:'bonus', kidKey, day:null, id:bonusId}; render(); }
-  }
+  const store = b.frequency === 'daily' ? kstate.bonusHitsDaily[day] : kstate.bonusHitsWeekly;
+  if(store[bonusId]){ delete store[bonusId]; }
+  else { store[bonusId] = {bucket:'sat'}; justDone = 'bon:'+bonusId; celebrateTap(ev); }
+  saveData(kidKey); render(); justDone = null;
 }
 function confirmChoice(bucket){
   if(!pendingChoice) return;
@@ -974,26 +1016,39 @@ function render(){
 
   const badges = badgeList(kstate);
 
-  const satBal = bucketRemaining(currentKid, 'sat');
-  const sunBal = bucketRemaining(currentKid, 'sun');
+  const ws = weekStats(currentKid);
+  const isWeekend = (actualToday === 'Sat' || actualToday === 'Sun');
+  const ringColor = ws.pct > 100 ? 'var(--gold)' : (ws.pct >= 80 ? 'var(--green)' : (ws.pct >= 50 ? 'var(--gold)' : 'var(--red)'));
+  const ringFill = Math.min(100, ws.pct);
+  const msg = ws.pct > 100 ? '🌟 BONUS! Above and beyond!' : (ws.pct === 100 ? '💯 Perfect! Full iPad time!' : (ws.pct >= 80 ? '🔥 So close to 100%!' : (ws.pct >= 50 ? '💪 Keep going!' : '🚀 Finish your quests to climb!')));
   const penHits = data[currentKid].penaltyHits[currentDay] || {};
-  const penListHtml = data.penalties.map(p=>{
-    const hit = penHits[p.id];
-    const on = !!hit;
-    const tag = on ? ` (${hit.bucket==='sat'?'Sat':'Sun'})` : '';
-    return `<div class="penrow"><div class="ticon">${p.icon}</div><div class="tlabel">${p.label}${tag}</div><div class="penamt">-${p.amount}m</div>
-      <div class="pentoggle ${on?'on':''}" onclick="togglePenalty('${currentKid}','${currentDay}','${p.id}')">${on?'✓':''}</div></div>`;
+  const penTiles = data.penalties.map(pp=>{
+    const on = !!penHits[pp.id];
+    return `<div class="bigtile bad ${on?'on':''} ${justDone==='pen:'+pp.id?'shake':''}" onclick="togglePenalty('${currentKid}','${currentDay}','${pp.id}',event)">
+      ${on?'<div class="bmark">😬</div>':''}<div class="bi">${pp.icon}</div><div class="bl">${pp.label}</div></div>`;
   }).join('');
-
-  const bonusListHtml = data.bonuses.map(b=>{
-    const isDaily = b.frequency === 'daily';
-    const hit = isDaily ? kstate.bonusHitsDaily[currentDay][b.id] : kstate.bonusHitsWeekly[b.id];
+  const bonTiles = data.bonuses.map(b=>{
+    const hit = (b.frequency === 'daily') ? kstate.bonusHitsDaily[currentDay][b.id] : kstate.bonusHitsWeekly[b.id];
     const on = !!hit;
-    const bucketTag = on ? ` (${hit.bucket==='sat'?'Sat':'Sun'})` : '';
-    const freqTag = isDaily ? ' · daily' : ' · weekly';
-    return `<div class="penrow"><div class="ticon">${b.icon}</div><div class="tlabel">${b.label}${bucketTag}<span style="color:var(--muted);font-weight:700;">${freqTag}</span></div><div class="penamt" style="color:var(--green);">+${b.amount}m</div>
-      <div class="pentoggle ${on?'on':''}" style="${on?'background:var(--green);border-color:var(--green);':''}" onclick="toggleBonus('${currentKid}','${currentDay}','${b.id}')">${on?'✓':''}</div></div>`;
+    return `<div class="bigtile good ${on?'on':''} ${justDone==='bon:'+b.id?'bounce':''}" onclick="toggleBonus('${currentKid}','${currentDay}','${b.id}',event)">
+      ${on?'<div class="bmark">🌟</div>':''}<div class="bi">${b.icon}</div><div class="bl">${b.label}</div></div>`;
   }).join('');
+  const minTiles = isWeekend ? `<div class="mintiles">
+      <div class="mintile"><div class="md">Saturday</div><div class="mn">${weekendMinutes(currentKid,'sat')}<small> min</small></div></div>
+      <div class="mintile"><div class="md">Sunday</div><div class="mn">${weekendMinutes(currentKid,'sun')}<small> min</small></div></div></div>` : '';
+  const ipadHtml = `<div class="panel">
+      <h2 style="font-size:18px;">📱 Weekend iPad Time</h2>
+      <div class="ipadtop">
+        <div class="pctring" style="background:conic-gradient(${ringColor} ${ringFill*3.6}deg, var(--line) 0deg)"><div class="pctnum">${ws.pct}%</div></div>
+        <div class="pctside"><div class="pctmsg">${msg}</div>
+          <div class="pctsub">${isWeekend ? 'Your iPad time this weekend:' : 'Do all your quests Mon–Fri to reach 100%. Minutes unlock on the weekend 🎁'}</div></div>
+      </div>
+      ${minTiles}
+      <div class="biglabel">⚠️ Oops… <span style="color:var(--muted);font-weight:700;font-size:12px;">(a grown-up taps these)</span></div>
+      <div class="bigtiles">${penTiles}</div>
+      <div class="biglabel">🎯 Extra credit!</div>
+      <div class="bigtiles">${bonTiles}</div>
+    </div>`;
 
   const exDone = !!kstate.exerciseDone[currentDay];
 
@@ -1073,20 +1128,10 @@ function render(){
       ${showFull ? `<div class="timeline">${timelineHtml}</div>` : ''}
     </div>
 
-    <button class="linkbtn" onclick="showMore=!showMore;render()">${showMore?'▲ Hide':'📱 Show'} iPad balance · medals · badges</button>
-    ${showMore ? `
-    <div class="panel penaltypanel">
-      <h2 style="font-size:16px;margin-bottom:10px;">📱 iPad/TV Balance (this week)</h2>
-      <div class="balrow2">
-        <div class="balbox"><div class="ballabel">Saturday</div><div class="balnum ${satBal.remaining<=10?'low':''}">${satBal.remaining}<span style="font-size:13px;">/${satBal.base}m</span></div></div>
-        <div class="balbox"><div class="ballabel">Sunday</div><div class="balnum ${sunBal.remaining<=10?'low':''}">${sunBal.remaining}<span style="font-size:13px;">/${sunBal.base}m</span></div></div>
-      </div>
-      <div class="panelsub" style="margin-bottom:6px;">⚠️ Penalties — tap, then pick which day's time it comes out of</div>
-      <div class="penlist" style="margin-bottom:12px;">${penListHtml}</div>
-      <div class="panelsub" style="margin-bottom:6px;">🎯 Weekly accuracy bonus — tap, then pick which day it's added to</div>
-      <div class="penlist">${bonusListHtml}</div>
-    </div>
+    ${ipadHtml}
 
+    <button class="linkbtn" onclick="showMore=!showMore;render()">${showMore?'▲ Hide':'🏅 Show'} medals · badges</button>
+    ${showMore ? `
     <div class="panel">
       <div class="panelhead">
         <h2 style="font-size:15px;">🏃 50-Medal Taobao Reward</h2>
@@ -1194,7 +1239,7 @@ function renderEdit(){
     body = `
       <div class="panel">
         <h2 style="font-size:16px;margin-bottom:10px;">⚠️ Penalty items</h2>
-        <div class="panelsub">Icon · Label · Minutes deducted</div>
+        <div class="panelsub">Icon · Label · Points (%) taken off the weekend iPad score</div>
         ${data.penalties.map(p=>`
           <div class="editrow">
             <input class="ein-icon pen-field" type="text" data-id="${p.id}" data-field="icon" value="${p.icon.replace(/"/g,'&quot;')}">
@@ -1206,7 +1251,7 @@ function renderEdit(){
       </div>
       <div class="panel">
         <h2 style="font-size:16px;margin-bottom:10px;">🎯 Bonuses (screen-time add-ons)</h2>
-        <div class="panelsub">Icon · Label · Minutes added · Daily (resets every day) or Weekly (once per week)</div>
+        <div class="panelsub">Icon · Label · Points (%) added (score capped at 120%) · Daily (resets every day) or Weekly (once per week)</div>
         ${data.bonuses.map(b=>`
           <div class="editrow">
             <input class="ein-icon bonus-field" type="text" data-id="${b.id}" data-field="icon" value="${b.icon.replace(/"/g,'&quot;')}">
