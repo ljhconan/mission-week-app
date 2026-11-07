@@ -1094,6 +1094,13 @@ const slotKey = it => it.slot==='room' ? 'room-'+it.spot : it.slot;
 const DEFAULT_BG = 'linear-gradient(180deg,#CFF0FF 0%,#EAFBE0 60%,#B7E4A0 61%,#9ED585 100%)';
 const TAP_LINES = ['Hehe, that tickles! 🥰','Boop! 💕','I believe in you! 💪','Wanna play later? 🎮','You\'re my best friend! 💖','Hi hi hi! 👋'];
 function newPet(){ return {type:null, name:'', coins:0, owned:[], equipped:{}, awarded:{}}; }
+function rescaleGrowth(pt){
+  if(!pt || pt.gv2 || !pt.type) return; pt.gv2 = true;
+  const g = pt.growth||0;
+  if(g >= 250) pt.growth = 250;            // was Grown-up: now back to late Teen, 100 points to go
+  else if(g >= 100) pt.growth = Math.max(g, 150);   // keep Teen
+  else if(g >= 30) pt.growth = Math.max(g, 40);     // keep Kid
+}
 function petOf(kidKey){ return data['pet'+kidKey]; }
 function logCoin(pt, amt, why){
   if(!pt.log) pt.log = [];
@@ -1189,7 +1196,7 @@ function completeWish(kidKey, kind){
   const pt = petOf(kidKey); if(!pt || !pt.type) return;
   const w = wishOf(kidKey); if(w.done || w.k !== kind) return;
   w.done = true; pt.wishCount = (pt.wishCount||0)+1; pt.coins += 3; logCoin(pt, 3, '💭 Granted '+pt.name+"'s wish");
-  addGrowth(kidKey, 2); savePet(kidKey);
+  addGrowth(kidKey, 2, true); savePet(kidKey);
   setTimeout(()=>{ playFanfare(); burstConfetti(); }, 150);
   petReact('My wish came true!! +3 🪙 💖');
 }
@@ -1209,6 +1216,7 @@ function shopAction(itemId){
 }
 function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
   const pt = petOf(kidKey);
+  if(pt.type && !pt.gv2){ rescaleGrowth(pt); savePet(kidKey); }
   checkAchievements(kidKey); const eq = pt.equipped || {};
   const item = slot => PET_ITEMS.find(x=>x.id===eq[slot]);
   const bgItem = item('bg');
@@ -1266,7 +1274,7 @@ function petOverlays(kidKey){
       ${changingPet?'<button class="rbtn snz" onclick="cancelChangePet()">Cancel</button>':''}
     </div></div>`;
   }
-  if(pt.type && !changingPet && (pt.growth||0) >= 100 && !pt.branch){
+  if(pt.type && !changingPet && (pt.growth||0) >= STAGES[2].min && !pt.branch){
     const prev = b => (pt.line && CPAL[pt.line]) ? creatureSVG(pt.line, 2, 'party', 96, b) : `<div style="font-size:64px;line-height:1.1;position:relative;display:inline-block;">${pt.type}<span style="position:absolute;right:-14px;top:-6px;font-size:28px;">${BRANCHES[b].icon}</span></div>`;
     out += `<div class="remind-overlay"><div class="remind-box" style="max-width:370px;">
       <div class="rtitle" style="margin-bottom:2px;">✨ ${pt.name} is evolving!</div>
@@ -1495,10 +1503,16 @@ function petFaceHtml(pt, px, mood){
 }
 
 /* ---------------- Growing up ---------------- */
-const STAGES = [{name:'Baby',min:0,scale:.62},{name:'Kid',min:30,scale:.8},{name:'Teen',min:100,scale:1.0},{name:'Grown-up',min:250,scale:1.2}];
+const STAGES = [{name:'Baby',min:0,scale:.62},{name:'Kid',min:40,scale:.8},{name:'Teen',min:150,scale:1.0},{name:'Grown-up',min:350,scale:1.2}];
 function stageIdx(pts){ let i=0; STAGES.forEach((st,k)=>{ if(pts>=st.min) i=k; }); return i; }
-function addGrowth(kidKey, n){
+const CARE_GROWTH_CAP = 4; // feeding/playing/games/wishes can add at most this much growth per day; quests are uncapped
+function addGrowth(kidKey, n, care){
   const pt = petOf(kidKey); const before = stageIdx(pt.growth||0);
+  if(care){
+    const dk = wishDateKey(); if(!pt.gcare || pt.gcare.d !== dk) pt.gcare = {d:dk, n:0};
+    n = Math.max(0, Math.min(n, CARE_GROWTH_CAP - pt.gcare.n)); pt.gcare.n += n;
+    if(n <= 0) return false;
+  }
   pt.growth = (pt.growth||0) + n;
   const after = stageIdx(pt.growth);
   if(after >= 2 && before < 2 && !pt.branch){ petEvolveUntil = Date.now()+2500; setTimeout(()=>{ burstConfetti(); playFanfare(); }, 200); return true; }
@@ -1578,13 +1592,13 @@ function careAction(kind){
     if(pt.coins < 2){ petReact('Treats cost 🪙2 — finish a quest to get coins!'); render(); return; }
     pt.coins -= 2; logCoin(pt, -2, treatForPet(pt)+' Treat for '+pt.name); setHappy(pt, 25);
     flyItem(treatForPet(pt), 'toface'); tone([500,700,500,700],0.09,0.12);
-    if(!addGrowth(currentKid, 2)) petReact('Yum yum! Thank you! '+treatForPet(pt)+' 😋');
+    if(!addGrowth(currentKid, 2, true)) petReact('Yum yum! Thank you! '+treatForPet(pt)+' 😋');
     completeWish(currentKid,'feed');
   } else if(kind==='play'){
     if(careCooldown.play && now - careCooldown.play < 15000){ petReact('Whew, let me catch my breath! 😅'); render(); return; }
     careCooldown.play = now; setHappy(pt, 15);
     flyItem(['⚽','🎾','🏀'][Math.floor(Math.random()*3)], 'ball'); tone([392,523,659],0.1,0.1);
-    if(!addGrowth(currentKid, 1)) petReact('Wheee! Catch! 🎉');
+    if(!addGrowth(currentKid, 1, true)) petReact('Wheee! Catch! 🎉');
     completeWish(currentKid,'play');
   } else {
     if(careCooldown.hug && now - careCooldown.hug < 10000){ petReact('Still feeling the love! 💗'); render(); return; }
@@ -1628,7 +1642,7 @@ function finishGame(score, kind){
   let coins = kind==='catch' ? Math.min(3, Math.floor(score/5)) : Math.min(3, Math.floor(score/2));
   if(!gamePaid || left <= 0) coins = 0; else pt.gameLog.n++;
   gamePaid = false;
-  pt.coins += coins; if(coins>0) logCoin(pt, coins, (kind==='catch'?'🧺 Catch the Treats':'🧠 Copy Me')+' prize (score '+score+')'); setHappy(pt, 15); const grew = addGrowth(currentKid, 1); completeWish(currentKid,'game'); savePet(currentKid);
+  pt.coins += coins; if(coins>0) logCoin(pt, coins, (kind==='catch'?'🧺 Catch the Treats':'🧠 Copy Me')+' prize (score '+score+')'); setHappy(pt, 15); const grew = addGrowth(currentKid, 1, true); completeWish(currentKid,'game'); savePet(currentKid);
   playFanfare();
   const ov = document.getElementById('gameov'); if(!ov) return;
   ov.innerHTML = `<div class="gbox"><div class="gtitle">${coins>0?'🎉 Great job!':'👏 Nice game!'}</div>
