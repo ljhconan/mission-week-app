@@ -549,7 +549,7 @@ function weekStats(kidKey){
 }
 function weekendMinutes(kidKey, bucket){
   const allow = data.allowance[kidKey] || {sat:30,sun:30};
-  const base = allow[bucket] != null ? allow[bucket] : 30;
+  const base = (allow[bucket] > 0) ? allow[bucket] : 30;   // 0/empty setting = default 30 min
   const pct = weekStats(kidKey).pct;
   return pct < 100 ? 0 : Math.round(base * pct / 100);   // below 100% = no iPad time; 100% = full; above = proportional
 }
