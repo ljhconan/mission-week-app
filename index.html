@@ -1149,7 +1149,7 @@ function render(){
       <div class="ipadtop">
         <div class="pctring" style="background:conic-gradient(${ringColor} ${ringFill*3.6}deg, var(--line) 0deg)"><div class="pctnum">${ws.pct}%</div></div>
         <div class="pctside"><div class="pctmsg">${msg}</div>
-          <div class="pctsub">${isWeekend ? 'Your iPad time this weekend:' : 'Do all your quests Mon–Fri to reach 100%. Under 100% = no iPad time 🔒'}</div></div>
+          <div class="pctsub">${isWeekend ? (ws.pct>=100 ? '🎁 = <b>'+weekendMinutes(currentKid,'sat')+' min</b> Saturday + <b>'+weekendMinutes(currentKid,'sun')+' min</b> Sunday' : '🔒 = <b>0 min</b> this weekend') : 'Do all your quests Mon–Fri to reach 100%. Under 100% = no iPad time 🔒'}</div></div>
       </div>
       ${minTiles}
       <button class="rbtn go" style="width:100%;margin-bottom:12px;" onclick="openReport()">📊 See my weekly report</button>
