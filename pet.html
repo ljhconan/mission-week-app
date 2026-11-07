@@ -1095,11 +1095,11 @@ const DEFAULT_BG = 'linear-gradient(180deg,#CFF0FF 0%,#EAFBE0 60%,#B7E4A0 61%,#9
 const TAP_LINES = ['Hehe, that tickles! 🥰','Boop! 💕','I believe in you! 💪','Wanna play later? 🎮','You\'re my best friend! 💖','Hi hi hi! 👋'];
 function newPet(){ return {type:null, name:'', coins:0, owned:[], equipped:{}, awarded:{}}; }
 function rescaleGrowth(pt){
-  if(!pt || pt.gv2 || !pt.type) return; pt.gv2 = true;
+  if(!pt || pt.gv3 || !pt.type) return;
   const g = pt.growth||0;
-  if(g >= 250) pt.growth = 250;            // was Grown-up: now back to late Teen, 100 points to go
-  else if(g >= 100) pt.growth = Math.max(g, 150);   // keep Teen
-  else if(g >= 30) pt.growth = Math.max(g, 40);     // keep Kid
+  if(g >= 250) pt.growth = 350;                       // was Grown-up: stays Grown-up (Lv.1), levels come next
+  else if(!pt.gv2){ if(g >= 100) pt.growth = Math.max(g, 150); else if(g >= 30) pt.growth = Math.max(g, 40); }
+  pt.gv2 = pt.gv3 = true;
 }
 function petOf(kidKey){ return data['pet'+kidKey]; }
 function logCoin(pt, amt, why){
@@ -1168,8 +1168,9 @@ const BRANCHES = {
 };
 function stageLabel(pt){
   const i = stageIdx(pt.growth||0);
-  if(pt.branch && BRANCHES[pt.branch] && i>=2) return BRANCHES[pt.branch][i===2?'t2':'t3'];
-  return STAGES[i].name;
+  const lv = adultLevel(pt.growth||0), tag = lv ? ' · Lv.'+lv+' '+'⭐'.repeat(Math.min(lv,5)) : '';
+  if(pt.branch && BRANCHES[pt.branch] && i>=2) return BRANCHES[pt.branch][i===2?'t2':'t3']+tag;
+  return STAGES[i].name+tag;
 }
 function chooseBranch(b){
   const pt = petOf(currentKid); pt.branch = b; petEvolveUntil = Date.now()+2500; savePet(currentKid);
@@ -1216,7 +1217,7 @@ function shopAction(itemId){
 }
 function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
   const pt = petOf(kidKey);
-  if(pt.type && !pt.gv2){ rescaleGrowth(pt); savePet(kidKey); }
+  if(pt.type && !pt.gv3){ rescaleGrowth(pt); savePet(kidKey); }
   checkAchievements(kidKey); const eq = pt.equipped || {};
   const item = slot => PET_ITEMS.find(x=>x.id===eq[slot]);
   const bgItem = item('bg');
@@ -1225,7 +1226,7 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
   const reacting = petMsg && petMsg.until > Date.now();
   const happy = petHappy(pt);
   const gp = pt.growth||0, sidx = stageIdx(gp), stage = STAGES[sidx], nextSt = STAGES[sidx+1];
-  const growPct = nextSt ? Math.round((gp-stage.min)/(nextSt.min-stage.min)*100) : 100;
+  const growPct = nextSt ? Math.round((gp-stage.min)/(nextSt.min-stage.min)*100) : Math.round(((gp-STAGES[3].min)%LEVEL_STEP)/LEVEL_STEP*100);
   const text = reacting ? petMsg.text : (night ? 'Zzz… goodnight, '+META[kidKey].name+'! 🌙💤' : mood==='sleepy' && currentDay===actualToday ? 'Zzz… wake me up by finishing a quest! 💤' : (happy < 45 ? 'I\'m a little hungry… got a treat? '+treatForPet(pt) : msgDefault));
   const room = pt.equipped || {};
   const roomHtml = ['tl','tr','bl','br'].map(sp=>{ const it = PET_ITEMS.find(x=>x.id===room['room-'+sp]); return it?`<div class="roomitem ${sp}">${it.emoji}</div>`:''; }).join('');
@@ -1251,7 +1252,7 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
     <div class="petname">${pt.name} · ${stageLabel(pt)}</div>
     <button class="shopbtn" onclick="openShop()">🛍️ Shop</button>
   </div>
-  <div class="growline">🌱 ${nextSt ? 'Growing to '+nextSt.name+' · '+(gp-stage.min)+'/'+(nextSt.min-stage.min) : 'Fully grown! 🌟'}<div class="gbar"><div style="width:${growPct}%"></div></div></div>
+  <div class="growline">🌱 ${nextSt ? 'Growing to '+nextSt.name+' · '+(gp-stage.min)+'/'+(nextSt.min-stage.min) : 'Level '+adultLevel(gp)+' · next level '+((gp-STAGES[3].min)%LEVEL_STEP)+'/'+LEVEL_STEP+' 🌟'}<div class="gbar"><div style="width:${growPct}%"></div></div></div>
   <div class="carerow">
     <button class="carebtn" onclick="careAction('feed')"><span>${treatForPet(pt)}</span>Feed <small>🪙2</small></button>
     <button class="carebtn" onclick="careAction('play')"><span>⚽</span>Play</button>
@@ -1504,6 +1505,8 @@ function petFaceHtml(pt, px, mood){
 
 /* ---------------- Growing up ---------------- */
 const STAGES = [{name:'Baby',min:0,scale:.62},{name:'Kid',min:40,scale:.8},{name:'Teen',min:150,scale:1.0},{name:'Grown-up',min:350,scale:1.2}];
+const LEVEL_STEP = 80;   // after Grown-up, every 80 growth points = +1 level
+function adultLevel(g){ return g >= STAGES[3].min ? Math.floor((g-STAGES[3].min)/LEVEL_STEP)+1 : 0; }
 function stageIdx(pts){ let i=0; STAGES.forEach((st,k)=>{ if(pts>=st.min) i=k; }); return i; }
 const CARE_GROWTH_CAP = 4; // feeding/playing/games/wishes can add at most this much growth per day; quests are uncapped
 function addGrowth(kidKey, n, care){
@@ -1515,7 +1518,12 @@ function addGrowth(kidKey, n, care){
   }
   pt.growth = (pt.growth||0) + n;
   const after = stageIdx(pt.growth);
+  const lvBefore = adultLevel(pt.growth - n), lvAfter = adultLevel(pt.growth);
   if(after >= 2 && before < 2 && !pt.branch){ petEvolveUntil = Date.now()+2500; setTimeout(()=>{ burstConfetti(); playFanfare(); }, 200); return true; }
+  if(lvAfter > lvBefore && lvBefore > 0){
+    petEvolveUntil = Date.now()+2500; setTimeout(()=>{ burstConfetti(); playFanfare(); }, 200);
+    petReact('⭐ LEVEL UP! I am Level '+lvAfter+' now!! ⭐'); return true;
+  }
   if(after > before){
     petEvolveUntil = Date.now()+2500;
     setTimeout(()=>{ burstConfetti(); playFanfare(); }, 200);
