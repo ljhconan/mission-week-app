@@ -261,6 +261,12 @@
   .branchrow{ display:flex; gap:10px; } .branchpick{ flex:1; border-radius:20px; padding:12px 6px; cursor:pointer; border:3px solid transparent; }
   .branchpick.brave{ background:#FFE9E4; border-color:#FF8A75; } .branchpick.gentle{ background:#EAF2FF; border-color:#8FB8FF; }
   .branchpick .bn{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:16px; margin-top:4px; } .branchpick .bd{ font-size:11px; font-weight:700; color:var(--muted); line-height:1.3; margin-top:3px; }
+  @keyframes lvspin{ to{ transform:rotate(360deg); } }
+  .lvorbit{ position:absolute; left:50%; top:52%; width:200px; height:200px; margin:-100px 0 0 -100px; animation:lvspin 5s linear infinite; pointer-events:none; }
+  .lvorbit span{ position:absolute; font-size:20px; }
+  .lvgold{ position:absolute; left:50%; top:52%; width:200px; height:200px; margin:-100px 0 0 -100px; border-radius:50%; background:radial-gradient(circle,rgba(255,215,90,.55),transparent 66%); z-index:-1; animation:zzz 2s ease-in-out infinite; }
+  .lvring{ position:absolute; left:50%; top:52%; width:196px; height:196px; margin:-98px 0 0 -98px; border-radius:50%; z-index:-1; opacity:.85; background:conic-gradient(#ff5e5e,#ffb84d,#ffe94d,#6bdc6b,#4dd2ff,#6b7bff,#c06bff,#ff5e5e); -webkit-mask:radial-gradient(circle,transparent 64%,#000 66%,#000 72%,transparent 74%); mask:radial-gradient(circle,transparent 64%,#000 66%,#000 72%,transparent 74%); animation:lvspin 9s linear infinite; }
+  .lvcrown{ position:absolute; left:50%; top:34px; margin-left:28px; transform:rotate(18deg); font-size:34px; animation:zzz 2.2s ease-in-out infinite; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
   .branchglow{ position:absolute; left:50%; top:52%; width:170px; height:170px; margin:-85px 0 0 -85px; border-radius:50%; z-index:-1; animation:zzz 2.4s ease-in-out infinite; }
   .branchglow.brave{ background:radial-gradient(circle,rgba(255,110,80,.55),transparent 68%); } .branchglow.gentle{ background:radial-gradient(circle,rgba(140,190,255,.7),transparent 68%); }
   .branchbadge{ position:absolute; right:-14px; top:-4px; font-size:30px; pointer-events:none; }
@@ -1166,6 +1172,16 @@ const BRANCHES = {
   brave:  {icon:'⚔️', name:'Brave Path',  t2:'Brave Teen',  t3:'Champion', desc:'Strong & fearless — horns and a bold look!'},
   gentle: {icon:'✨', name:'Gentle Path', t2:'Gentle Teen', t3:'Sage',     desc:'Kind & magical — wings and a glowing halo!'}
 };
+function lvFxHtml(lv){
+  if(lv < 2) return '';
+  const n = Math.min(lv, 6), dur = Math.max(2.6, 7 - lv);
+  const stars = ['✨','⭐','💫','🌟','✨','⭐'].slice(0, n);
+  let h = `<div class="lvorbit" style="animation-duration:${dur}s">${stars.map((st,i)=>{ const a = i/n*2*Math.PI; return `<span style="left:${Math.round(100+92*Math.sin(a)-10)}px;top:${Math.round(100-92*Math.cos(a)-10)}px">${st}</span>`; }).join('')}</div>`;
+  if(lv >= 3) h += `<div class="lvgold"></div>`;
+  if(lv >= 4) h += `<div class="lvring"></div>`;
+  if(lv >= 5) h += `<div class="lvcrown">👑</div>`;
+  return h;
+}
 function stageLabel(pt){
   const i = stageIdx(pt.growth||0);
   const lv = adultLevel(pt.growth||0), tag = lv ? ' · Lv.'+lv+' '+'⭐'.repeat(Math.min(lv,5)) : '';
@@ -1240,6 +1256,7 @@ function petStageHtml(kidKey, allDone, anyStarted, msgDefault){
     <div class="petwrap pet-${mood} ${reacting?'hop':''} ${(petEvolveUntil>Date.now())?'evolving':''}" onclick="tapPet()"><div class="petscale" style="--ps:${stage.scale}">
       ${(pt.line&&LINES[pt.line])?`<div class="elemglow" style="--ec:${LINES[pt.line].color}"></div>`:''}
       ${sidx===3?'<div class="petaura"></div>':''}
+      ${lvFxHtml(adultLevel(gp))}
       ${(pt.branch&&sidx>=2)?`<div class="branchglow ${pt.branch}"></div>`:''}
       ${(pt.branch&&sidx>=2&&!(pt.line&&CPAL[pt.line]))?`<div class="branchbadge">${BRANCHES[pt.branch].icon}</div>`:''}
       ${item('hat')?`<div class="petacc hat">${item('hat').emoji}</div>`:''}
