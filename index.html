@@ -183,6 +183,12 @@
   .alldone .big{ font-size:46px; display:inline-block; animation:wiggle 1.2s ease-in-out infinite; }
   .alldone .tt{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:20px; color:var(--kidcolor); }
   .linkbtn{ width:100%; background:none; border:2px dashed var(--line); color:var(--muted); border-radius:14px; padding:10px; font-weight:800; font-size:13px; cursor:pointer; margin:2px 0 14px; }
+  .wrep{ max-height:88vh; overflow-y:auto; text-align:center; }
+  .rpctbig{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:56px; line-height:1; } .rpctbig.ok{ color:var(--green); } .rpctbig.low{ color:var(--red); }
+  .rsec{ text-align:left; margin-bottom:10px; } .rsh{ font-weight:800; font-size:14px; margin-bottom:4px; }
+  .rrow{ display:flex; align-items:center; gap:8px; border-radius:12px; padding:6px 10px; margin-bottom:4px; font-weight:800; font-size:14px; }
+  .rrow.g{ background:#E3F8E8; } .rrow.b{ background:#FFE9E4; } .rrow .rl{ flex:1; } .rrow .rn{ font-size:12px; white-space:nowrap; }
+  .rgoal{ background:#FFF3C9; border-radius:14px; padding:10px; margin:6px 0 12px; font-weight:800; font-size:14px; }
   .remind-overlay{ position:fixed; inset:0; background:rgba(20,20,35,.55); display:flex; align-items:center; justify-content:center; z-index:3000; padding:20px; }
   .remind-box{ background:var(--panel); border:3px solid var(--kidcolor); border-radius:28px; padding:26px 20px 20px; max-width:340px; width:100%; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.3); animation:rpop .5s cubic-bezier(.3,1.5,.5,1); }
   @keyframes rpop{ from{transform:scale(.4); opacity:0;} to{transform:scale(1); opacity:1;} }
@@ -544,7 +550,40 @@ function weekStats(kidKey){
 function weekendMinutes(kidKey, bucket){
   const allow = data.allowance[kidKey] || {sat:30,sun:30};
   const base = allow[bucket] != null ? allow[bucket] : 30;
-  return Math.round(base * weekStats(kidKey).pct / 100);
+  const pct = weekStats(kidKey).pct;
+  return pct < 100 ? 0 : Math.round(base * pct / 100);   // below 100% = no iPad time; 100% = full; above = proportional
+}
+let reportKid = null;
+function openReport(){ reportKid = currentKid; render(); }
+function closeReport(){ reportKid = null; render(); }
+function weekReportHtml(kidKey){
+  const k = data[kidKey], ws = weekStats(kidKey), nm = META[kidKey].name;
+  const by = {};
+  WEEKDAYS_FOR_TIME.forEach(d=>{ questsOf(kidKey,d).forEach(q=>{ const o = by[q.label] || (by[q.label] = {label:q.label, icon:q.icon||'', done:0, total:0}); o.total++; if((k.checks[d]||{})[q.id]) o.done++; }); });
+  const arr = Object.values(by).filter(o=>o.total>0);
+  const perfect = arr.filter(o=>o.done===o.total).slice(0,6);
+  const needs = arr.filter(o=>o.done<o.total).sort((a,b)=>(b.total-b.done)-(a.total-a.done)||a.done/a.total-b.done/b.total).slice(0,4);
+  const pens = {};
+  DAYS.forEach(d=>Object.keys((k.penaltyHits||{})[d]||{}).forEach(id=>{ const pp = data.penalties.find(x=>x.id===id); if(pp){ const o = pens[id] || (pens[id]={icon:pp.icon,label:pp.label,n:0,amt:pp.amount||0}); o.n++; } }));
+  const penArr = Object.values(pens);
+  const exDays = DAYS.filter(d=>(k.exerciseDone||{})[d]).length;
+  const bonN = Object.keys(k.bonusHitsWeekly||{}).length + DAYS.reduce((n,d)=>n+Object.keys((k.bonusHitsDaily||{})[d]||{}).length,0);
+  const mins = Math.max(weekendMinutes(kidKey,'sat'), weekendMinutes(kidKey,'sun'));
+  const focus = needs.length ? needs[0].label : (penArr.length ? penArr[0].label : '');
+  const goal = needs.length ? 'Next week: try to finish every <b>'+needs[0].label+'</b>!' : (penArr.length ? 'Next week: avoid <b>'+penArr[0].label+'</b>!' : 'Next week: keep it going — you\'re doing amazing! 🌟');
+  const row = (o,good)=>`<div class="rrow ${good?'g':'b'}"><span class="ri">${o.icon}</span><span class="rl">${o.label}</span><span class="rn">${good?'✅ '+o.done+'/'+o.total:o.done+'/'+o.total+' days'}</span></div>`;
+  return `<div class="remind-overlay"><div class="remind-box wrep">
+    ${(typeof petBubbleHtml==='function') ? petBubbleHtml(kidKey, ws.pct>=100 ? 'Great week, '+nm+'! 🎉' : 'Let\'s look at your week together, '+nm+'!') : ''}
+    <div class="rtitle">📊 ${nm}'s Week</div>
+    <div class="rpctbig ${ws.pct>=100?'ok':'low'}">${ws.pct}%</div>
+    <div class="rsub" style="margin-bottom:10px;">${ws.pct>=100 ? '🎁 iPad time unlocked: '+mins+' min each day!' : '🔒 No iPad time this week — you need 100%.'}</div>
+    ${perfect.length?`<div class="rsec"><div class="rsh">⭐ You did great at</div>${perfect.map(o=>row(o,true)).join('')}</div>`:''}
+    ${needs.length?`<div class="rsec"><div class="rsh">💪 Let's get better at</div>${needs.map(o=>row(o,false)).join('')}</div>`:''}
+    ${penArr.length?`<div class="rsec"><div class="rsh">⚠️ Points lost</div>${penArr.map(o=>`<div class="rrow b"><span class="ri">${o.icon}</span><span class="rl">${o.label}</span><span class="rn">×${o.n} (−${o.amt*o.n}%)</span></div>`).join('')}</div>`:''}
+    ${(exDays||bonN)?`<div class="rsec"><div class="rsh">🎯 Extra credit</div><div class="rrow g"><span class="ri">🏃</span><span class="rl">Exercise days: ${exDays} · Bonus goals: ${bonN}</span></div></div>`:''}
+    <div class="rgoal">${goal}</div>
+    <button class="rbtn go" onclick="closeReport()">Got it! 💪</button>
+  </div></div>`;
 }
 let pendingChoice = null; // {kind:'penalty'|'bonus', kidKey, day, id}
 function togglePenalty(kidKey, day, penId, ev){
@@ -1086,7 +1125,7 @@ function render(){
   const isWeekend = (actualToday === 'Sat' || actualToday === 'Sun');
   const ringColor = ws.pct > 100 ? 'var(--gold)' : (ws.pct >= 80 ? 'var(--green)' : (ws.pct >= 50 ? 'var(--gold)' : 'var(--red)'));
   const ringFill = Math.min(100, ws.pct);
-  const msg = ws.pct > 100 ? '🌟 BONUS! Above and beyond!' : (ws.pct === 100 ? '💯 Perfect! Full iPad time!' : (ws.pct >= 80 ? '🔥 So close to 100%!' : (ws.pct >= 50 ? '💪 Keep going!' : '🚀 Finish your quests to climb!')));
+  const msg = ws.pct > 100 ? '🌟 BONUS! Above and beyond!' : (ws.pct === 100 ? '💯 Perfect! Full iPad time!' : (ws.pct >= 80 ? '🔥 So close! 100% unlocks iPad time!' : (ws.pct >= 50 ? '💪 Keep going — 100% unlocks iPad time!' : '🚀 Reach 100% to unlock iPad time!')));
   const penHits = data[currentKid].penaltyHits[currentDay] || {};
   const penTiles = data.penalties.map(pp=>{
     const on = !!penHits[pp.id];
@@ -1102,7 +1141,7 @@ function render(){
   const exOn = !!kstate.exerciseDone[currentDay];
   const exTile = `<div class="bigtile good ${exOn?'on':''} ${justDone==='exercise'?'bounce':''}" onclick="toggleExercise('${currentKid}','${currentDay}',event)">
       ${exOn?'<div class="bmark">🌟</div>':''}<div class="bi">🏃</div><div class="bl">Exercise<br>about 60 min</div></div>`;
-  const minTiles = isWeekend ? `<div class="mintiles">
+  const minTiles = (isWeekend && ws.pct < 100) ? `<div class="panel" style="text-align:center;background:var(--panel2);margin-bottom:14px;"><div style="font-size:34px;">🔒</div><div style="font-weight:800;">No iPad time this weekend</div><div class="pctsub">You need 100% to unlock it. Check the report to see how to do better next week!</div></div>` : isWeekend ? `<div class="mintiles">
       <div class="mintile"><div class="md">Saturday</div><div class="mn">${weekendMinutes(currentKid,'sat')}<small> min</small></div></div>
       <div class="mintile"><div class="md">Sunday</div><div class="mn">${weekendMinutes(currentKid,'sun')}<small> min</small></div></div></div>` : '';
   const ipadHtml = `<div class="panel">
@@ -1110,9 +1149,10 @@ function render(){
       <div class="ipadtop">
         <div class="pctring" style="background:conic-gradient(${ringColor} ${ringFill*3.6}deg, var(--line) 0deg)"><div class="pctnum">${ws.pct}%</div></div>
         <div class="pctside"><div class="pctmsg">${msg}</div>
-          <div class="pctsub">${isWeekend ? 'Your iPad time this weekend:' : 'Do all your quests Mon–Fri to reach 100%. Minutes unlock on the weekend 🎁'}</div></div>
+          <div class="pctsub">${isWeekend ? 'Your iPad time this weekend:' : 'Do all your quests Mon–Fri to reach 100%. Under 100% = no iPad time 🔒'}</div></div>
       </div>
       ${minTiles}
+      <button class="rbtn go" style="width:100%;margin-bottom:12px;" onclick="openReport()">📊 See my weekly report</button>
       <div class="biglabel">⚠️ Oops… <span style="color:var(--muted);font-weight:700;font-size:12px;">(a grown-up taps these)</span></div>
       <div class="bigtiles">${penTiles}</div>
       <div class="biglabel">🎯 Extra credit!</div>
@@ -1121,6 +1161,11 @@ function render(){
 
   const exDone = !!kstate.exerciseDone[currentDay];
 
+  let reportHtml = '';
+  if(isWeekend && !activeReminder && reportKid !== currentKid){
+    try{ const rk = 'mw_report|'+kstate.weekStart+'|'+actualToday+'|'+currentKid; if(!localStorage.getItem(rk)){ localStorage.setItem(rk,'1'); reportKid = currentKid; } }catch(e){}
+  }
+  if(reportKid === currentKid) reportHtml = weekReportHtml(currentKid);
   let modalHtml = '';
   if(pendingChoice && pendingChoice.kidKey === currentKid){
     const isBonus = pendingChoice.kind === 'bonus';
@@ -1219,7 +1264,7 @@ function render(){
 
     ` : ''}
 
-    ${modalHtml}${remindHtml}
+    ${modalHtml}${reportHtml}${remindHtml}
   `;
 }
 
