@@ -1983,7 +1983,7 @@ function render(){
     else if(nowMin < en){ cd = fmtMin(en-nowMin)+' left'; pctTime = Math.round((nowMin-st)/(en-st)*100); }
     else { cd = "time's up — finish it!"; pctTime = 100; }
     heroHtml = `<div class="hero ${justDone===fq.id?'celebrate':''}">
-      <div class="herotag">${started?'⏰ NOW':'NEXT UP'}${fq.id===luckyQ?' · 🍀 LUCKY ×3':''}</div>
+      <div class="herotag">${nowMin>=en?'⏳ NOT DONE YET':(started?'⏰ NOW':'NEXT UP')}${fq.id===luckyQ?' · 🍀 LUCKY ×3':''}</div>
       <div class="heroicon">${fq.icon}</div>
       <div class="herolabel">${fq.label}</div>
       <div class="herotime">${fmtRange(fq)} · <b>${cd}</b></div>

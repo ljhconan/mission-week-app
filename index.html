@@ -1087,7 +1087,8 @@ function render(){
     const checked = !!kstate.checks[currentDay][e.id];
     const isFocus = e.id === focusId;
     const started = currentDay===actualToday && timeToMinutes(e.time) <= nowMin;
-    const tag = isFocus ? `<span class="qtag">${started?'NOW':'NEXT'}</span>` : '';
+    const ended = currentDay===actualToday && (e.end ? timeToMinutes(e.end) : timeToMinutes(e.time)+30) <= nowMin;
+    const tag = isFocus ? `<span class="qtag">${ended?'NOT DONE YET':(started?'NOW':'NEXT')}</span>` : '';
     return `<div class="qcard ${checked?'done':''} ${isFocus?'focus':''} ${justDone===e.id?'celebrate':''}" onclick="toggleTask('${currentKid}','${currentDay}','${e.id}',event)">
       <div class="qicon">${e.icon}</div>
       <div class="qmid"><div class="qlabel">${e.label}</div><div class="qtime">${tag}${fmtRange(e)}</div></div>
