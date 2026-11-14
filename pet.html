@@ -396,7 +396,7 @@ const DEFAULT_PENALTIES = [
   {id:'pen-attitude', icon:'😤', label:'Bad attitude / back talk', amount:10},
   {id:'pen-latebed', icon:'⏰', label:'Not in bed on time', amount:10}
 ];
-const DEFAULT_ALLOWANCE = { leyna:{sat:30,sun:30}, lea:{sat:30,sun:30} };
+const DEFAULT_ALLOWANCE = { leyna:{sat:15,sun:15,v15:true}, lea:{sat:15,sun:15,v15:true} };
 const DEFAULT_BONUSES = [
   {id:'bonus-rsm', icon:'📐', label:'RSM homework ≥90% accuracy this week', amount:20, frequency:'weekly'},
   {id:'bonus-mathhw', icon:'➗', label:'Math homework ≥90% accuracy this week', amount:20, frequency:'weekly'}
@@ -505,9 +505,10 @@ async function loadData(){
   });
 
   Object.keys(META).forEach(k=>{
-    if(typeof data.allowance[k] !== 'object' || data.allowance[k] == null){ data.allowance[k] = {sat:30, sun:30}; }
-    if(data.allowance[k].sat == null) data.allowance[k].sat = 30;
-    if(data.allowance[k].sun == null) data.allowance[k].sun = 30;
+    if(typeof data.allowance[k] !== 'object' || data.allowance[k] == null){ data.allowance[k] = {sat:15, sun:15, v15:true}; }
+    if(data.allowance[k].sat == null) data.allowance[k].sat = 15;
+    if(data.allowance[k].sun == null) data.allowance[k].sun = 15;
+    if(!data.allowance[k].v15){ data.allowance[k].v15 = true; if(data.allowance[k].sat === 30) data.allowance[k].sat = 15; if(data.allowance[k].sun === 30) data.allowance[k].sun = 15; setTimeout(()=>{ try{ saveData('allowance'); }catch(e){} }, 1500); }
   });
   const thisMonday = mondayOf(new Date());
   Object.keys(META).forEach(k=>{
@@ -612,8 +613,8 @@ function badgeList(kstate){
   ];
 }
 function bucketRemaining(kidKey, bucket){
-  const allow = data.allowance[kidKey] || {sat:30,sun:30};
-  const base = allow[bucket] != null ? allow[bucket] : 30;
+  const allow = data.allowance[kidKey] || {sat:15,sun:15};
+  const base = allow[bucket] != null ? allow[bucket] : 15;
   let deduct = 0, add = 0;
   DAYS.forEach(d=>{
     const hits = data[kidKey].penaltyHits[d] || {};
@@ -696,22 +697,18 @@ function weekStats(kidKey){
     if((k.exerciseDone||{})[d]) earned += EXERCISE_POINTS;
   });
   Object.keys(k.bonusHitsWeekly||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) earned += (b.amount||0); });
-  // Extra credit is a SHARE of the total possible: doing every daily item every day (+ weekly goals + exercise) = full +20%.
-  // So every single day/item keeps counting until the very end of the week.
-  const dailyItems = data.bonuses.filter(b=>b.frequency!=='weekly').reduce((n,b)=>n+(b.amount||0),0);
-  const weeklyItems = data.bonuses.filter(b=>b.frequency==='weekly').reduce((n,b)=>n+(b.amount||0),0);
-  const possible = dailyItems*DAYS.length + weeklyItems + EXERCISE_POINTS*EXERCISE_DAYS_POSSIBLE;
-  const bon = possible > 0 ? Math.min(1, earned/possible) * MAX_EXTRA : 0;
+  // Extra credit is UNCAPPED: every extra item adds minutes on top of the 15-minute base (about +100% = the old 30 minutes)
+  const bon = earned;
   const base = Math.max(0, Math.min(100, completion - pen));
   // extra credit only counts once ALL weekday quests are done, so finishing early or skipping later quests can't be covered by extras
   const extraLocked = completion < 99.5 && bon > 0;
   const extra = completion >= 99.5 ? bon : 0;
-  const pct = Math.max(0, Math.min(100 + MAX_EXTRA, Math.round(base + extra)));
+  const pct = Math.max(0, Math.round(base + extra));
   return {pct, completion:Math.round(completion), pen, bon, extra, extraLocked};
 }
 function weekendMinutes(kidKey, bucket){
-  const allow = data.allowance[kidKey] || {sat:30,sun:30};
-  const base = (allow[bucket] > 0) ? allow[bucket] : 30;   // 0/empty setting = default 30 min
+  const allow = data.allowance[kidKey] || {sat:15,sun:15};
+  const base = (allow[bucket] > 0) ? allow[bucket] : 15;   // 0/empty setting = default 15 min
   const pct = weekStats(kidKey).pct;
   return pct < 100 ? 0 : Math.round(base * pct / 100);   // below 100% = no iPad time; 100% = full; above = proportional
 }
@@ -1825,7 +1822,7 @@ function onBonusFrequencyChange(ev){
   saveData('bonuses'); renderEdit();
 }
 function onAllowanceChange(kid, bucket, val){
-  if(!data.allowance[kid]) data.allowance[kid] = {sat:30,sun:30};
+  if(!data.allowance[kid]) data.allowance[kid] = {sat:15,sun:15,v15:true};
   data.allowance[kid][bucket] = parseInt(val)||0;
   saveData('allowance');
 }
@@ -2057,7 +2054,7 @@ function render(){
       <div class="ipadtop">
         <div class="pctring" style="background:conic-gradient(${ringColor} ${ringFill*3.6}deg, var(--line) 0deg)"><div class="pctnum">${ws.pct}%</div></div>
         <div class="pctside"><div class="pctmsg">${msg}</div>
-          <div class="pctsub">${isWeekend ? (ws.pct>=100 ? '🎁 = <b>'+weekendMinutes(currentKid,'sat')+' min</b> Saturday + <b>'+weekendMinutes(currentKid,'sun')+' min</b> Sunday' : '🔒 = <b>0 min</b> this weekend') : ('Do all your quests Mon–Fri to reach 100%. Under 100% = no iPad time 🔒' + (ws.extraLocked ? ' ⭐ Extra credit counts after ALL quests are done.' : ''))}</div></div>
+          <div class="pctsub">${isWeekend ? (ws.pct>=100 ? '🎁 = <b>'+weekendMinutes(currentKid,'sat')+' min</b> Saturday + <b>'+weekendMinutes(currentKid,'sun')+' min</b> Sunday'+' · extras = more minutes! 🎯' : '🔒 = <b>0 min</b> this weekend') : ('Do all your quests Mon–Fri to reach 100%. Under 100% = no iPad time 🔒' + (ws.extraLocked ? ' ⭐ Extra credit counts after ALL quests are done.' : ''))}</div></div>
       </div>
       ${minTiles}
       <button class="rbtn go" style="width:100%;margin-bottom:12px;" onclick="openReport()">📊 See my weekly report</button>
@@ -2270,7 +2267,7 @@ function renderEdit(){
       </div>
       <div class="panel">
         <h2 style="font-size:16px;margin-bottom:10px;">🎯 Bonuses (screen-time add-ons)</h2>
-        <div class="panelsub">Icon · Label · Points (%) added (extra credit is shared out: doing ALL daily items every day + weekly goals + exercise = +20%. Each item counts until the end of the week) · Daily (resets every day) or Weekly (once per week)</div>
+        <div class="panelsub">Icon · Label · Points (%) added (extra credit has NO cap: 100% = 15 min each weekend day, every extra item adds more (about +100% = 30 min)) · Daily (resets every day) or Weekly (once per week)</div>
         ${data.bonuses.map(b=>`
           <div class="editrow">
             <input class="ein-icon bonus-field" type="text" data-id="${b.id}" data-field="icon" value="${b.icon.replace(/"/g,'&quot;')}">
