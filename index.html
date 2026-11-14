@@ -543,9 +543,11 @@ function weekStats(kidKey){
   DAYS.forEach(d=>{ if((k.exerciseDone||{})[d]) bon += EXERCISE_POINTS; });
   // extra credit can only ever add up to MAX_EXTRA points total, and can't be used to cover missed quests/penalties above 100
   const base = Math.max(0, Math.min(100, completion - pen));
-  const extra = Math.min(MAX_EXTRA, bon);
+  // extra credit only counts once ALL weekday quests are done, so finishing early or skipping later quests can't be covered by extras
+  const extraLocked = completion < 99.5 && bon > 0;
+  const extra = completion >= 99.5 ? Math.min(MAX_EXTRA, bon) : 0;
   const pct = Math.max(0, Math.min(100 + MAX_EXTRA, Math.round(base + extra)));
-  return {pct, completion:Math.round(completion), pen, bon, extra};
+  return {pct, completion:Math.round(completion), pen, bon, extra, extraLocked};
 }
 function weekendMinutes(kidKey, bucket){
   const allow = data.allowance[kidKey] || {sat:30,sun:30};
@@ -581,6 +583,7 @@ function weekReportHtml(kidKey){
     ${needs.length?`<div class="rsec"><div class="rsh">💪 Let's get better at</div>${needs.map(o=>row(o,false)).join('')}</div>`:''}
     ${penArr.length?`<div class="rsec"><div class="rsh">⚠️ Points lost</div>${penArr.map(o=>`<div class="rrow b"><span class="ri">${o.icon}</span><span class="rl">${o.label}</span><span class="rn">×${o.n} (−${o.amt*o.n}%)</span></div>`).join('')}</div>`:''}
     ${(exDays||bonN)?`<div class="rsec"><div class="rsh">🎯 Extra credit</div><div class="rrow g"><span class="ri">🏃</span><span class="rl">Exercise days: ${exDays} · Bonus goals: ${bonN}</span></div></div>`:''}
+    ${ws.extraLocked ? '<div class="rsub" style="margin-bottom:8px;">⭐ Your extra credit counts only after ALL quests Mon–Fri are done.</div>' : ''}
     <div class="rgoal">${goal}</div>
     <button class="rbtn go" onclick="closeReport()">Got it! 💪</button>
   </div></div>`;
@@ -1150,7 +1153,7 @@ function render(){
       <div class="ipadtop">
         <div class="pctring" style="background:conic-gradient(${ringColor} ${ringFill*3.6}deg, var(--line) 0deg)"><div class="pctnum">${ws.pct}%</div></div>
         <div class="pctside"><div class="pctmsg">${msg}</div>
-          <div class="pctsub">${isWeekend ? (ws.pct>=100 ? '🎁 = <b>'+weekendMinutes(currentKid,'sat')+' min</b> Saturday + <b>'+weekendMinutes(currentKid,'sun')+' min</b> Sunday' : '🔒 = <b>0 min</b> this weekend') : 'Do all your quests Mon–Fri to reach 100%. Under 100% = no iPad time 🔒'}</div></div>
+          <div class="pctsub">${isWeekend ? (ws.pct>=100 ? '🎁 = <b>'+weekendMinutes(currentKid,'sat')+' min</b> Saturday + <b>'+weekendMinutes(currentKid,'sun')+' min</b> Sunday' : '🔒 = <b>0 min</b> this weekend') : ('Do all your quests Mon–Fri to reach 100%. Under 100% = no iPad time 🔒' + (ws.extraLocked ? ' ⭐ Extra credit counts after ALL quests are done.' : ''))}</div></div>
       </div>
       ${minTiles}
       <button class="rbtn go" style="width:100%;margin-bottom:12px;" onclick="openReport()">📊 See my weekly report</button>
