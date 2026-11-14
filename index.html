@@ -526,6 +526,9 @@ function claimStarReward(kidKey){
   kstate.taobaoRedemptions = (kstate.taobaoRedemptions||0) + 1;
   saveData(kidKey); render(); burstConfetti();
 }
+const DAILY_EXTRA_CAP = 3;    // max % one day's extra-credit items can add
+const MAX_DAILY_EXTRA = 15;   // daily items total per week (5 full days)
+const MAX_WEEKLY_EXTRA = 5;   // weekly goals total per week
 const EXERCISE_POINTS = 4;  // each exercise day adds this many % toward the weekly extra-credit cap
 const MAX_EXTRA = 20;   // extra credit never adds more than +20% in a week
 const WEEKDAYS_FOR_TIME = ['Mon','Tue','Wed','Thu','Fri'];
@@ -534,14 +537,16 @@ function weekStats(kidKey){
   WEEKDAYS_FOR_TIME.forEach(d=>{ const t = dayTotals(kidKey, d); done += t.done; total += t.total; });
   const completion = total ? done/total*100 : 0;
   const k = data[kidKey];
-  let pen = 0, bon = 0;
+  let pen = 0, dailyBon = 0, weeklyBon = 0;
   DAYS.forEach(d=>{
     Object.keys((k.penaltyHits||{})[d]||{}).forEach(pid=>{ const p = data.penalties.find(x=>x.id===pid); if(p) pen += (p.amount||0); });
-    Object.keys((k.bonusHitsDaily||{})[d]||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) bon += (b.amount||0); });
+    let dayBon = 0;
+    Object.keys((k.bonusHitsDaily||{})[d]||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) dayBon += (b.amount||0); });
+    if((k.exerciseDone||{})[d]) dayBon += EXERCISE_POINTS;
+    dailyBon += Math.min(DAILY_EXTRA_CAP, dayBon);   // each day can only add a little, so every day matters
   });
-  Object.keys(k.bonusHitsWeekly||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) bon += (b.amount||0); });
-  DAYS.forEach(d=>{ if((k.exerciseDone||{})[d]) bon += EXERCISE_POINTS; });
-  // extra credit can only ever add up to MAX_EXTRA points total, and can't be used to cover missed quests/penalties above 100
+  Object.keys(k.bonusHitsWeekly||{}).forEach(bid=>{ const b = data.bonuses.find(x=>x.id===bid); if(b) weeklyBon += (b.amount||0); });
+  const bon = Math.min(MAX_DAILY_EXTRA, dailyBon) + Math.min(MAX_WEEKLY_EXTRA, weeklyBon);
   const base = Math.max(0, Math.min(100, completion - pen));
   // extra credit only counts once ALL weekday quests are done, so finishing early or skipping later quests can't be covered by extras
   const extraLocked = completion < 99.5 && bon > 0;
@@ -1371,7 +1376,7 @@ function renderEdit(){
       </div>
       <div class="panel">
         <h2 style="font-size:16px;margin-bottom:10px;">🎯 Bonuses (screen-time add-ons)</h2>
-        <div class="panelsub">Icon · Label · Points (%) added (extras total max +20% per week) · Daily (resets every day) or Weekly (once per week)</div>
+        <div class="panelsub">Icon · Label · Points (%) added (daily items: max +3% per day, weekly goals: max +5%, total extra max +20%) · Daily (resets every day) or Weekly (once per week)</div>
         ${data.bonuses.map(b=>`
           <div class="editrow">
             <input class="ein-icon bonus-field" type="text" data-id="${b.id}" data-field="icon" value="${b.icon.replace(/"/g,'&quot;')}">
